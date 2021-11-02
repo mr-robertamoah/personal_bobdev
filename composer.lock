@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8bb6a62d945b1c47324091d9207e1bd9",
+    "content-hash": "578b2e9b75c990c97ea681c16df50207",
     "packages": [
         {
             "name": "asm89/stack-cors",
@@ -2215,6 +2215,50 @@
                 }
             ],
             "time": "2020-12-14T13:15:25+00:00"
+        },
+        {
+            "name": "mr-robertamoah/dto",
+            "version": "dev-main",
+            "dist": {
+                "type": "path",
+                "url": "D:/web projectss/DTO",
+                "reference": "c6b37a92b3526131bf3a8d9e125565837f8535f0"
+            },
+            "require-dev": {
+                "orchestra/testbench": "^6.20"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "MrRobertAmoah\\DTO\\Providers\\DTOServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "MrRobertAmoah\\DTO\\": "src/"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "MrRobertAmoah\\Tests\\": "tests/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Robert Amoah",
+                    "email": "mr_robertamoah@yahoo.com"
+                }
+            ],
+            "description": "this will help you create dtos from requests quite easily",
+            "transport-options": {
+                "symlink": true,
+                "relative": false
+            }
         },
         {
             "name": "nesbot/carbon",
@@ -9415,12 +9459,14 @@
     ],
     "aliases": [],
     "minimum-stability": "dev",
-    "stability-flags": [],
+    "stability-flags": {
+        "mr-robertamoah/dto": 20
+    },
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
         "php": "^7.3|^8.0"
     },
     "platform-dev": [],
-    "plugin-api-version": "2.0.0"
+    "plugin-api-version": "2.1.0"
 }

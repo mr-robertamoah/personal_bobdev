@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "target": "ESNext",
+        "module": "ESNext",
+        "strict": true,
+        "jsx": "preserve",
+        "moduleResolution": "Node",
+        // "noImplicitAny": false,
+        // "allowJs": true,
+    },
+    "includes": [
+        "resources/ts/*.ts",
+    ]
+}

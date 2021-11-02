@@ -1,9 +1,8 @@
 {
-    "/js/404.js": "/js/404.js",
     "/js/app.js": "/js/app.js",
-    "/js/Home.js": "/js/Home.js",
-    "/js/Logout.js": "/js/Logout.js",
-    "/js/Login.js": "/js/Login.js",
     "/css/app.css": "/css/app.css",
-    "/js/Register.js": "/js/Register.js"
+    "/js/404.js": "/js/404.js",
+    "/js/Register.js": "/js/Register.js",
+    "/js/Login.js": "/js/Login.js",
+    "/js/Home.js": "/js/Home.js"
 }

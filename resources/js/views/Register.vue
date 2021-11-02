@@ -1,18 +1,18 @@
 <template>
-    <login-register-layout>
-        <login-register-card>
+    <Layout>
+        <Card>
             
-        </login-register-card>
-    </login-register-layout>
+        </Card>
+    </Layout>
 </template>
 
 <script>
-import LoginRegisterCard from '../components/layouts/LoginRegisterCard.vue'
-import LoginRegisterLayout from '../components/layouts/LoginRegisterLayout.vue'
+import Card from '../components/auth/Card.vue'
+import AuthLayout from '../components/layouts/Auth.vue'
 export default {
     components: { 
-        LoginRegisterLayout,
-        LoginRegisterCard 
+        AuthLayout,
+        Card 
     },
     
 }
