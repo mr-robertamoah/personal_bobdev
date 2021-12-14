@@ -1,5 +1,8 @@
 <template>
-    <Button :id="id" :type="type" class="">
+    <Button :id="id" :type="type" 
+        class="border p-2 rounded border-gray-400 bg-blue-100 shadow hover:bg-blue-200 
+            transition-colors duration-100"
+    >
         <slot></slot>
     </Button>
 </template>

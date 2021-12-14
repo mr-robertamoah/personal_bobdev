@@ -6,9 +6,13 @@ export default {
             type: String,
             default: 'button'
         },
-        id: {
-            type: String,
-            default: `button${getRandomNumber()}`
-        },
     },
+    created() {
+        this.id = `input${getRandomNumber(1000000)}`
+    },
+    data() {
+        return {
+            id: ''
+        }
+    }
 }

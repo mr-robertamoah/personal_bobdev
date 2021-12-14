@@ -5,10 +5,14 @@
         "strict": true,
         "jsx": "preserve",
         "moduleResolution": "Node",
-        // "noImplicitAny": false,
+        "typeRoots": [
+            "./resources/ts/modules",
+            "./resources/ts/types",
+        ],
         // "allowJs": true,
     },
-    "includes": [
-        "resources/ts/*.ts",
+    "include": [
+        "./resources/ts/modules/*.ts",
+        "./resources/ts/types/*.ts",
     ]
 }

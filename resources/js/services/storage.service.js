@@ -2,15 +2,19 @@
 
 const StorageService = class {
     type = 'localStorage'
+
+    possibleTypes = ['localStorage', 'sessionStorage']
+
     instance = null
 
     constructor(type) {
-        if (!type || typeof type !== 'string' || type.length == 0) {
-            type = 'localStorage'
+        if (!type || typeof type !== 'string' || !this.possibleTypes.includes(type)) {
+            return
         }
 
         this.type = type
     }
+    
     setUpStorageBasedOnType() {
         if (this.type === 'localStorage') {
             this.instance = localStorage

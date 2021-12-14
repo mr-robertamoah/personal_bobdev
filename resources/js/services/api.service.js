@@ -17,7 +17,7 @@ const ApiService = {
     },
 
     setHeadersAuthorization: () => {
-        axios.defaults.headers.common['Authorization'] = TokenService.hasToken ? `Bearer ${TokenService.getToken}` : ''
+        axios.defaults.headers.common['Authorization'] = TokenService.hasToken() ? `Bearer ${TokenService.getToken()}` : ''
     },
 
     removeHeadersAuthorization: () => {
@@ -28,11 +28,22 @@ const ApiService = {
         return axios.get(url, {data})
     },
 
-    post: (url, data, hasMultipart = false) => {
+    post: async (url, data, hasMultipart = false) => {
         
         let config = hasMultipart ? {headers: {'Content-Type': 'multipart/form-data'}} : {}
 
-        return axios.post(url, data, config)
+        try {
+
+            console.log('data',  data)
+
+            let res = await axios.post(url, data, config)
+
+            return res
+        } catch (error) {
+            
+            return error.response
+        }
+        
     },
 
     put: (url, data) => {

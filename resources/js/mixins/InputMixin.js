@@ -14,13 +14,25 @@ export default {
             type: String,
             default: ''
         },
-        id: {
-            type: String,
-            default: `input${getRandomNumber()}`
-        },
         icon: {
             type: Array,
             default: []
         },
+        errors: {
+            type: Array,
+            default: null
+        },
+        info: {
+            type: Array,
+            default: null
+        },
     },
+    created() {
+        this.id = `input${getRandomNumber(1000000)}`
+    },
+    data() {
+        return {
+            id: ''
+        }
+    }
 }

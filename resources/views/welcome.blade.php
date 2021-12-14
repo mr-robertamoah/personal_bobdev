@@ -21,9 +21,7 @@
             }
         </style>
     </head>
-    <body class="relative">
-        <div id="app">
-            <main-app></main-app>
-        </div>
+    <body id="app" class="relative">
+        <main-app></main-app>
     </body>
 </html>

@@ -16,6 +16,35 @@ const routes = [
         component: () => import(/* webpackChunkName: 'Home' */ "../views/Home.vue")
     },
     {
+        name: 'profile',
+        path: '/profile',
+        component: () => import(/* webpackChunkName: 'Home' */ "../views/Profile.vue"),
+        children: [
+            {
+                name: 'userProfile',
+                path: 'user/:username',
+                component: () => import(/* webpackChunkName: 'Home' */ "../views/UserProfile.vue"),
+            },
+            {
+                name: 'companyProfile',
+                path: 'company/:uuid',
+                component: () => import(/* webpackChunkName: 'Home' */ "../views/CompanyProfile.vue"),
+            }
+        ]
+    },
+    {
+        name: 'projects',
+        path: '/projects',
+        component: () => import(/* webpackChunkName: 'Home' */ "../views/Projects.vue"),
+        children: [
+            {
+                name: 'project',
+                path: ':projectName',
+                component: () => import(/* webpackChunkName: 'Home' */ "../views/Project.vue"),
+            }
+        ]
+    },
+    {
         name: 'notFound',
         path: '/404',
         alias: '/:pathMatch(.*)*',

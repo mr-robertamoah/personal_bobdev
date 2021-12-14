@@ -51,6 +51,9 @@ module.exports = {
         "90vh": "90vh",
         'content': 'fit-content',
       },
+      width: {
+        'content': 'fit-content',
+      },
       transitionProperty: {
         'height': 'height',
         'width': 'width',

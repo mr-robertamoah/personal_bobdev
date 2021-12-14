@@ -2,6 +2,10 @@ export default interface Storage {
     type: string,
 
     instance: any,
+
+    possibleTypes: string[],
+
+    constructor(type: string): void,
     
     setUpStorageBasedOnType(): void,
 

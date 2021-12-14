@@ -1,25 +1,34 @@
 <template>
-    <div class="" v-if="show">
-        {{message}}
-    </div>
+    <slide-left-transition :duration="alertDuration">
+        <div 
+            class="absolute bottom-full left-0 right-0 p-10"
+            :class="[
+                alertStatus == 'sucess' ? 'bg-green-500 text-green-100' : 
+                (alertStatus == 'danger' ? 'bg-red-500 text-red-100' : '')]"
+            v-if="alertMessage.length"
+        >
+            {{alertMessage}}
+        </div>
+    </slide-left-transition>
 </template>
 
 <script>
+import SlideLeftTransition from './transitions/SlideLeftTransition.vue'
+
     export default {
+        components: {
+            SlideLeftTransition,
+        },
         props: {
-            message: {
+            alertMessage: {
                 type: String,
                 default:''
             },
-            success: {
-                type: Boolean,
-                default: false
+            alertStatus: {
+                type: String,
+                default: ''
             },
-            danger: {
-                type: Boolean,
-                default: false
-            },
-            duration: {
+            alertDuration: {
                 type: Number,
                 default: 1000
             },
@@ -30,25 +39,15 @@
             }
         },
         watch: {
-            message: {
+            alertMessage: {
                 immediate: true,
                 handler(newValue) {
                     if (!newValue) {
-                        return this.hideAlert()
+                        return
                     }
 
-                    this.showAlert()
+                    this.$emit('clearAlertMessage')
                 }
-            }
-        },
-        methods: {
-            hideAlert() {
-                this.show = false
-                this.$emit('hideAlert')
-            },
-            showAlert() {
-                this.show = true
-                this.$emit('showAlert')
             }
         },
     }
