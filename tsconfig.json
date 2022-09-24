@@ -1,0 +1,15 @@
+{
+    "extends": "@vue/tsconfig/tsconfig.json",
+    "compilerOptions": {
+        "paths": {
+            "@fortawesome/fontawesom-common-types": [
+                "./node_modules/@fortawesome/fontawesome-common-types/index"
+            ]
+        },
+        "types": [
+            "node",
+            "vite/client"
+        ],
+        "allowJs": true
+    }
+}
