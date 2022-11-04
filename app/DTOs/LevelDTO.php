@@ -2,6 +2,7 @@
 
 namespace App\DTOs;
 
+use App\Models\Level;
 use App\Models\LevelCollection;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -10,6 +11,8 @@ use MrRobertAmoah\DTO\BaseDTO;
 class LevelDTO extends BaseDTO
 {
     public ?User $user = null;
+    public ?Level $level = null;
+    public ?string $levelId = null;
     public ?LevelCollection $levelCollection = null;
     public ?string $levelCollectionId = null;
     public ?string $name = null;

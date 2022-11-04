@@ -44,6 +44,7 @@ class AuthController extends Controller
     
     public function register(RegisterRequest $request)
     {
+        //TODO work on the password strenght
         try {
             
             $user = (new AuthService)->register(
@@ -83,39 +84,6 @@ class AuthController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => "Sorry, something happened while trying to logout. Please try again later."
-            ], 500);
-        }
-    }
-
-    public function getUser(Request $request)
-    {
-        $user = $request->user();
-
-        return response()->json([
-            'status' => (bool) $user,
-            'user' => $user ? new UserResource($user) : null
-        ]);
-    }
-
-    public function getAUser(Request $request)
-    {
-        try {
-            $user = (new AuthService)->getAUser($request->username);
-
-            return response()->json([
-                'status' => (bool) $user,
-                'user' => $user ? new UserResource($user) : null
-            ]);  
-        } catch (UserNotFoundException $e) {
-            return response()->json([
-                'status' => false,
-                'message' => $e->getMessage()
-            ], 422);
-        } catch (\Throwable $th) {
-            throw $th;
-            return response()->json([
-                'status' => false,
-                'message' => "Sorry, something happened while trying to get user with username: {$request->username}. Please try again later."
             ], 500);
         }
     }

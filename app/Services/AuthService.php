@@ -59,15 +59,4 @@ class AuthService extends Service
 
        return $user;
     }
-
-    public function getAUser(string $username)
-    {
-        $user = User::where('username', $username)->first();
-
-        if (is_null($user)) {
-            throw new UserNotFoundException("user with $username username was not found.");
-        }
-
-        return $user;
-    }
 }

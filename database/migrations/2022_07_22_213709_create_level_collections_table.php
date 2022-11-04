@@ -16,7 +16,7 @@ return new class extends Migration
         Schema::create('level_collections', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('user_id');
-            $table->string('name');
+            $table->string('name')->unique();
             $table->integer('value');
             $table->timestamps();
         });

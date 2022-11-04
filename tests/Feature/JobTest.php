@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\DTOs\JobDTO;
+use App\Exceptions\JobException;
 use App\Models\Job;
 use App\Models\User;
 use App\Models\UserType;
@@ -547,5 +548,127 @@ class JobTest extends TestCase
                     ['name' => 'Native Developer'],
                 ]
             ]);
+    }
+
+    public function testCannotAttachJobToAnotherUserIfNotAdmin()
+    {
+        // $this->expectException(JobException::class);
+        // $this->expectExceptionMessage('Sorry! You must be an admin if you are attaching job to a different account. The user you are trying to attach the job to must be a facilitator.');
+
+        $admin = User::create([
+            'username' => "mr_robertamoah",
+            'first_name' => "Robert",
+            'surname' => "Amoah",
+            'password' => bcrypt("password"),
+            'email' => "mr_robertamoah@yahoo.com",
+        ]);
+
+        $user = User::create([
+            'username' => "mr_robertamoah1",
+            'first_name' => "Robert",
+            'surname' => "Amoah",
+            'password' => bcrypt("password"),
+            'email' => "mr_robertamoah1@yahoo.com",
+        ]);
+
+        $user2 = User::create([
+            'username' => "mr_robertamoah2",
+            'first_name' => "Robert",
+            'surname' => "Amoah",
+            'password' => bcrypt("password"),
+            'email' => "mr_robertamoah2@yahoo.com",
+        ]);
+
+        $userType = $admin->addedUserTypes()->create([
+            'name' => UserType::ADMIN
+        ]);
+
+        $admin->userTypes()->attach($userType->id);
+
+        $userType = $admin->addedUserTypes()->create([
+            'name' => UserType::FACILITATOR
+        ]);
+
+        $user->userTypes()->attach($userType->id);
+        $user2->userTypes()->attach($userType->id);
+
+        $job = (new JobService)->createJob(
+            JobDTO::new()->fromArray([
+                'name' => 'Web Develop',
+                'addedBy' => $admin
+            ])
+        );
+
+        $this->actingAs($user);
+        
+        $response = $this->postJson("/api/job/{$job->id}/attach", [
+            'user_id' => $user2->id
+        ]);
+
+        $response
+            ->assertStatus(500);
+
+        $this->assertDatabaseMissing('job_user', [
+            'job_id' => $job->id,
+            'user_id' => $user->id,
+        ]);
+
+        $this->assertDatabaseMissing('job_user', [
+            'job_id' => $job->id,
+            'user_id' => $user2->id,
+        ]);
+    }
+
+    public function testCanAttachJobToFacilitator()
+    {
+        $admin = User::create([
+            'username' => "mr_robertamoah",
+            'first_name' => "Robert",
+            'surname' => "Amoah",
+            'password' => bcrypt("password"),
+            'email' => "mr_robertamoah@yahoo.com",
+        ]);
+
+        $user = User::create([
+            'username' => "mr_robertamoah1",
+            'first_name' => "Robert",
+            'surname' => "Amoah",
+            'password' => bcrypt("password"),
+            'email' => "mr_robertamoah1@yahoo.com",
+        ]);
+
+        $userType = $admin->addedUserTypes()->create([
+            'name' => UserType::ADMIN
+        ]);
+
+        $admin->userTypes()->attach($userType->id);
+
+        $userType = $admin->addedUserTypes()->create([
+            'name' => UserType::FACILITATOR
+        ]);
+
+        $user->userTypes()->attach($userType->id);
+
+        $job = (new JobService)->createJob(
+            JobDTO::new()->fromArray([
+                'name' => 'Web Develop',
+                'addedBy' => $admin
+            ])
+        );
+
+        $this->actingAs($user);
+        
+        $response = $this->postJson("/api/job/{$job->id}/attach");
+
+        $response
+            ->assertStatus(200)
+            ->assertJson([
+                'status' => true
+            ]);
+
+        $this->assertDatabaseHas('job_user', [
+            'job_id' => $job->id,
+            'user_id' => $user->id,
+        ]);
     }
 }

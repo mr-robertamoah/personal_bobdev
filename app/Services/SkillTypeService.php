@@ -65,19 +65,19 @@ class SkillTypeService
         if (!$skillTypeDTO->addedBy) {
             throw new SkillTypeException('Sorry! A valid user is required to perform this action.');
         }
-
+        
         if ($this->doesntHaveAppropriateData($skillTypeDTO, 'delete')) {
             throw new SkillTypeException('Sorry! A skill type id is required for this operation.');
         }
         
         $skillTypeDTO = $skillTypeDTO->skillType ? $skillTypeDTO : $skillTypeDTO->withSkillType(SkillType::find($skillTypeDTO->skillTypeId));
-
+        
         if (!$skillTypeDTO->skillType) {
             throw new SkillTypeException("Sorry! The skill type with id {$skillTypeDTO->skillTypeId} was not found.");
         }
-
+        
         if ($this->isNotAuthorized($skillTypeDTO, action: 'delete')) {
-           throw new SkillTypeException("Sorry! You are not authorized to delete the skill type with name {$skillTypeDTO->skillType->name}.");
+            throw new SkillTypeException("Sorry! You are not authorized to delete the skill type with name {$skillTypeDTO->skillType->name}.");
         }
         
         if (

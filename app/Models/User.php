@@ -2,23 +2,27 @@
 
 namespace App\Models;
 
-use App\Exceptions\UserTypeException;
+use App\Interfaces\Request;
 use App\Traits\CanAddImagesTrait;
+use App\Traits\CanSendAndReceiveRequestsTrait;
 use App\Traits\HasAdministratorTrait;
 use App\Traits\HasProfileTrait;
+use App\Traits\ProjectAddedByTrait;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable
+class User extends Authenticatable implements Request
 {
     use HasFactory, 
         Notifiable,
         HasProfileTrait,
         HasAdministratorTrait,
-        CanAddImagesTrait;
+        CanAddImagesTrait,
+        ProjectAddedByTrait,
+        CanSendAndReceiveRequestsTrait;
     
     const MALE = 'MALE';
     const FEMALE = 'FEMALE';
@@ -115,6 +119,13 @@ class User extends Authenticatable
     {
         return $this->morphMany(Activity::class, 'performedby');
     }
+
+    public function projects()
+    {
+        return $this->belongsToMany(User::class)
+            ->withPivot(['participating_as'])
+            ->withTimestamps();
+    }
     // end of relationships
 
     // start of methods
@@ -129,6 +140,13 @@ class User extends Authenticatable
     {
         return $this->userTypes()
             ->where('name', UserType::FACILITATOR)
+            ->exists();
+    }
+
+    public function isStudent() : bool
+    {
+        return $this->userTypes()
+            ->where('name', UserType::STUDENT)
             ->exists();
     }
 
@@ -154,11 +172,25 @@ class User extends Authenticatable
             ->toArray();
     }
 
-    public function hasUserType($name)
+    public function isUserType($name)
     {
+        $name = strtoupper($name);
+
+        if (!in_array($name, UserType::TYPES)) {
+            return false;
+        }
+        
         return $this->userTypes()
-            ->where('name', strtoupper($name))
+            ->where('name', $name)
             ->exists();
+    }
+
+    public function canMakeRequestFor(): array
+    {
+        return [
+            Project::class,
+            Company::class
+        ];
     }
     // end of methods
 

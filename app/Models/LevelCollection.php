@@ -22,4 +22,31 @@ class LevelCollection extends Model
     {
         return $this->hasMany(Level::class);
     }
+
+    public function hasLevels(): bool
+    {
+        return $this->levels()->exists();
+    }
+
+    public function doesNotHaveLevels(): bool
+    {
+        return !$this->hasLevels();
+    }
+
+    public function hasLevelWithName($name): bool
+    {
+        return $this->whereHasLevelWithName($name)->exists();
+    }
+
+    public function doesNotHaveLevelWithName($name): bool
+    {
+        return !$this->hasLevelWithName($name);
+    }
+
+    public function scopeWhereHasLevelWithName($query, $name)
+    {
+        return $query->whereHas('levels', function ($query) use ($name) {
+            $query->whereName($name);
+        });
+    }
 }

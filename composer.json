@@ -14,7 +14,8 @@
         "laravel/tinker": "^2.7",
         "laravel/ui": "^3.2",
         "mr-robertamoah/dto": "^1.0",
-        "spatie/laravel-ray": "^1.26"
+        "spatie/laravel-ray": "^1.26",
+        "stymiee/password-helper": "^2"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.6",

@@ -405,7 +405,7 @@ class SkillTypeTest extends TestCase
             'name' => 'Framework',
         ]);
         
-        $response = $this->delete("/api/skill_type/{$skillType->id}");
+        $response = $this->deleteJson("/api/skill_type/{$skillType->id}");
 
         $response
             ->assertStatus(200)

@@ -375,8 +375,8 @@ class SkillTypeTest extends TestCase
 
         $jobUser = $job->jobUsers()->create(['user_id' => $user->id]);
 
-        $jobUser->skills()->attach($skill1->id);
-        $jobUser->skills()->attach($skill2->id);
+        $jobUser->jobUserSkills()->create(['skill_id' => $skill1->id]);
+        $jobUser->jobUserSkills()->create(['skill_id' => $skill2->id]);
 
         $this->assertDatabaseHas('skill_types', [
             'name' => 'Programming Language',
@@ -477,8 +477,8 @@ class SkillTypeTest extends TestCase
 
         $jobUser = $job->jobUsers()->create(['user_id' => $user->id]);
         
-        $jobUser->skills()->attach($skill1->id);
-        $jobUser->skills()->attach($skill2->id);
+        $jobUser->jobUserSkills()->create(['skill_id' => $skill1->id]);
+        $jobUser->jobUserSkills()->create(['skill_id' => $skill2->id]);
         
         $job2 = (new JobService)->createJob(
             JobDTO::new()->fromArray([
@@ -499,7 +499,7 @@ class SkillTypeTest extends TestCase
 
         $jobUser2 = $job2->jobUsers()->create(['user_id' => $user2->id]);
         
-        $jobUser2->skills()->attach($skill3->id);
+        $jobUser2->jobUserSkills()->create(['skill_id' => $skill3->id]);
 
         $this->assertDatabaseHas('skill_types', [
             'name' => 'Programming Language',
@@ -617,8 +617,8 @@ class SkillTypeTest extends TestCase
 
         $jobUser = $job->jobUsers()->create(['user_id' => $user->id]);
         
-        $jobUser->skills()->attach($skill1->id);
-        $jobUser->skills()->attach($skill2->id);
+        $jobUser->jobUserSkills()->create(['skill_id' => $skill1->id]);
+        $jobUser->jobUserSkills()->create(['skill_id' => $skill2->id]);
         
         $job2 = (new JobService)->createJob(
             JobDTO::new()->fromArray([
@@ -639,7 +639,7 @@ class SkillTypeTest extends TestCase
 
         $jobUser2 = $job2->jobUsers()->create(['user_id' => $user2->id]);
         
-        $jobUser2->skills()->attach($skill3->id);
+        $jobUser2->jobUserSkills()->create(['skill_id' => $skill3->id]);
 
         $this->assertDatabaseHas('skill_types', [
             'name' => 'Programming Language',

@@ -1,5 +1,5 @@
 <template>
-    <div class="absolute left-0 right-0 top-0 bottom-0 bg-red-50 flex justify-center items-center p-5 flex-col"
+    <div class="z-10 absolute left-0 right-0 top-0 bottom-0 bg-red-50 flex justify-center items-center p-5 flex-col"
         v-if="!user"
     >
         <div class="text-sm text-slate-600">Sorry! Nothing to see here. Please make sure you a logged in or visiting a valid user/company profile</div>

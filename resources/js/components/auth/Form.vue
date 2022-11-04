@@ -4,7 +4,7 @@
         class="md:w-5/12 mx-auto w-9/12 relative bg-blue-200 px-8 pb-2 pt-16 
             rounded-b-3xl"
         @keydown.enter="submit"
-        :class="$attrs.class"
+        v-bind="$attrs"
     >
         <div
             v-if="title.length"

@@ -32,7 +32,7 @@ class RemoveUserTypeAction
             throw new UserTypeException("Sorry! There is no user type with the name {$userTypeDTO->name}.");
         }
 
-        if (! $userTypeDTO->attachedUser->hasUserType($userTypeName)) {
+        if (! $userTypeDTO->attachedUser->isUserType($userTypeName)) {
             throw new UserTypeException("Sorry! User is not of {$userTypeDTO->name} type.");
         }
 

@@ -615,7 +615,7 @@ class SkillTest extends TestCase
         );
 
         $jobUser1 = $job1->jobUsers()->create(['user_id' => $user1->id]);
-        $jobUser1->skills()->attach($skill->id);
+        $jobUser1->jobUserSkills()->create(['skill_id' => $skill->id]);
         
         $job2 = (new JobService)->createJob(
             JobDTO::new()->fromArray([
@@ -626,7 +626,7 @@ class SkillTest extends TestCase
         );
 
         $jobUser2= $job2->jobUsers()->create(['user_id' => $user2->id]);
-        $jobUser2->skills()->attach($skill->id);
+        $jobUser2->jobUserSkills()->create(['skill_id' => $skill->id]);
 
         $this->assertDatabaseHas('skill_types', [
             'name' => 'Programming Language',
@@ -793,7 +793,7 @@ class SkillTest extends TestCase
         );
 
         $jobUser1 = $job1->jobUsers()->create(['user_id' => $user1->id]);
-        $jobUser1->skills()->attach($skill->id);
+        $jobUser1->jobUserSkills()->create(['skill_id' => $skill->id]);
         
         $job2 = (new JobService)->createJob(
             JobDTO::new()->fromArray([
@@ -804,7 +804,7 @@ class SkillTest extends TestCase
         );
 
         $jobUser2= $job2->jobUsers()->create(['user_id' => $user2->id]);
-        $jobUser2->skills()->attach($skill->id);
+        $jobUser2->jobUserSkills()->create(['skill_id' => $skill->id]);
         
         $job3 = (new JobService)->createJob(
             JobDTO::new()->fromArray([
@@ -815,7 +815,7 @@ class SkillTest extends TestCase
         );
 
         $jobUser3= $job3->jobUsers()->create(['user_id' => $user3->id]);
-        $jobUser3->skills()->attach($skill->id);
+        $jobUser3->jobUserSkills()->create(['skill_id' => $skill->id]);
 
         $this->assertDatabaseHas('skill_types', [
             'name' => 'Programming Language',

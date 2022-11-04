@@ -54,6 +54,41 @@ class JobController extends Controller
             'job' => $job
         ]);
     }
+
+    public function attach(Request $request)
+    {
+        // [job_id, ]
+
+        (new JobService)->attachJobToUser(
+            JobDTO::new()->fromArray([
+                'jobId' => $request->route('job_id'),
+                'attachedTo' => $request->get('user_id') ? 
+                    User::find($request->get('user_id')) : 
+                    $request->user(),
+                'addedBy' => $request->user(),
+            ])
+        );
+
+        return response()->json([
+            'status' => true,
+        ]);
+    }
+
+    public function detach(Request $request)
+    {
+        // [job_id, ]
+
+        (new JobService)->detachJobFromUser(
+            JobDTO::new()->fromArray([
+                'jobId' => $request->route('job_id'),
+                'addedBy' => $request->user()
+            ])
+        );
+
+        return response()->json([
+            'status' => true,
+        ]);
+    }
     
     public function update(UpdateJobRequest $request)
     {

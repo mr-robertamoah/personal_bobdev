@@ -5,7 +5,7 @@
                 top-2 z-50 mx-2.5 rounded md:right-[150px] md:left-[150px] lg:right-[200px] lg:left-[200px]"
             :class="[
                 alertStatus == 'success' ? 'bg-green-500 text-green-200' : 
-                (alertStatus == 'danger' ? 'bg-red-500 text-red-200' : '')]"
+                (alertStatus == 'danger' ? 'bg-red-500 text-red-200' : 'bg-gray-500 text-white')]"
             v-if="alertMessage.length"
         >
             {{alertMessage}}
@@ -47,13 +47,17 @@ import {ref, watch} from 'vue'
         hasAlertIcon: {
             type: Boolean,
             default: false
+        },
+        mustClearOutside: {
+            type: Boolean,
+            default: false
         }
     })
 
     let emits = defineEmits(['clearAlertMessage'])
     
     watch(()=> props.alertMessage, (newValue) => {
-        if (!newValue || props.hasAlertIcon) {
+        if (!newValue || props.hasAlertIcon || props.mustClearOutside) {
             return
         }
 

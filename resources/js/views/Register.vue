@@ -2,12 +2,6 @@
     <div class="flex justify-center items-center w-full h-90vh flex-col">
         <Form :title="componentName" class="mt-14">
             <template #default>
-                <Alert 
-                    @clearAlertMessage="clearAlertMessage" 
-                    :alertMessage="alertData.alertMessage"
-                    :alertStatus="alertData.alertStatus"
-                    :alertDuration="alertData.alertDuration"
-                ></Alert>
                 <Loader
                     text="loading"
                     :load="loading"

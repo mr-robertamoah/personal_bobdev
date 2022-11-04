@@ -17,6 +17,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('job_user_id');
             $table->unsignedBigInteger('skill_id');
+            $table->unsignedBigInteger('level_id')->nullable();
             $table->timestamps();
         });
     }

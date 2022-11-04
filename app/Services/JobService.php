@@ -113,11 +113,13 @@ class JobService
     
     public function getJobs(JobDTO $jobDTO)
     {
-        return Job::where('name', 'LIKE', "%{$jobDTO->name}%")->paginate(5);
+        return Job::where('name', 'LIKE', "%{$jobDTO->name}%")->paginate(2);
     }
 
     public function attachJobToUser(JobDTO $jobDTO)
     {
+        $jobDTO = $jobDTO->job ? $jobDTO : $jobDTO->withJob(Job::find($jobDTO->jobId));
+        
         if ($this->doesntHaveAppropriateData($jobDTO, 'attach')) {
             throw new JobException('Sorry! You need a valid user and job to perform this action.');
         }
@@ -127,7 +129,7 @@ class JobService
         }
 
         if ($this->shouldNotAttach($jobDTO)) {
-            return;
+            throw new JobException('Sorry! You must be an admin if you are attaching job to a different account. The user you are trying to attach the job to must be a facilitator.');
         }
 
         return $jobDTO->attachedTo->jobUsers()->create(['job_id' => $jobDTO->job->id]);
@@ -135,6 +137,8 @@ class JobService
 
     public function detachJobFromUser(JobDTO $jobDTO)
     {
+        $jobDTO = $jobDTO->job ? $jobDTO : $jobDTO->withJob(Job::find($jobDTO->jobId));
+        
         $this->validateJob($jobDTO, "Sorry! There is no job to detach from this user.");
         
         $jobDTO->job->jobUserFromUserID($jobDTO->addedBy->id)?->delete();
@@ -158,11 +162,11 @@ class JobService
 
     private function shouldAttach(JobDTO $jobDTO)
     {
-        if ($jobDTO->addedBy->isAdmin() && $jobDTO->attachedTo?->isFacilitator()) {
+        if ($jobDTO->addedBy?->isAdmin() && $jobDTO->attachedTo?->isFacilitator()) {
             return true;
         }
         
-        if ($jobDTO->addedBy->isFacilitator()) {
+        if ($jobDTO->addedBy?->isFacilitator() && $jobDTO->addedBy?->is($jobDTO->attachedTo)) {
             return true;
         }
 

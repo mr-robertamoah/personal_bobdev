@@ -20,10 +20,19 @@ class JobUser extends Model
         return $this->belongsTo(Job::class);
     }
 
-    public function skills()
+    public function jobUserSkills()
     {
-        return $this->belongsToMany(Skill::class, 'job_user_skill')
-            ->withTimestamps();
+        return $this->hasMany(JobUserSkill::class);
+    }
+
+    public function hasSkillWithLevel($levelId): bool
+    {
+        return $this->whereHasSkillWithLevel($levelId)->exists();
+    }
+
+    public function doesNotHaveSkillWithLevel($levelId): bool
+    {
+        return !$this->hasSkillWithLevel($levelId);
     }
 
     public function scopeWhereUser($query, $user)
@@ -34,5 +43,12 @@ class JobUser extends Model
     public function scopeWhereNotUser($query, $user)
     {
         return $query->where('user_id', '<>', $user->id);
+    }
+
+    public function scopeWhereHasSkillWithLevelId($query, $levelId)
+    {
+        return $query->whereHas('jobUserSkills', function ($query) use ($levelId) {
+            $query->where('level_id', $levelId);
+        });
     }
 }

@@ -63,9 +63,7 @@ class SkillService
 
         $skillDTO->skill->update($this->getData($skillDTO));
 
-        $skillDTO->skill->refresh();
-
-        return $skillDTO->skill;
+        return $skillDTO->skill->refresh();
     }
 
     public function deleteSkill(SkillDTO $skillDTO)
@@ -76,7 +74,7 @@ class SkillService
         
         $skillDTO = $skillDTO->withSkill(Skill::find($skillDTO->skillId));
 
-        if ($this->isNotAuthorized($skillDTO, 'update')) {
+        if ($this->isNotAuthorized($skillDTO, 'delete')) {
            throw new SkillException('Sorry! You are not authorized to delete a skill.');
         }
         
@@ -85,14 +83,16 @@ class SkillService
         }
 
         if ($skillDTO->user->isAdmin()) {
-            $skillDTO->skill->jobUsers()->detach();
+            $skillDTO->skill->jobUserSkills()->delete();
         }
         
         if (
             !$skillDTO->user->isAdmin() &&
-            $skillDTO->skill->jobUsers()->whereNotUser($skillDTO->user)->exists()
+            $skillDTO->skill->jobUserSkills()->whereNotUser($skillDTO->user)->exists()
         ) {
-            $skillDTO->skill->jobUsers()->whereUser($skillDTO->user)->detach($skillDTO->skill->id);
+            $skillDTO->skill->jobUserSkills()->whereUser($skillDTO->user)
+                ->where('skill_id', $skillDTO->skill->id)->delete();
+                
             return 1;
         }
 

@@ -14,13 +14,16 @@ import ApiService from './services/api.service'
 import mitt from 'mitt'
 import {library} from '@fortawesome/fontawesome-svg-core'
 import {FontAwesomeIcon} from '@fortawesome/vue-fontawesome'
-import { faTimes, faKey, faInfo, faCheck, faBars, faSpinner, faUserCircle} from '@fortawesome/free-solid-svg-icons';
+import { 
+    faTimes, faKey, faInfo, faCheck, faBars, faSpinner, faUserCircle,
+    faPencil, faArrowLeftLong
+} from '@fortawesome/free-solid-svg-icons';
 import { } from '@fortawesome/free-regular-svg-icons';
 import { createApp } from 'vue/dist/vue.esm-bundler';
 import MainApp from './components/MainApp.vue'
 import NavBar from './components/NavBar.vue'
 
-library.add(faTimes, faBars, faKey, faInfo, faCheck, faSpinner, faUserCircle)
+library.add(faTimes, faBars, faKey, faInfo, faCheck, faSpinner, faUserCircle, faArrowLeftLong, faPencil)
 
 var myStorage = new StorageService('localStorage')
 myStorage.setUpStorageBasedOnType()

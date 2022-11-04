@@ -1,6 +1,6 @@
 <template>
     <div class="flex justify-center items-center w-full h-90vh flex-col relative overflow-hidden">
-        <Form :submit="clickedSecondary" :title="componentName" class="mt-14">
+        <Form :title="componentName" class="mt-14">
             <template #default>
                 <Loader
                     text="loading"
@@ -49,7 +49,6 @@ import Checkbox from '../components/auth/Checkbox.vue'
 import Form from '../components/auth/Form.vue'
 import FormFooter from '../components/auth/FormFooter.vue'
 import Input from '../components/auth/Input.vue'
-import Alert from '../components/Alert.vue'
 import PrimaryButton from '../components/auth/PrimaryButton.vue'
 import SecondaryButton from '../components/auth/SecondaryButton.vue'
 import Loader from '../components/auth/Loader.vue'

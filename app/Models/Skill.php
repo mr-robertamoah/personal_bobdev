@@ -33,10 +33,9 @@ class Skill extends Model
         return $this->belongsToMany(Level::class);
     }
 
-    public function jobUsers()
+    public function jobUserSkills()
     {
-        return $this->belongsToMany(JobUser::class, 'job_user_skill')
-            ->withTimestamps();
+        return $this->hasMany(JobUserSkill::class);
     }
 
     public function scopeWhereAddedBy($query, $user)
@@ -69,14 +68,14 @@ class Skill extends Model
 
     public function scopeWhereJobUsersUser($query, $user)
     {
-        return $query->whereHas('jobUsers', function($query) use($user) {
+        return $query->whereHas('jobUserSkills', function($query) use($user) {
             $query->whereUser($user);
         });
     }
 
     public function scopeWhereNotJobUsersUser($query, $user)
     {
-        return $query->whereHas('jobUsers', function($query) use($user) {
+        return $query->whereHas('jobUserSkills', function($query) use($user) {
             $query->whereNotUser($user);
         });
     }

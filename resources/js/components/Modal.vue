@@ -7,9 +7,9 @@
                 <div class="absolute top-0 bottom-0 left-0 right-0 bg-blue-200 opacity-50 z-40 rounded-lg"
                     @click="closeModal"
                 ></div>
-                <div v-bind="$attrs" class="z-50 bg-white shadow w-11/12 h-[85%] rounded relative
+                <div v-bind="$attrs" class="z-50 shadow w-11/12 h-[85%] rounded relative
                     sm:w-9/12 sm:h-[80%] md:w-8/12 lg:w-7/12 lg:h-[75%]"
-                    :class="{'': title}"
+                    :class="[bg ? bg : 'bg-white']"
                 >
                     <div class="absolute -right-2 cursor-pointer -top-2 bg-white border rounded-full
                         flex items-center justify-center p-1 h-6 w-6"
@@ -35,6 +35,7 @@ import ModalTransition from "./transitions/ModalTransition.vue";
         title?: string,
         show: boolean,
         hasCloseButton?: boolean,
+        bg?: string,
     }>()
 
     function closeModal() {

@@ -12,7 +12,7 @@ class Level extends Model
     const MINVALUE = 1;
 
     protected $fillable = [
-        'name', 'value', 'description', 'level_collection_id'
+        'name', 'value', 'description', 'level_collection_id', 'user'
     ];
 
     public function user()
@@ -23,5 +23,10 @@ class Level extends Model
     public function levelCollection()
     {
         return $this->belongsTo(LevelCollection::class);
+    }
+
+    public function scopeWhereName($query, $name)
+    {
+        return $query->where('name', $name);
     }
 }
