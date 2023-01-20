@@ -2,19 +2,18 @@
 
 namespace App\Services;
 
+use App\Actions\Profile\CreateProfileAction;
+use App\Actions\Profile\GetProfileWithLoadedAccountsAction;
+use App\Actions\Users\FindUserByIdAction;
 use App\DTOs\ProfileDTO;
-use App\Exceptions\NotProfileableModelException;
-use App\Exceptions\ProfileableNotAvailableException;
-use App\Exceptions\ProfileAlreadyExistsException;
-use App\Models\Profile;
+use App\Exceptions\ProfileException;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Model;
 
 class ProfileService extends Service
 {
-    public static function initProfileCreation(User $user) 
+    public function initProfileCreation(User $user) 
     {
-        (new static)->createProfile(
+        CreateProfileAction::make()->execute(
             ProfileDTO::fromArray([
                 'settings' => [],
                 'about' => null,
@@ -23,37 +22,33 @@ class ProfileService extends Service
         );
     }
 
-    public function createProfile(ProfileDTO $profileDTO) : Profile
+    public function getUserProfile(ProfileDTO $profileDTO)
     {
-        if (
-            is_null($profileDTO->profileable) ||
-            $this->isNotProfileable($profileDTO->profileable)
-        ) {
-            throw new ProfileableNotAvailableException(
-                "Sorry 😕! You can only create a profile for either a user or company."
-            );
+        $user = FindUserByIdAction::make()->execute($profileDTO->userId);
+
+        $profile = GetProfileWithLoadedAccountsAction::make()->execute($user);
+
+        if (is_null($profile)) {
+            throw new ProfileException("Sorry! Profile for user with name {$user->name} was not found.");
         }
 
-        if ($profileDTO->profileable->hasProfile()) {
-            throw new ProfileAlreadyExistsException(
-                "Sorry 😏! This user or company already has a profile"
-            );
+        if ($profile->isFacilitator()) {
+            $profile->loadFacilitatorProjects();
         }
-        
-        $profile = $profileDTO->profileable->profile()->create([
-            $profileDTO->getData()
-        ]);
 
-        return $profile;        
-    }
+        if ($profile->isLearner()) {
+            $profile->loadLearnerProjects();
+        }
 
-    private function isProfileable(Model $model) : bool
-    {
-        return in_array($model::class, Profile::PROFILEABLECLASSES);
-    }
+        if ($profile->isSponsor()) {
+            $profile->loadSponsorProjects();
+        }
 
-    private function isNotProfileable(Model $model) : bool
-    {
-        return ! $this->isProfileable($model);
+        if ($profile->isParent()) {
+            $profile->loadParentProjects();
+        }
+
+        return $profile;
+            
     }
 }

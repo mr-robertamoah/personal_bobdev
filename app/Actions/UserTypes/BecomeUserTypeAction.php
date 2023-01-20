@@ -2,17 +2,17 @@
 
 namespace App\Actions\UserTypes;
 
+use App\Actions\Action;
 use App\DTOs\UserTypeDTO;
 use App\Exceptions\UserTypeException;
 use App\Models\User;
 use App\Models\UserType;
 
-class BecomeUserTypeAction
+class BecomeUserTypeAction extends Action
 {
-
     public function execute(UserTypeDTO $userTypeDTO)
     {
-        if (! (new CanAttachOrDetachUserTypeAction)->execute($userTypeDTO->user, $userTypeDTO->attachedUser)) {
+        if (! CanAttachOrDetachUserTypeAction::make()->execute($userTypeDTO->user, $userTypeDTO->attachedUser)) {
             throw new UserTypeException("Sorry! You are not allowed to perform this action regarding the user type with name {$userTypeDTO->name}");
         }
 
@@ -29,9 +29,7 @@ class BecomeUserTypeAction
             throw new UserTypeException("Sorry! There is no user type with the name {$userTypeDTO->name}.");
         }
 
-        if ($userTypeDTO->attachedUser->isUserType($userTypeName)) {
-            throw new UserTypeException("Sorry! User is already of type with name {$userTypeDTO->name}.");
-        }
+        EnsureCanBecomeUserTypeAction::make()->execute($userTypeDTO->attachedUser, $userTypeName);
 
         $userType = UserType::withName($userTypeName);
 

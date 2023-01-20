@@ -4,7 +4,7 @@ namespace App\Exceptions;
 
 use Exception;
 
-class RespondException extends Exception
+class ProfileException extends Exception
 {
     //
 }

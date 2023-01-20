@@ -1,15 +1,14 @@
 <template>
     <div class="p-9">
-    
-        <Slider>
-            <SliderDisplay class="">hey</SliderDisplay>
-            <SliderDisplay class="">sup</SliderDisplay>
-        </Slider>
+        <button @click="show = !show">login in</button>
+        
+        <LoginModal :show="show" @close-login-modal="show = !show"></LoginModal>
     </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import LoginModal from '../components/LoginModal.vue';
 import Slider from '../components/slider/Slider.vue'
 import SliderDisplay from '../components/slider/SliderDisplay.vue'
 

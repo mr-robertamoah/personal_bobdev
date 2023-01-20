@@ -7,6 +7,11 @@ use Illuminate\Support\Str;
 
 class Service
 {
+    public static function make(): self
+    {
+        return new static;
+    }
+
     public static function __callStatic($name, $arguments)
     {
         if (method_exists($class = static::class, $name)) {

@@ -6,14 +6,14 @@ use App\Actions\Action;
 use App\DTOs\ProjectDTO;
 use App\Exceptions\ProjectException;
 
-class CheckProjectExistsAction extends Action
+class EnsureParticipantExistsAction extends Action
 {
     public function execute(ProjectDTO $projectDTO)
     {
-        if ($projectDTO->project) {
+        if ($projectDTO->participant) {
             return;
         }
         
-        throw new ProjectException('Sorry! A valid project is required to perform this action.');
+        throw new ProjectException("Sorry, no participant was provided.");
     }
 }

@@ -7,7 +7,9 @@ use App\Traits\CanAddImagesTrait;
 use App\Traits\CanSendAndReceiveRequestsTrait;
 use App\Traits\HasAdministratorTrait;
 use App\Traits\HasProfileTrait;
+use App\Traits\HasProjectParticipantTrait;
 use App\Traits\ProjectAddedByTrait;
+use Carbon\Carbon;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -22,10 +24,12 @@ class User extends Authenticatable implements Request
         HasAdministratorTrait,
         CanAddImagesTrait,
         ProjectAddedByTrait,
-        CanSendAndReceiveRequestsTrait;
+        CanSendAndReceiveRequestsTrait,
+        HasProjectParticipantTrait;
     
     const MALE = 'MALE';
     const FEMALE = 'FEMALE';
+    const ADULTAGE = 18;
 
     protected $fillable = [
         'first_name',
@@ -35,6 +39,7 @@ class User extends Authenticatable implements Request
         'gender',
         'email',
         'password',
+        'dob',
     ];
     
     protected $hidden = [
@@ -51,13 +56,28 @@ class User extends Authenticatable implements Request
     {
         return new Attribute(
             get: function ($value, $attributes) {
-                $name = "{$attributes['surname']} {$attributes['first_name']}";
 
-                if ($attributes['other_names']) {
+                $name = "{$attributes['surname']} {$attributes['first_name']}";
+                
+                if (array_key_exists('other_names', $attributes) && !is_null($attributes['other_names'])) {
                     $name = $name . " {$attributes['other_names']}";
                 }
                 
                 return $name;
+            }
+        );
+    }
+
+    public function age(): Attribute
+    {
+        return new Attribute(
+            get: function($value, $attributes){
+            
+                if (in_array('dob', array_keys($attributes))) {
+                    return now()->diffInYears(Carbon::parse($attributes['dob']));
+                }
+                
+                return null;
             }
         );
     }
@@ -100,6 +120,11 @@ class User extends Authenticatable implements Request
         return $this->hasMany(LevelCollection::class, 'user_id');
     }
 
+    public function addedCompanies()
+    {
+        return $this->hasMany(Company::class, 'user_id');
+    }
+
     public function addedJobs()
     {
         return $this->hasMany(Job::class, 'user_id');
@@ -120,15 +145,22 @@ class User extends Authenticatable implements Request
         return $this->morphMany(Activity::class, 'performedby');
     }
 
-    public function projects()
+    public function addedByRelations()
     {
-        return $this->belongsToMany(User::class)
-            ->withPivot(['participating_as'])
-            ->withTimestamps();
+        return $this->morphMany(Relation::class, 'by');
+    }
+
+    public function addedToRelations()
+    {
+        return $this->morphMany(Relation::class, 'to');
     }
     // end of relationships
 
     // start of methods
+    public function isAdult(): bool
+    {
+        return $this->age >= self::ADULTAGE;
+    }
     public function isAdmin() : bool
     {
         return $this->userTypes()
@@ -143,10 +175,27 @@ class User extends Authenticatable implements Request
             ->exists();
     }
 
+    public function isLearner()
+    {
+        return $this->isStudent();
+    }
+
+    public function isSponsor()
+    {
+        return $this->isDonor();
+    }
+
     public function isStudent() : bool
     {
         return $this->userTypes()
             ->where('name', UserType::STUDENT)
+            ->exists();
+    }
+
+    public function isDonor() : bool
+    {
+        return $this->userTypes()
+            ->where('name', UserType::DONOR)
             ->exists();
     }
 
@@ -182,6 +231,13 @@ class User extends Authenticatable implements Request
         
         return $this->userTypes()
             ->where('name', $name)
+            ->exists();
+    }
+
+    public function hasUserTypes(array $userTypes): bool
+    {
+        return $this
+            ->userTypes()->whereIn('name', $userTypes)
             ->exists();
     }
 

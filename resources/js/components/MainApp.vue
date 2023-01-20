@@ -1,6 +1,9 @@
 <template>
-    <div class="bg-blue-100 relative w-full h-screen overflow-auto">
+    <div class="bg-blue-100 min-h-full">
         <NavBar :close="!!alertData.alertMessage?.length" :navItems="routes"></NavBar>
+        <router-view 
+            :class="{'mt-16 px-2': !['admin', 'profile', 'userProfile', 'companyProfile'].includes($route.name ?? '')}"
+        ></router-view>
         <Alert
             @clearAlertMessage="clearAlertMessage" 
             :alertMessage="alertData.alertMessage"
@@ -8,9 +11,6 @@
             :alertDuration="alertData.alertDuration"
             :hasAlertIcon="true"
         ></Alert>
-        <router-view 
-            :class="{'mt-16 px-2': !['admin', 'profile', 'userProfile', 'companyProfile'].includes($route.name ?? '')}"
-        ></router-view>
     </div>
 </template>
 

@@ -5,13 +5,16 @@ namespace App\DTOs;
 use App\Models\Company;
 use App\Models\Project;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use MrRobertAmoah\DTO\BaseDTO;
 
 class RequestDTO extends BaseDTO
 {
+    public bool $isOfficial = false;
     public ?string $state = null;
     public ?string $purpose = null;
+    public ?string $fromId = null;
     public ?string $fromType = null;
     public User|Company|null $from = null;
     public ?string $toId = null;
@@ -19,7 +22,7 @@ class RequestDTO extends BaseDTO
     public User|Company|null $to = null;
     public ?string $forId = null;
     public ?string $forType = null;
-    public Project|Company|null $for = null;
+    public Project|Company|Model|null $for = null;
     
     /**
      * assign data (filled or validated) to the dto properties as an 

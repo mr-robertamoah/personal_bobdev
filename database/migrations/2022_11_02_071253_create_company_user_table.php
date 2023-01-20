@@ -1,5 +1,6 @@
 <?php
 
+//TODO delete
 use App\Enums\CompanyMemberEnum;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;

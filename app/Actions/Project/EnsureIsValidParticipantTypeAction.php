@@ -7,17 +7,13 @@ use App\DTOs\ProjectDTO;
 use App\Enums\ProjectParticipantEnum;
 use App\Exceptions\ProjectException;
 
-class CheckIfValidParticipantAction extends Action
+class EnsureIsValidParticipantTypeAction extends Action
 {
     public function execute(ProjectDTO $projectDTO)
     {
-        if (!$projectDTO->participant) {
-            throw new ProjectException("Sorry, no participant was provided.");
-        }
-
         $participantType = strtoupper($projectDTO->participantType);
 
-        if (!in_array($participantType, ProjectParticipantEnum::values())) {
+        if (!in_array($participantType, [...ProjectParticipantEnum::values(), 'LEARNER'])) {
             throw new ProjectException("Sorry, participant cannot participate in the project as {$participantType}.");
         }
 

@@ -15,7 +15,10 @@ class ActivityService
             throw new ActivityException('Sorry! You do not have the needed information to perform this action.');
         }
 
-        $activity = $activityDTO->performedby->activities()->create(['action' => $activityDTO->action]);
+        $activity = $activityDTO->performedby->activities()->create([
+            'action' => $activityDTO->action,
+            'data' => json_encode($activityDTO->data)
+        ]);
 
         $activity->performedon()->associate($activityDTO->performedon);
 

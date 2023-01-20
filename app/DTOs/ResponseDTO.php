@@ -11,6 +11,7 @@ class ResponseDTO extends BaseDTO
 {
     public ?string $response = null;
     public ?string $requestId = null;
+    public ?string $userId = null;
     public ?ModelsRequest $request = null;
     public ?User $user = null;
     

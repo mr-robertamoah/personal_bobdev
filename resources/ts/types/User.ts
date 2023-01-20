@@ -1,4 +1,3 @@
-import type UserType from "./UserType";
 
 export default interface User {
     id: string|number,
@@ -10,7 +9,8 @@ export default interface User {
     email: string,
     gender: string,
     url?: string,
-    userTypes?: Array<UserType>
+    age?: string|number,
+    userTypes?: Array<string>
 }
 
 let defaultUser = {

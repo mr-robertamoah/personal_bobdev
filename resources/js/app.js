@@ -12,6 +12,8 @@ import StorageService from './services/storage.service'
 import ApiService from './services/api.service'
 
 import mitt from 'mitt'
+import DatePicker from '@vuepic/vue-datepicker'
+import "@vuepic/vue-datepicker/dist/main.css"
 import {library} from '@fortawesome/fontawesome-svg-core'
 import {FontAwesomeIcon} from '@fortawesome/vue-fontawesome'
 import { 
@@ -47,6 +49,7 @@ app.config.globalProperties.emitter = emitter
 app.component('main-app', MainApp)
 app.component('nav-bar', NavBar)
 app.component('font-awesome-icon', FontAwesomeIcon)
+app.component('DatePicker', DatePicker)
 
 app.mount('#app')
 

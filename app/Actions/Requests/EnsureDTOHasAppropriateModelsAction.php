@@ -6,7 +6,7 @@ use App\Actions\Action;
 use App\DTOs\RequestDTO;
 use App\Exceptions\RequestException;
 
-class CheckHasAppropriateModelsAction extends Action
+class EnsureDTOHasAppropriateModelsAction extends Action
 {
     public function execute(RequestDTO $requestDTO)
     {

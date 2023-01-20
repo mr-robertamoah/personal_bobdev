@@ -59,7 +59,7 @@
         </div>
     </div>
     <div 
-        class="mb-2 text-xs text-white font-bold cursor-pointer pl-2 max-w-400 mx-auto"
+        class="mb-2 text-xs text-gray-500 font-bold cursor-pointer pl-2 max-w-400 mx-auto"
         v-if="info && showInfo"
         @click="showInfo = !showInfo"
     >

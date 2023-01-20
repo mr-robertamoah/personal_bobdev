@@ -1,20 +1,21 @@
 <?php
 
-namespace App\Services\UserTypeService;
+namespace App\Services;
 
 use App\Actions\Users\FindUserByIdAction;
 use App\Actions\UserTypes\RemoveUserTypeAction;
 use App\Actions\UserTypes\BecomeUserTypeAction;
+use App\Actions\UserTypes\EnsureCanCreateUserTypeAction;
 use App\DTOs\UserTypeDTO;
 use App\Exceptions\UserTypeException;
 use App\Models\User;
 use App\Models\UserType;
 
-class UserTypeService {
-
+class UserTypeService 
+{
     public function createUserType(UserTypeDTO $userTypeDTO)
     {
-        $this->ensureCanCreateUserType($userTypeDTO);
+        EnsureCanCreateUserTypeAction::make()->execute($userTypeDTO->user);
 
         $this->create($userTypeDTO);
     }
@@ -30,15 +31,6 @@ class UserTypeService {
         }
 
         return $userType;
-    }
-
-    private function ensureCanCreateUserType(UserTypeDTO $userTypeDTO)
-    {
-        if ($userTypeDTO->user->isAdmin()) {
-            return;
-        }
-
-        throw new UserTypeException("Sorry 😞! You are not allowed to create a user type.");
     }
 
     public function becomeUserType(UserTypeDTO $userTypeDTO)

@@ -14,10 +14,10 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('project_user', function (Blueprint $table) {
+        Schema::create('project_participant', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('project_id');
-            $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('project_id')->nullable();
+            $table->nullableMorphs('participant');
             $table->enum('participating_as', ProjectParticipantEnum::values());
             $table->timestamps();
         });

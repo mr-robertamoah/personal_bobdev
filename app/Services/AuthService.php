@@ -9,12 +9,17 @@ use App\Exceptions\AuthException;
 use App\Exceptions\UserNotFoundException;
 use App\Models\User;
 use Barryvdh\Debugbar\Facades\Debugbar;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class AuthService extends Service
 {
     public function login(AuthLoginDTO $authDTO)
     {
+        if (Auth::check()) {
+            throw new AuthException('Sorry! User is already logged in.');
+        }
+        
         $loginData = $authDTO->getData(all: true);
 
         $query = User::query();
@@ -29,8 +34,6 @@ class AuthService extends Service
 
         $user = $query->first();
 
-        Debugbar::info([$user]);
-
         if (is_null($user)) {
             throw new AuthException('Sorry! There is no user with such credentials.');
         }
@@ -38,6 +41,8 @@ class AuthService extends Service
         if (!Hash::check($loginData['password'], $user->password)) {
             throw new AuthException('Sorry! The password given does not match that for the user with the given username or email');
         }
+
+        Auth::login($user);
 
         return $user;
     }
@@ -57,6 +62,8 @@ class AuthService extends Service
 
         UserRegisteredEvent::dispatch($user);
 
-       return $user;
+        Auth::login($user);
+
+        return $user;
     }
 }

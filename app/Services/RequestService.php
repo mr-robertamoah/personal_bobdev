@@ -2,16 +2,22 @@
 
 namespace App\Services;
 
-use App\Actions\Requests\CheckHasAppropriateModelsAction;
-use App\Actions\Requests\CheckIfCanRespondToRequestAction;
-use App\Actions\Requests\CheckIfCanSendRequestAction;
+use App\Actions\Activity\AddActivityAction;
+use App\Actions\GetModelInstanceFromIdAndClassNameIfModelIsNull;
+use App\Actions\Requests\EnsureDTOHasAppropriateModelsAction;
+use App\Actions\Requests\EnsureUserCanRespondToRequestAction;
+use App\Actions\Requests\EnsureCanSendRequestAction;
+use App\Actions\Requests\EnsureRequestPurposeIsValidAction;
+use App\Actions\Requests\EnsureRequestExistsAction;
+use App\Actions\Requests\EnsureResponseIsValidAction;
+use App\Actions\Requests\CreateRequestAction;
+use App\Actions\Requests\PerformActionBasedOnResponseAction;
+use App\DTOs\ActivityDTO;
 use App\DTOs\RequestDTO;
 use App\DTOs\ResponseDTO;
-use App\Enums\RequestStateEnum;
-use App\Events\RequestSentEvent;
-use App\Models\Company;
-use App\Models\Project;
 use App\Models\Request;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
 
 class RequestService
 {
@@ -19,20 +25,13 @@ class RequestService
     {
         $requestDTO = $this->setUpRequestModelsOnDTO($requestDTO);
 
-        CheckHasAppropriateModelsAction::make()->execute($requestDTO);
+        EnsureDTOHasAppropriateModelsAction::make()->execute($requestDTO);
+        
+        EnsureRequestPurposeIsValidAction::make()->execute($requestDTO);
 
-        CheckIfCanSendRequestAction::make()->execute($requestDTO);
+        EnsureCanSendRequestAction::make()->execute($requestDTO);
 
-        $request = new Request([
-            'state' => RequestStateEnum::pending->value,
-            'purpose' => strtoupper($requestDTO->purpose),
-        ]);
-
-        $request->from()->associate($requestDTO->from);
-        $request->to()->associate($requestDTO->to);
-        $request->for()->associate($requestDTO->for);
-
-        $request->save();
+        $request = CreateRequestAction::make()->execute($requestDTO);
 
         // RequestSentEvent::broadcast($request);
 
@@ -44,49 +43,82 @@ class RequestService
         $responseDTO = $responseDTO->withRequest(
             $responseDTO->request ?? Request::find($responseDTO->requestId)
         );
-
-        CheckIfCanRespondToRequestAction::make()->execute($responseDTO);
-
-        CheckIfResponseIsValidAction::make()->execute($responseDTO);
         
+        $responseDTO = $responseDTO->withUser(
+            $responseDTO->user ?? User::find($responseDTO->userId)
+        );
+
+        EnsureRequestExistsAction::make()->execute($responseDTO);
+
+        EnsureResponseIsValidAction::make()->execute($responseDTO);
+
+        EnsureUserCanRespondToRequestAction::make()->execute($responseDTO);
+        
+        $response = strtoupper($responseDTO->response);
+
         $responseDTO->request->update([
-            'state' => strtoupper($responseDTO->response)
-        ])
+            'state' => $response
+        ]);
+
+        PerformActionBasedOnResponseAction::make()->execute($responseDTO);
+        
+        AddActivityAction::make()->execute(
+            ActivityDTO::new()->fromArray([
+                'performedby' => $responseDTO->user,
+                'performedon' => $responseDTO->request,
+                'action' => 'respond',
+                'data' => [
+                    'response' => $response
+                ]
+            ])
+        );
+
+        return $responseDTO->request->refresh();
     }
 
     private function setUpRequestModelsOnDTO(RequestDTO $requestDTO): RequestDTO
-    {   
-        if ($requestDTO->fromId && $requestDTO->fromType && 
-            class_exists($class = $this->getModelClass($requestDTO->fromType))
-        ) {
-            $requestDTO = $requestDTO->withFrom($class::find($requestDTO->fromId));
-        }
-        
-        if ($requestDTO->forId && $requestDTO->forType && 
-            class_exists($class = $this->getModelClass($requestDTO->forType))
-        ) {
-            $requestDTO = $requestDTO->withFor($class::find($requestDTO->forId));
-        }
+    {
+        $requestDTO = $requestDTO->withFrom(
+            GetModelInstanceFromIdAndClassNameIfModelIsNull::make()->execute(
+                $requestDTO->fromId,
+                $requestDTO->fromType,
+                $requestDTO->from
+            )
+        );
 
-        $class = $requestDTO->for::class;
+        $requestDTO = $requestDTO->withTo(
+            GetModelInstanceFromIdAndClassNameIfModelIsNull::make()->execute(
+                $requestDTO->toId,
+                $requestDTO->toType,
+                $requestDTO->to
+            )
+        );
 
-        if ($requestDTO->for && ($class == Project::class || $class == Company::class)) {
-            $requestDTO = $requestDTO->withTo($requestDTO->for->addedby);
+        $requestDTO = $requestDTO->withFor(
+            GetModelInstanceFromIdAndClassNameIfModelIsNull::make()->execute(
+                $requestDTO->forId,
+                $requestDTO->forType,
+                $requestDTO->for
+            )
+        );
 
+        if ($requestDTO->to) {
             return $requestDTO;
         }
 
-        if ($requestDTO->toId && $requestDTO->toType && 
-            class_exists($class = $this->getModelClass($requestDTO->toType))
-        ) {
-            $requestDTO = $requestDTO->withTo($class::find($requestDTO->toId));
-        }
+        $requestDTO = $requestDTO->withTo(
+            $this->getOwnerOfForModel($requestDTO)
+        );
 
         return $requestDTO;
     }
 
-    private function getModelClass(string $modelName): string
+    private function getOwnerOfForModel(RequestDTO $requestDTO): Model|null
     {
-        return "App\\Models\\" . ucfirst(strtolower($modelName));
+        if (is_null($requestDTO->for)) {
+            return null;
+        }
+
+        return $requestDTO->for->owner;
     }
 }

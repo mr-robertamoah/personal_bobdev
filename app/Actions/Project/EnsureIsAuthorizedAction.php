@@ -4,10 +4,11 @@ namespace App\Actions\Project;
 
 use App\Actions\Action;
 use App\DTOs\ProjectDTO;
+use App\Enums\ProjectParticipantEnum;
 use App\Exceptions\ProjectException;
 use App\Services\ProjectService;
 
-class CheckAuthorizationAction extends Action
+class EnsureIsAuthorizedAction extends Action
 {
     public function execute(ProjectDTO $projectDTO, string $action = 'create')
     {
@@ -32,11 +33,16 @@ class CheckAuthorizationAction extends Action
     private function isAuthorized(ProjectDTO $projectDTO, string $action)
     {
         if (in_array($action, ['create'])) {
-            return $projectDTO->addedby->userTypes()->whereIn('name', ProjectService::AUTHORIZEDUSERTYPES)->exists();            
+            return $projectDTO->addedby->hasUserTypes(ProjectService::AUTHORIZEDUSERTYPES);            
         }
 
         if (in_array($action, ['update', 'delete'])) {
-            return $projectDTO->addedby->is($projectDTO->project?->addedby) || $projectDTO->addedby->isAdmin();
+            return $projectDTO->addedby->is($projectDTO->project?->addedby) || 
+                $projectDTO->addedby->isAdmin() ||
+                (
+                    $projectDTO->project?->isFacilitator($projectDTO->addedby) && 
+                    IsLearnerParticipantTypeAction::make()->execute($projectDTO->participantType)
+                );
         }
 
         return false;

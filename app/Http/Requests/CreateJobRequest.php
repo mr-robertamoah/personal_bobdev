@@ -16,7 +16,6 @@ class CreateJobRequest extends FormRequest
         $user = $this->user();
         
         if (!$user) {
-            dd('here');
             return false;
         }
         

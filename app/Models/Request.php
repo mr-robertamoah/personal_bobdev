@@ -25,4 +25,62 @@ class Request extends Model
     {
         return $this->morphTo();
     }
+
+    public function isFor(Model $model): bool
+    {
+        return $this->for_type == $model::class &&
+            $this->for_id == $model->id;
+    }
+
+    public function isNotFor(Model $model): bool
+    {
+        return !$this->isFor($model);
+    }
+
+    public function isFromClass(string $class): bool
+    {
+        return $this->from_type == $class;
+    }
+
+    public function isToClass(string $class): bool
+    {
+        return $this->to_type == $class;
+    }
+
+    public function isForClass(string $class): bool
+    {
+        return $this->for_type == $class;
+    }
+
+    public function isFromCompany(): bool
+    {
+        return $this->isFromClass(Company::class);
+    }
+
+    public function isToCompany(): bool
+    {
+        return $this->isToClass(Company::class);
+    }
+
+    public function isForCompany(): bool
+    {
+        return $this->isForClass(Company::class);
+    }
+
+    public function isForProject(): bool
+    {
+        return $this->isForClass(Project::class);
+    }
+
+    public function scopeWhereState($query, $state)
+    {
+        return $query
+            ->where('state', strtoupper($state));
+    }
+
+    public function scopeWherePurpose($query, $purpose)
+    {
+        return $query
+            ->where('purpose', strtoupper($purpose));
+    }
 }

@@ -11,4 +11,8 @@ enum ProjectParticipantEnum : string
     case facilitator = 'FACILITATOR';
     case learner = 'STUDENT';
     case sponsor = 'SPONSOR';
+
+    const LEARNERALIASES = [
+        'LEARNER', 'STUDENT'
+    ];
 }

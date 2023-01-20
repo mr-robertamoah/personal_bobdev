@@ -88,7 +88,7 @@ import { computed, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 import { UserTypeClass } from '../../ts/types/UserType';
-import useGetUserTypes from '../composables/useGetUserTypes';
+import useUserTypes from '../composables/useUserTypes';
 import useGeneralFunctions from '../composables/useGeneralFunctions';
 import User from "../components/admin/User.vue"
 import InfoCard from "../components/admin/InfoCard.vue"
@@ -99,7 +99,7 @@ import ApiService from '../services/api.service';
 
 let router = useRouter()
 let store = useStore()
-let {isSuperAdmin} = useGetUserTypes()
+let {isSuperAdmin} = useUserTypes()
 let {getPluralBasedOnNumber} = useGeneralFunctions()
 let loadingInfo = ref<Boolean>(false)
 let generalInfo = reactive<{

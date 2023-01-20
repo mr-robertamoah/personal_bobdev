@@ -51,6 +51,7 @@ class UserController extends Controller
                 'surname' => $request->get('surname'),
                 'otherNames' => $request->get('otherNames'),
                 'email' => $request->get('email'),
+                'dob' => $request->get('dob'),
                 'gender' => $request->get('gender'),
                 'currentUser' => $request->user(),
                 'userId' => $request->route('id'),

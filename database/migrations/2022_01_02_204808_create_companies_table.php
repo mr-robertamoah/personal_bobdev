@@ -17,6 +17,9 @@ class CreateCompaniesTable extends Migration
             $table->id();
             $table->foreignId('user_id');
             $table->string('name');
+            $table->string('alias')->unique();
+            $table->string('about')->nullable();
+            $table->softDeletes();
             $table->timestamps();
         });
     }

@@ -11,4 +11,12 @@ enum RequestStateEnum: string
     case pending = 'PENDING';
     case accepted = 'ACCEPTED';
     case declined = 'DECLINED';
+
+    public static function possibleResponse()
+    {
+        return [
+            static::accepted->value,
+            static::declined->value,
+        ];
+    }
 }

@@ -24,7 +24,7 @@ import { ref, watch } from 'vue'
 import useAlert from '../composables/useAlert'
 import ProfileHeader from '../components/profile/ProfileHeader.vue'
 
-let emits = defineEmits(['sendProfileOwner'])
+let emits = defineEmits(['sendProfileOwner', 'sendLoadingState'])
 let profileOwner = ref<User|null>(null)
 let loading = ref<boolean>(false)
 let props = defineProps<{uuid: string}>()

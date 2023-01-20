@@ -125,11 +125,11 @@ import type {PropType} from 'vue'
 import {useStore} from 'vuex'
 import {useRouter, useRoute, type RouteRecordName} from 'vue-router'
 import useCheckLoginStatus from '../composables/useCheckLoginStatus'
-import useGetUserTypes from '../composables/useGetUserTypes'
+import useUserTypes from '../composables/useUserTypes'
 
     let {
         isAdmin, isSuperAdmin
-    } = useGetUserTypes()
+    } = useUserTypes()
 
     let props = defineProps({
         navItems: {

@@ -133,6 +133,39 @@ class UserTest extends TestCase
         ]);
     }
 
+    public function testCanEditInfoSpecificallyAsTheUser()
+    {
+        $currentUser = User::create([
+            'username' => "mr_robertamoah",
+            'first_name' => "Robert",
+            'surname' => "Amoah",
+            'password' => bcrypt("password"),
+            'email' => "mr_robertamoah@yahoo.com",
+        ]);
+
+        $this->actingAs($currentUser);
+
+        $response = $this->postJson("/api/user/{$currentUser->id}/edit-info",[
+            'firstName' => 'Roberto',
+            'dob' => now()->subYear(20)->toDateTimeString()
+        ]);
+
+        $response
+            ->assertStatus(200)
+            ->assertJson([
+                'status' => true,
+                'user' => [
+                    'name' => 'Amoah Roberto'
+                ]
+            ]);
+
+        $this->assertDatabaseHas('users', [
+            'first_name' => 'Roberto'
+        ]);
+
+        $this->assertEquals($currentUser->refresh()->age,  20);
+    }
+
     public function testCanEditInfoOfUserAsAdmin()
     {
         $currentUser = User::create([
@@ -183,7 +216,7 @@ class UserTest extends TestCase
         // $this->expectException(UserException::class);
         // $this->expectExceptionMessage("Sorry 😏, you are not authorized to perform this action.");
 
-        $curentUser = User::create([
+        $currentUser = User::create([
             'username' => "mr_robertamoah",
             'first_name' => "Robert",
             'surname' => "Amoah",
@@ -199,7 +232,7 @@ class UserTest extends TestCase
             'email' => "mr_robertamoah1@yahoo.com",
         ]);
 
-        $this->actingAs($curentUser);
+        $this->actingAs($currentUser);
 
         $response = $this->postJson("/api/user/{$user->id}/reset-password",[
 
@@ -213,7 +246,7 @@ class UserTest extends TestCase
         // $this->expectException(UserException::class);
         // $this->expectExceptionMessage("Sorry 😏, you are not authorized to perform this action.");
 
-        $curentUser = User::create([
+        $currentUser = User::create([
             'username' => "mr_robertamoah",
             'first_name' => "Robert",
             'surname' => "Amoah",
@@ -243,7 +276,7 @@ class UserTest extends TestCase
         // $this->expectException(UserException::class);
         // $this->expectExceptionMessage("Sorry 😏, you are not authorized to perform this action.");
 
-        $curentUser = User::create([
+        $currentUser = User::create([
             'username' => "mr_robertamoah",
             'first_name' => "Robert",
             'surname' => "Amoah",
@@ -275,7 +308,7 @@ class UserTest extends TestCase
         // $this->expectException(UserException::class);
         // $this->expectExceptionMessage("Sorry 😏, you are not authorized to perform this action.");
 
-        $curentUser = User::create([
+        $currentUser = User::create([
             'username' => "mr_robertamoah",
             'first_name' => "Robert",
             'surname' => "Amoah",

@@ -2,13 +2,20 @@
 
 namespace App\Services;
 
-use App\Actions\Project\CheckAddedByAction;
-use App\Actions\Project\CheckAuthorizationAction;
+use App\Actions\Project\BecomeFacilitatorOfProjectAction;
+use App\Actions\Project\BecomeLearnerOfProjectAction;
+use App\Actions\Project\BecomeProjectParticipantAction;
+use App\Actions\Project\BecomeSponsorOfProjectAction;
+use App\Actions\Project\EnsureAddedByExistsAction;
+use App\Actions\Project\EnsureIsAuthorizedAction;
 use App\Actions\Project\CheckDataAppropriatenessAction;
-use App\Actions\Project\CheckIfValidParticipantAction;
-use App\Actions\Project\CheckProjectExistsAction;
+use App\Actions\Project\EnsureIsValidParticipantTypeAction;
+use App\Actions\Project\EnsureProjectExistsAction;
+use App\Actions\Project\EnsureParticipantExistsAction;
+use App\Actions\Project\EnsureParticipantNotAlreadyAParticipantAction;
 use App\Actions\Skills\CheckIfValidSkillsAction;
 use App\DTOs\ProjectDTO;
+use App\Enums\ProjectParticipantEnum;
 use App\Models\Project;
 use App\Models\User;
 use App\Models\UserType;
@@ -26,9 +33,9 @@ class ProjectService
     
     public function createProject(ProjectDTO $projectDTO): Project
     {
-        CheckAddedByAction::make()->execute($projectDTO);
+        EnsureAddedByExistsAction::make()->execute($projectDTO);
 
-        CheckAuthorizationAction::make()->execute($projectDTO, 'create');
+        EnsureIsAuthorizedAction::make()->execute($projectDTO, 'create');
 
         CheckDataAppropriatenessAction::make()->execute($projectDTO, 'create');
 
@@ -42,13 +49,13 @@ class ProjectService
 
     public function updateProject(ProjectDTO $projectDTO)
     {
-        CheckAddedByAction::make()->execute($projectDTO);
+        EnsureAddedByExistsAction::make()->execute($projectDTO);
         
         $projectDTO = $this->setProjectOnDTO($projectDTO);
 
-        CheckProjectExistsAction::make()->execute($projectDTO);
+        EnsureProjectExistsAction::make()->execute($projectDTO);
 
-        CheckAuthorizationAction::make()->execute($projectDTO, 'update');
+        EnsureIsAuthorizedAction::make()->execute($projectDTO, 'update');
         
         CheckDataAppropriatenessAction::make()->execute($projectDTO, 'update');
 
@@ -59,13 +66,13 @@ class ProjectService
 
     public function updateProjectDates(ProjectDTO $projectDTO)
     {
-        CheckAddedByAction::make()->execute($projectDTO);
+        EnsureAddedByExistsAction::make()->execute($projectDTO);
         
         $projectDTO = $this->setProjectOnDTO($projectDTO);
 
-        CheckProjectExistsAction::make()->execute($projectDTO);
+        EnsureProjectExistsAction::make()->execute($projectDTO);
 
-        CheckAuthorizationAction::make()->execute($projectDTO, 'update');
+        EnsureIsAuthorizedAction::make()->execute($projectDTO, 'update');
 
         $projectDTO->project->update($this->setDates($projectDTO));
 
@@ -74,13 +81,13 @@ class ProjectService
 
     public function deleteProject(ProjectDTO $projectDTO)
     {
-        CheckAddedByAction::make()->execute($projectDTO);
+        EnsureAddedByExistsAction::make()->execute($projectDTO);
         
         $projectDTO = $this->setProjectOnDTO($projectDTO);
 
-        CheckProjectExistsAction::make()->execute($projectDTO);
+        EnsureProjectExistsAction::make()->execute($projectDTO);
 
-        CheckAuthorizationAction::make()->execute($projectDTO, 'delete');
+        EnsureIsAuthorizedAction::make()->execute($projectDTO, 'delete');
         
         CheckDataAppropriatenessAction::make()->execute($projectDTO, 'delete');
 
@@ -89,13 +96,13 @@ class ProjectService
 
     public function addSkillsToProject(ProjectDTO $projectDTO, array $ids)
     {
-        CheckAddedByAction::make()->execute($projectDTO);
+        EnsureAddedByExistsAction::make()->execute($projectDTO);
         
         $projectDTO = $this->setProjectOnDTO($projectDTO);
 
-        CheckProjectExistsAction::make()->execute($projectDTO);
+        EnsureProjectExistsAction::make()->execute($projectDTO);
 
-        CheckAuthorizationAction::make()->execute($projectDTO, 'update');
+        EnsureIsAuthorizedAction::make()->execute($projectDTO, 'update');
 
         CheckIfValidSkillsAction::make()->execute($ids);
 
@@ -106,23 +113,23 @@ class ProjectService
 
     public function addParticipantToProject(ProjectDTO $projectDTO)
     {
-        CheckAddedByAction::make()->execute($projectDTO);
+        EnsureAddedByExistsAction::make()->execute($projectDTO);
         
         $projectDTO = $this->setProjectOnDTO($projectDTO);
 
-        CheckProjectExistsAction::make()->execute($projectDTO);
+        EnsureProjectExistsAction::make()->execute($projectDTO);
 
-        CheckAuthorizationAction::make()->execute($projectDTO, 'update');
+        EnsureIsAuthorizedAction::make()->execute($projectDTO, 'update');
         
         $projectDTO = $this->setParticipantOnDTO($projectDTO);
+        
+        EnsureParticipantExistsAction::make()->execute($projectDTO);
 
-        CheckIfValidParticipantAction::make()->execute($projectDTO);
+        EnsureParticipantNotAlreadyAParticipantAction::make()->execute($projectDTO);
 
-        $projectDTO->project->users()->attach($projectDTO->participant->id, [
-            'participating_as' => $projectDTO->participantType
-        ]);
+        EnsureIsValidParticipantTypeAction::make()->execute($projectDTO);
 
-        return $projectDTO->project->refresh();
+        BecomeProjectParticipantAction::make()->execute($projectDTO);
     }
 
     private function getData(ProjectDTO $projectDTO) : array

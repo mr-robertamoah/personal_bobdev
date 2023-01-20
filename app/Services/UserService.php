@@ -2,6 +2,9 @@
 
 namespace App\Services;
 
+use App\Actions\Users\EnsureDTOHasEnoughDataToEditInfoAction;
+use App\Actions\Users\GetDataToResetPasswordAction;
+use App\Actions\Users\GetDataToUpdateUserInfoAction;
 use App\DTOs\UserDTO;
 use App\Enums\GenderEnum;
 use App\Exceptions\UserException;
@@ -43,29 +46,11 @@ class UserService
             throw new UserException("Sorry 😏, you are not authorized to perform this action.");
         }
 
-        $this->ensureDTOHasEnoughDataToEditInfo($userDTO);
+        EnsureDTOHasEnoughDataToEditInfoAction::make()->execute($userDTO);
         
-        $data = [];
-
-        if ($userDTO->firstName) {
-            $data['first_name'] = $userDTO->firstName;
-        }
-
-        if ($userDTO->surname) {
-            $data['surname'] = $userDTO->surname;
-        }
-
-        if ($userDTO->otherNames) {
-            $data['other_names'] = $userDTO->otherNames;
-        }
-
-        if ($userDTO->email) {
-            $data['email'] = $userDTO->email;
-        }
-        
-        $data = $this->setGender($data, $userDTO);
-
-        $userDTO->user->update($data);
+        $userDTO->user->update(
+            GetDataToUpdateUserInfoAction::make()->execute($userDTO)
+        );
         
         return $userDTO->user->refresh();
     }
@@ -85,9 +70,9 @@ class UserService
             throw new UserException("Sorry 😏, you are not authorized to perform this action.");
         }
 
-        $data = $this->setPassword($userDTO);
-
-        $userDTO->user->update($data);
+        $userDTO->user->update(
+            GetDataToResetPasswordAction::make()->execute($userDTO)
+        );
         
         return $userDTO->user->refresh();
     }
@@ -101,74 +86,6 @@ class UserService
         }
 
         return $user;
-    }
-
-    private function setGender(array $data, UserDTO $userDTO): array
-    {
-        if (!$userDTO->gender) {
-            return $data;
-        }
-
-        $userDTO->gender = strtoupper($userDTO->gender);
-
-        if (!in_array(GenderEnum::from($userDTO->gender), GenderEnum::cases())) {
-            throw new UserException("Sorry 😞, male or female is required set gender");
-        }
-
-        $data['gender'] = $userDTO->gender;
-        
-        return $data;
-    }
-
-    private function setPassword(UserDTO $userDTO): array
-    {
-        $data = [];
-
-        $this->ensureDTOHasEnoughDataToResetPassword($userDTO);
-        
-        if (
-            !$userDTO->currentUser->userTypes()->whereIn('name', self::AUTHORIZEDUSERTYPES)->exists() &&
-            !password_verify($userDTO->currentPassword, $userDTO->user->password)
-        ) {
-            throw new UserException("Sorry 😏, the current password is wrong.");
-        }
-        
-        if (
-            strlen($userDTO->password) < 6 
-        ) {
-            throw new UserException("Sorry 😏, the password and the confirmation passwords do not match.");
-        }
-
-        if (
-            $userDTO->password !== $userDTO->passwordConfirmation
-        ) {
-            throw new UserException("Sorry 😏, the password and the confirmation passwords do not match.");
-        }
-
-        $data['password'] = bcrypt($userDTO->password);
-        
-        return $data;
-    }
-
-    private function ensureDTOHasEnoughDataToEditInfo(UserDTO $userDTO)
-    {
-        if (
-            $userDTO->firstName || $userDTO->surname || $userDTO->otherNames || 
-            $userDTO->email || $userDTO->gender
-        ) {
-            return;
-        }
-
-        throw new UserException("Sorry, you do not have enough data to perform this action.");
-    }
-
-    private function ensureDTOHasEnoughDataToResetPassword(UserDTO $userDTO)
-    {
-        if ($userDTO->password) {
-            return;
-        }
-
-        throw new UserException("Sorry, password is required to perform this action.");
     }
 
     private function setUser(UserDTO $userDTO) : UserDTO

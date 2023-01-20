@@ -9,7 +9,8 @@ use MrRobertAmoah\DTO\BaseDTO;
 class ProfileDTO extends BaseDTO
 {
     public ?string $about = null;
-    public Model $profileable = null;
+    public ?string $userId = null;
+    public ?Model $profileable = null;
     public $settings = null;
 
     protected array $dtoDataKeys = [

@@ -22,7 +22,7 @@ class AuthController extends Controller
                 AuthLoginDTO::fromRequest($request)
             );
 
-            $this->loginUser($user, $request);
+            $request->session()->regenerate();
         
             return response()->json([
                 'status' => true,
@@ -51,7 +51,7 @@ class AuthController extends Controller
                 AuthRegisterDTO::fromRequest($request)
             );
 
-            $this->loginUser($user, $request);
+            $request->session()->regenerate();
     
             return response()->json([
                 'status' => true,
@@ -86,12 +86,5 @@ class AuthController extends Controller
                 'message' => "Sorry, something happened while trying to logout. Please try again later."
             ], 500);
         }
-    }
-
-    private function loginUser($user, $request)
-    {
-        Auth::login($user);
-    
-        $request->session()->regenerate();
     }
 }

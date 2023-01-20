@@ -15,6 +15,7 @@ class UserResource extends JsonResource
     public function toArray($request)
     {
         return [
+            'id' => $this->id,
             'firstName' => $this->first_name,
             'surname' => $this->surname,
             'otherNames' => $this->other_names,
@@ -22,7 +23,11 @@ class UserResource extends JsonResource
             'username' => $this->username,
             'email' => $this->email,
             'gender' => strtolower($this->gender),
-            'userTypes' => $this->getAllUserTypes()
+            'userTypes' => $this->getAllUserTypes(),
+            'age' => $this->when(
+                $request->user()?->id == $this->id || $request->user()?->isAdmin(),
+                $this->age
+            )
         ];
     }
 }

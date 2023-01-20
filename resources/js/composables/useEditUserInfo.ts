@@ -3,6 +3,7 @@ import type User from "../../ts/types/User";
 import {defaultUser} from "../../ts/types/User";
 import ApiService from "../services/api.service";
 import useAlert from "./useAlert";
+import useHandleErrors from "./useHandleErrors";
 
 interface EditableData
 {
@@ -18,6 +19,7 @@ interface EditableData
 
 export default function useEditUserInfo(user: User|Ref<User>|null)
 {
+    let {handleErrors} = useHandleErrors()
     let {setDangerAlertMessage} = useAlert()
     let editableUser = ref<User>(defaultUser)
     let editableUserLoading = ref<boolean>(false)
@@ -36,17 +38,16 @@ export default function useEditUserInfo(user: User|Ref<User>|null)
 
             editableUserLoading.value = false
 
-            setDangerAlertMessage({
-                message: response.data.message,
-                duration: 500
-            })
+            handleErrors(response.status, response.data?.message ?? response.message)
 
-            return
+            return null
         }
 
         editableUser.value = response.data.user
 
         editableUserLoading.value = false
+
+        return response.data.user
     }
 
     async function resetPassword(data: EditableData)
@@ -59,10 +60,7 @@ export default function useEditUserInfo(user: User|Ref<User>|null)
 
             editableUserLoading.value = false
 
-            setDangerAlertMessage({
-                message: response.data.message,
-                duration: 500
-            })
+            handleErrors(response.status, response.data?.message ?? response.message)
 
             return
         }

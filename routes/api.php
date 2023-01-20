@@ -2,10 +2,13 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\JobController;
 use App\Http\Controllers\LevelCollectionController;
 use App\Http\Controllers\LevelController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\RequestController;
 use App\Http\Controllers\SkillController;
 use App\Http\Controllers\SkillTypeController;
 use App\Http\Controllers\UserController;
@@ -73,6 +76,18 @@ Route::group(['middleware' => 'auth:sanctum'], function() {
     Route::get('/level_collection', [LevelCollectionController::class, 'getLevelCollection']);
     Route::get('/level_collections', [LevelCollectionController::class, 'getLevelCollections']);
 
+    Route::post('/company/create', [CompanyController::class, 'create']);
+    Route::post('/company/{company_id}/update', [CompanyController::class, 'update']);
+    Route::delete('/company/{company_id}', [CompanyController::class, 'delete']);
+    Route::post('/company/{company_id}/add_members', [CompanyController::class, 'addMembers']);
+    Route::post('/company/{company_id}/remove_members', [CompanyController::class, 'removeMembers']);
+    Route::post('/company/{company_id}/leave', [CompanyController::class, 'leave']);
+    Route::get('/companies/{company_id}', [CompanyController::class, 'getCompany']);
+    Route::get('/companies', [CompanyController::class, 'getCompanies']);
+
+    Route::post('/request/create', [RequestController::class, 'create']);
+    Route::post('/request/{request_id}/update', [RequestController::class, 'update']);
+
     Route::group([
         'prefix' => 'admin',
         'middleware' => "isadmin"
@@ -82,6 +97,8 @@ Route::group(['middleware' => 'auth:sanctum'], function() {
         Route::get('/generalinfo', [AdminController::class, 'getGeneralInfo']);
         Route::get('/verify', [AdminController::class, 'verify']);
     });
+
+    Route::get('profile/user/{id}', [ProfileController::class, 'getUserProfile']);
     
 });
 

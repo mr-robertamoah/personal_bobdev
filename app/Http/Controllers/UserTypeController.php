@@ -3,17 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\DTOs\UserTypeDTO;
+use App\Exceptions\UserTypeException;
+use App\Http\Requests\BecomeUserTypeRequest;
 use App\Http\Resources\UserTypeResource;
-use App\Services\UserTypeService\UserTypeService;
+use App\Services\UserTypeService;
 use Illuminate\Http\Request;
 
 class UserTypeController extends Controller
 {
-    public function become(Request $request)
+    public function become(BecomeUserTypeRequest $request)
     {
         $userType = (new UserTypeService)->becomeUserType(
             UserTypeDTO::fromArray([
-                'userId' => $request->user->id,
+                'userId' => $request->user()->id,
                 'attachedUserId' => $request->userId,
                 'name' => $request->userType
             ])
@@ -30,7 +32,7 @@ class UserTypeController extends Controller
     {
         $userType = (new UserTypeService)->removeUserType(
             UserTypeDTO::fromArray([
-                'userId' => $request->user->id,
+                'userId' => $request->user()->id,
                 'attachedUserId' => $request->userId,
                 'name' => $request->userType
             ])

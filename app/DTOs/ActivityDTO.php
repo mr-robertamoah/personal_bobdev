@@ -10,6 +10,7 @@ use MrRobertAmoah\DTO\BaseDTO;
 class ActivityDTO extends BaseDTO
 {
     //set properties that correspond with request inputs
+    public $data = null;
     public ?string $action = null;
     public ?User $performedby = null;
     public ?Model $performedon = null;

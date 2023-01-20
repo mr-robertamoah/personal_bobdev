@@ -6,7 +6,7 @@ use App\Actions\Action;
 use App\DTOs\ProjectDTO;
 use App\Exceptions\ProjectException;
 
-class CheckAddedByAction extends Action
+class EnsureAddedByExistsAction extends Action
 {
     public function execute(ProjectDTO $projectDTO)
     {

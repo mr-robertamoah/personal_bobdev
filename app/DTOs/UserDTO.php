@@ -11,6 +11,7 @@ class UserDTO extends BaseDTO
     public ?User $user = null;
     public ?User $currentUser = null;
     public ?string $username = null;
+    public ?string $dob = null;
     public ?string $userId = null;
     public ?string $firstName = null;
     public ?string $surname = null;

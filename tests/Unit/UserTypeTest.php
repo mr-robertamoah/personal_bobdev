@@ -9,14 +9,14 @@ use App\DTOs\UserTypeDTO;
 use App\Exceptions\UserTypeException;
 use App\Models\User;
 use App\Models\UserType;
-use Illuminate\Database\Eloquent\Factories\Sequence;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
+use Tests\Traits\UserTypeTestTrait;
 
 class UserTypeTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, UserTypeTestTrait;
 
     protected function setUp(): void
     {
@@ -30,7 +30,7 @@ class UserTypeTest extends TestCase
     {
 
         $this->assertFalse(
-            (new CanAttachOrDetachUserTypeAction)->execute(
+            CanAttachOrDetachUserTypeAction::make()->execute(
                 User::factory()->make(['id' => 1]),
                 User::factory()->make(['id' => 2])
             )
@@ -64,7 +64,7 @@ class UserTypeTest extends TestCase
 
     public function testBecomeUserTypeActionSucceedsWhenSuperAdminAddsAdmin()
     {
-        $this->createUserTypes();
+        $this->createUserTypesUsingFactory();
         
         $adminUser = User::factory()->create();
         $adminUser->userTypes()->attach(UserType::where('name', UserType::SUPERADMIN)->first()->id);
@@ -83,7 +83,7 @@ class UserTypeTest extends TestCase
         $this->expectException(UserTypeException::class);
         $this->expectExceptionMessage("Sorry! Only a Super Administrator is allowed to perform this action.");
 
-        $this->createUserTypes();
+        $this->createUserTypesUsingFactory();
         
         $adminUser = User::factory()->create();
         $adminUser->userTypes()->attach(UserType::where('name', UserType::ADMIN)->first()->id);
@@ -98,7 +98,7 @@ class UserTypeTest extends TestCase
 
     public function testBecomeUserTypeActionSucceedsWhenAuthorizedAsAdmin()
     {
-        $this->createUserTypes();
+        $this->createUserTypesUsingFactory();
         
         $adminUser = User::factory()->create();
         $adminUser->userTypes()->attach(UserType::where('name', UserType::ADMIN)->first()->id);
@@ -114,7 +114,7 @@ class UserTypeTest extends TestCase
 
     public function testBecomeUserTypeActionSucceedsWhenAuthorizedAsCurrentUser()
     {
-        $this->createUserTypes();
+        $this->createUserTypesUsingFactory();
 
         $currentUser = User::factory()->create();
 
@@ -129,7 +129,7 @@ class UserTypeTest extends TestCase
 
     public function testBecomeUserTypeActionFailsWhenNotAuthorized()
     {
-        $this->createUserTypes();
+        $this->createUserTypesUsingFactory();
         
         $this->expectException(UserTypeException::class);
 
@@ -143,7 +143,7 @@ class UserTypeTest extends TestCase
 
     public function testBecomeUserTypeActionFailsWhenWrongUserTypeNameIsGiven()
     {
-        $this->createUserTypes();
+        $this->createUserTypesUsingFactory();
         
         $this->expectException(UserTypeException::class);
         $this->expectExceptionMessage("Sorry! There is no user type with the name hey.");
@@ -160,7 +160,7 @@ class UserTypeTest extends TestCase
 
     public function testBecomeUserTypeActionFailsWhenUserAlreadyHasType()
     {
-        $this->createUserTypes();
+        $this->createUserTypesUsingFactory();
 
         $this->expectException(UserTypeException::class);
         $this->expectExceptionMessage("Sorry! User is already of type with name student.");
@@ -178,7 +178,7 @@ class UserTypeTest extends TestCase
 
     public function testRemoveUserTypeActionSucceedsWhenSuperAdminRemovesAdmin()
     {
-        $this->createUserTypes();
+        $this->createUserTypesUsingFactory();
         
         $superAdminUser = User::factory()->create();
         $superAdminUser->userTypes()->attach(UserType::where('name', UserType::SUPERADMIN)->first()->id);
@@ -200,7 +200,7 @@ class UserTypeTest extends TestCase
         $this->expectException(UserTypeException::class);
         $this->expectExceptionMessage("Sorry! Only a Super Administrator is allowed to perform this action.");
 
-        $this->createUserTypes();
+        $this->createUserTypesUsingFactory();
         
         $adminUser = User::factory()->create();
         $adminUser->userTypes()->attach(UserType::where('name', UserType::ADMIN)->first()->id);
@@ -215,7 +215,7 @@ class UserTypeTest extends TestCase
 
     public function testRemoveUserTypeActionSucceedsWhenAuthorizedAsAdmin()
     {
-        $this->createUserTypes();
+        $this->createUserTypesUsingFactory();
         
         $adminUser = User::factory()->create();
         $adminUser->userTypes()->attach(UserType::where('name', UserType::ADMIN)->first()->id);
@@ -237,7 +237,7 @@ class UserTypeTest extends TestCase
 
     public function testRemoveUserTypeActionSucceedsWhenAuthorizedAsCurrentUser()
     {
-        $this->createUserTypes();
+        $this->createUserTypesUsingFactory();
 
         $userType = UserType::where('name', UserType::STUDENT)->first();
         
@@ -255,7 +255,7 @@ class UserTypeTest extends TestCase
 
     public function testRemoveUserTypeActionFailsWhenNotAuthorized()
     {
-        $this->createUserTypes();
+        $this->createUserTypesUsingFactory();
         
         $this->expectException(UserTypeException::class);
 
@@ -269,7 +269,7 @@ class UserTypeTest extends TestCase
 
     public function testRemoveUserTypeActionFailsWhenWrongUserTypeNameIsGiven()
     {
-        $this->createUserTypes();
+        $this->createUserTypesUsingFactory();
         
         $this->expectException(UserTypeException::class);
         $this->expectExceptionMessage("Sorry! There is no user type with the name hey.");
@@ -290,7 +290,7 @@ class UserTypeTest extends TestCase
 
     public function testRemoveUserTypeActionFailsWhenUserDoesNotHaveType()
     {
-        $this->createUserTypes();
+        $this->createUserTypesUsingFactory();
 
         $this->expectException(UserTypeException::class);
         $this->expectExceptionMessage("Sorry! User is not of student type.");
@@ -303,19 +303,5 @@ class UserTypeTest extends TestCase
                 ->withAttachedUser($currentUser)
         );
 
-    }
-
-    private function createUserTypes()
-    {
-        UserType::factory()
-            ->count(6)
-            ->state(new Sequence(
-                ['name' => UserType::ADMIN],
-                ['name' => UserType::SUPERADMIN],
-                ['name' => UserType::STUDENT],
-                ['name' => UserType::FACILITATOR],
-                ['name' => UserType::DONOR],
-            ))
-            ->create(['user_id' => 1]);
     }
 }

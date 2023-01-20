@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f01a5f5e7b5ae2736935cdae414d960f",
+    "content-hash": "032450354f9aaf6ff8cb56da2fb9c962",
     "packages": [
         {
             "name": "asm89/stack-cors",
@@ -4756,6 +4756,60 @@
             "time": "2022-06-03T12:32:57+00:00"
         },
         {
+            "name": "stymiee/password-helper",
+            "version": "2.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/stymiee/password-helper.git",
+                "reference": "bda49d9f5b913c5770d523b28382418d8f986caa"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/stymiee/password-helper/zipball/bda49d9f5b913c5770d523b28382418d8f986caa",
+                "reference": "bda49d9f5b913c5770d523b28382418d8f986caa",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.2.0"
+            },
+            "require-dev": {
+                "phpmd/phpmd": "@stable",
+                "phpunit/phpunit": "^8",
+                "squizlabs/php_codesniffer": "@stable"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "PasswordHelper\\": [
+                        "src/PasswordHelper/"
+                    ]
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "authors": [
+                {
+                    "name": "John Conde",
+                    "email": "stymiee@gmail.com",
+                    "homepage": "https://stymiee.dev",
+                    "role": "Developer"
+                }
+            ],
+            "homepage": "https://github.com/stymiee/ppassword-helper",
+            "keywords": [
+                "encryption",
+                "openssl",
+                "php"
+            ],
+            "support": {
+                "issues": "https://github.com/stymiee/password-helper/issues",
+                "source": "https://github.com/stymiee/password-helper/tree/2.0.0"
+            },
+            "time": "2020-06-10T17:08:32+00:00"
+        },
+        {
             "name": "symfony/console",
             "version": "v6.1.2",
             "source": {
@@ -7899,6 +7953,73 @@
                 "source": "https://github.com/hamcrest/hamcrest-php/tree/v2.0.1"
             },
             "time": "2020-07-09T08:09:16+00:00"
+        },
+        {
+            "name": "laradumps/laradumps",
+            "version": "v1.4.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/laradumps/laradumps.git",
+                "reference": "db3cfc44168d7c4befc5a62d41fa41b91d33506c"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/laradumps/laradumps/zipball/db3cfc44168d7c4befc5a62d41fa41b91d33506c",
+                "reference": "db3cfc44168d7c4befc5a62d41fa41b91d33506c",
+                "shasum": ""
+            },
+            "require": {
+                "nunomaduro/termwind": "^1.12",
+                "php": "^8.0"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^3.8",
+                "illuminate/support": "^8.18 | ^9.0",
+                "nunomaduro/larastan": "^1.0 | ^2.1",
+                "orchestra/testbench": "^6.17 | ^7.0",
+                "pestphp/pest": "^1.21",
+                "symfony/var-dumper": "^5.4 | ^6.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "LaraDumps\\LaraDumps\\LaraDumpsServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "files": [
+                    "src/functions.php"
+                ],
+                "psr-4": {
+                    "LaraDumps\\LaraDumps\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Luan Freitas",
+                    "email": "luanfreitas10@protonmail.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "A Dump Component for Laravel.",
+            "homepage": "https://github.com/laradumps/laradumps",
+            "support": {
+                "issues": "https://github.com/laradumps/laradumps/issues",
+                "source": "https://github.com/laradumps/laradumps/tree/v1.4.0"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/luanfreitasdev",
+                    "type": "github"
+                }
+            ],
+            "time": "2022-10-04T20:00:57+00:00"
         },
         {
             "name": "laravel/sail",

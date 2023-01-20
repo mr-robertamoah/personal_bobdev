@@ -1,5 +1,5 @@
 import TokenService from "./token.service"
-import {router} from "../app"
+import router from '../router/index.js'
 import axios from "axios"
 
 const ApiService = {
@@ -16,7 +16,6 @@ const ApiService = {
                     return reqFn(request)
                 }
 
-                console.log(`request`, request)
                 return request
             },
             error => {
@@ -45,12 +44,18 @@ const ApiService = {
                     return errFn(error)
                 }
 
-                if (![401, 419].includes(error.response.status)) {
-
+                // console.log(`error`, error.response, router.currentRoute.value)
+                
+                if (
+                    ['login', 'projects', 'project', 'home', 'test', 'profile']
+                        .includes(router.currentRoute.value.name)
+                ) {
+                    console.log('here');
                     throw error
                 }
-                
-                if (['login', 'projects', 'project', 'home', 'test',].includes(router.currentRoute.value.name)) {
+
+                if (![401, 419].includes(error.response.status)) {
+
                     throw error
                 }
 

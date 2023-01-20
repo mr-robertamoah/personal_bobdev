@@ -18,6 +18,7 @@ return new class extends Migration
             $table->nullableMorphs('performedby');
             $table->nullableMorphs('performedon');
             $table->string('action')->nullable();
+            $table->longText('data')->nullable();
             $table->softDeletes();
             $table->timestamps();
         });

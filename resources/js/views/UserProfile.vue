@@ -1,6 +1,6 @@
 <template>
     <div class="overflow-hidden">
-        <div v-if="user.username == profileOwner?.username" 
+        <div v-if="isProfileOwner" 
             class="absolute top-0 z-10 m-3 text-blue-600 cursor-pointer hover:text-blue-400" 
             @click="data.showEdit = true">
             <font-awesome-icon :icon="['fa', 'pencil']"></font-awesome-icon>
@@ -32,6 +32,9 @@
                 <Input
                     :placeholder="'email'" v-model="data.user.email" :errors="errors?.user.email"
                 ></Input>
+                <DatePicker
+                    :placeholder="'date of birth'" v-model="data.user.dob" :errors="errors?.user.dob"
+                ></DatePicker>
                 <div class="flex justify-center">
                 <PrimaryButton class="mt-2 p-1 text-sm" 
                     v-if="computedHasDataToEditInfo"
@@ -109,44 +112,73 @@
                 this is for donors
             </EditSection>
         </ProfileEdit>
-        <ProfileHeader 
-            :loading="loading" 
+        <ProfileHeader
             :src="profileOwner?.url" 
             :username="profileOwner?.username"
             :name="profileOwner?.name ?? ''"></ProfileHeader>
         <ProfileBody>
-            <FoldableCard :cardTitle="'Admin'">
+            <template v-if="isProfileOwner">
+                <FoldableCard v-if="checkIfIsUserTypes(['student', 'facilitator'])" :cardTitle="'Admin'">
 
-            </FoldableCard>
-            <FoldableCard :cardTitle="'Facilitator'">
-                <Slider :titles="['about', 'want to be']">
-                    <SliderDisplay>
-                        <div class="font-semibold text-center text-lg mb-2">About</div>
-                        <div class="text-center">This user type will have the ability to set skills and career in order to take up programs for training learners in those fields.</div>
-                    </SliderDisplay>
-                    <SliderDisplay>
-                        <div class="font-semibold text-center text-lg mb-2">Want To be</div>
-                        <div class="flex flex-col items-center">
-                            <div class="text-justify">
-                                The road to becoming a Facilitator starts with clicking the button below. It ends with an interview by and approval from an administrator
-                            </div>
-                            <SecondaryButton class="mt-4" @click="become('facilitator')">Apply</SecondaryButton>
-                        </div>
-                    </SliderDisplay>
-                </Slider>
-            </FoldableCard>
-            <FoldableCard :cardTitle="'Parent'">
+                </FoldableCard>
+                <FoldableCard :cardTitle="'Facilitator'">
+                    <Slider :titles="['about', 'want to be']">
+                        <SliderDisplay>
+                            <div class="font-semibold text-center text-lg mb-2">About</div>
+                            <div class="text-center">This user type will have the ability to set skills and career in order to take up programs for training learners in those fields.</div>
+                            <div 
+                                class="font-semibold text-sm rounded text-green-600 bg-green-200 p-1 absolute bottom-0 mb-1
+                                    left-0 ml-1"
+                                v-if="isProfileOwnerFacilitator"
+                            >A Facilitator</div>
+                        </SliderDisplay>
+                        <template v-if="isProfileOwnerFacilitator">
+                            <SliderDisplay>
+                                <div class="font-semibold text-center text-lg mb-2">Set Up</div>
+                                <div class="text-center">
+                                    Now you can go ahead to set up your facilitator account. Add your what you do (job), skills you are good at (skills), and others. Lets go 👍.
+                                </div>
+                                <SecondaryButton class="mt-4" @click="setUpUserTypeProfile">{{
+                                    hasJobs || hasSkills ? 'continue' : 'start'
+                                }}</SecondaryButton>
+                                <div 
+                                    class="font-semibold text-sm rounded text-green-600 bg-green-200 p-1 absolute bottom-0 mb-1
+                                        left-0 ml-1"
+                                >A Facilitator</div>
+                            </SliderDisplay>
+                        </template>
+                        <template v-else>
+                            <SliderDisplay>
+                                <div v-if="loadings.facilitator.becoming" class="text-center text-green-600 my-2">
+                                    becoming 
+                                    <span>
+                                        <font-awesome-icon class="animate-spin" :icon="['fa', 'spinner']"></font-awesome-icon>
+                                    </span>
+                                </div>
+                                <div class="font-semibold text-center text-lg mb-2">Want To be</div>
+                                <div class="flex flex-col items-center">
+                                    <div class="text-justify">
+                                        The road to becoming a Facilitator starts with clicking the button below. It ends with an interview by and approval from an administrator
+                                    </div>
+                                    <SecondaryButton class="mt-4" @click="becomeUserType('facilitator')">Apply</SecondaryButton>
+                                </div>
+                            </SliderDisplay>
+                        </template>
+                    </Slider>
+                </FoldableCard>
+                <FoldableCard :cardTitle="'Parent'">
 
-            </FoldableCard>
-            <FoldableCard :cardTitle="'Learner'">
+                </FoldableCard>
+                <FoldableCard :cardTitle="'Learner'">
 
-            </FoldableCard>
-            <FoldableCard :cardTitle="'Donor'">
+                </FoldableCard>
+                <FoldableCard :cardTitle="'Donor'">
 
-            </FoldableCard>
-            <FoldableCard :cardTitle="'Organisation'">
+                </FoldableCard>
+                <FoldableCard :cardTitle="'Organisation'">
 
-            </FoldableCard>
+                </FoldableCard>
+            </template>
         </ProfileBody>
 
         <Teleport to="body">
@@ -171,10 +203,10 @@
                         ></Input>
                         <PrimaryButton class="mt-2 p-1 text-sm w-content mx-auto" 
                             v-if="data.job.name?.length"
-                            @click="createAndAttachJob"
+                            @click="create('createAndAttachJob')"
                         >create and attach</PrimaryButton>
                         <div class="font-bold text-base mb-4 mt-2 text-center capitalize">search and add a job to your jobs</div>
-                        <div class="relative">
+                        <div class="relative">``
                             <Input
                                 :type="'search'" :placeholder="`search for job`" v-model="data.searchText" :errors="errors?.job.description" :info="info.job.description"
                             ></Input>
@@ -236,12 +268,36 @@ import EditSection from '../components/profile/EditSection.vue'
 import ProfileEdit from '../components/profile/ProfileEdit.vue'
 import useEditUserInfo from '../composables/useEditUserInfo'
 import Alert from '../components/Alert.vue'
+import useUserTypes from '../composables/useUserTypes'
+import DatePicker from '../components/auth/DatePicker.vue'
+import useHelpers from '../composables/useHelpers'
+import ResponseStatus from "../../ts/types/ResponseStatus"
 
 let store = useStore()
 let profileOwner = ref<User|null>(null)
 let loading = ref<boolean>(false)
+let loadings = ref<{
+    job: {
+        creating: boolean,
+        searching: boolean,
+        attaching: boolean,
+    },
+    facilitator: {
+        becoming: boolean,
+    }
+}>({
+    job: {
+        creating: false,
+        searching: false,
+        attaching: false,
+    },
+    facilitator: {
+        becoming: false,
+    }
+})
+let {clearObjectProperties, pushItem, setObjectProperties} = useHelpers()
 let props = defineProps<{username: string}>()
-let emits = defineEmits(['sendProfileOwner'])
+let emits = defineEmits(['sendProfileOwner', 'sendLoadingState'])
 let user = computed(() => store.state.user.user)
 let showModal = ref<boolean>(false)
 let modalType = ref<string|null>(null)
@@ -265,6 +321,7 @@ let data = reactive({
         firstName: '',
         surname: '',
         otherNames: '',
+        dob: '',
         email: '',
         gender: '',
         password: '',
@@ -282,6 +339,165 @@ let info = reactive({
 })
 let alertMessage = ref<string>('')
 
+// function
+async function clickedEditInfo(type: string)
+{
+    if (!profileOwner.value?.username) {
+        return
+    }
+
+    if (type == 'reset password') {
+        alertMessage.value = 'resetting password...'
+
+        resetPassword({...data.user, id: profileOwner.value?.id})
+
+        return
+    }
+    
+    alertMessage.value = 'editing profile...'
+
+    let user = await editInfo({...data.user, id: profileOwner.value?.id})
+
+    if (!user) {
+        return;
+    }
+
+    data.user = clearObjectProperties(data.user)
+}
+
+async function attachJob(job: Job)
+{
+    let response = await ApiService.post(`/job/${job.id}/attach`, {})
+}
+
+function checkIfIsUserTypes(userTypes: Array<string>): boolean {
+
+    let mappedUserTypes = profileOwner.value?.userTypes?.map((ut)=> {
+        if (typeof ut == 'string') {
+            return ut
+        }
+        
+        ut.usableName
+    })
+    return userTypes.every(val=> mappedUserTypes?.includes(val))
+}
+
+async function becomeUserType(type: string) {
+
+    loadings.value.facilitator.becoming = true
+
+    let {status, userType} = await become({name: type, userId: profileOwner.value ? profileOwner.value.id : ""})
+
+    loadings.value.facilitator.becoming = false
+
+    if (!status) {
+        return
+    }
+
+    await store.dispatch('user/addUserType', userType)
+
+    pushItem(profileOwner.value?.userTypes ?? [], userType.usableName)
+
+    modalType.value = type
+}
+
+function setUpUserTypeProfile() {
+
+    switch (modalType.value) {
+        case 'facilitator':
+            steps.facilitator.step = 1
+            break;
+    
+        default:
+            break;
+    }
+
+    showModal.value = true
+}
+
+async function create(type: string, data: any = null) {
+    switch (type) {
+        case 'createAndAttachJob':
+            loadings.value.job.creating = true
+            await createAndAttachJob({
+                name: data.job.name,
+                description: data.job.description,
+                attach: true,
+                userId: user.value.id
+            })
+
+            loadings.value.job.creating = false
+            break;
+    
+        default:
+            break;
+    }
+}
+
+function closeModal() {
+    showModal.value = false
+}
+
+function changeStep(type: string)
+{
+    if (type == 'next') {
+        steps.facilitator.step = steps.facilitator.step++
+    }
+    
+    if (type == 'previous') {
+        steps.facilitator.step = steps.facilitator.step--
+    }
+}
+
+async function setUpUserProfile() {
+    loading.value = true
+
+    if (user.value?.username == props.username) {
+        profileOwner.value = {...user.value}
+    }
+    
+    if (user.value?.username != props.username) {
+        let response = await ApiService.get(`/user/${props.username}`)
+
+        if (response.status != 200) {
+
+            setDangerAlertMessage({message: response.data.message, duration: 3000})
+        }
+
+        profileOwner.value = response.data.user
+    }
+    
+    loading.value = false
+}
+
+async function getProfileDataForUser(user: User) {
+    let response = await ApiService.get(`profile/user/${user.id ?? user.username}`)
+
+    if (response.status != ResponseStatus.SUCCESS) {
+        setDangerAlertMessage({
+            message: "Sorry! Failed to get the profile info for this user",
+            duration: 1000
+        })
+
+        return
+    }
+
+    profileOwner.value = setObjectProperties(profileOwner, response.data.profile)
+}
+
+await setUpUserProfile()
+
+if (profileOwner.value) {
+    await getProfileDataForUser(profileOwner.value)
+}
+
+let {become, isProfileOwnerFacilitator, hasSkills, hasJobs} = useUserTypes(
+    profileOwner
+)
+
+let {editInfo, editableUser, editableUserLoading, resetPassword} = useEditUserInfo(profileOwner.value)
+
+// watch
 watch(profileOwner, ()=>{
     emits('sendProfileOwner', profileOwner)
 })
@@ -298,31 +514,9 @@ watch(()=> data.searchType, () =>{
     data.searchText = ''
 })
 
-
-async function setUpUserProfile() {
-    loading.value = true
-    
-    if (user.value?.username != props.username) {
-        let response = await ApiService.get(`/user/${props.username}`)
-
-        if (response.status != 200) {
-
-            setDangerAlertMessage({message: response.data.message, duration: 3000})
-        }
-
-        profileOwner.value = response.data.user
-    }
-
-    if (user.value?.username == props.username) {
-        profileOwner.value = user.value
-
-    }
-    
-    loading.value = false
-}
-
-setUpUserProfile()
-let {editInfo, editableUser, editableUserLoading, resetPassword} = useEditUserInfo(profileOwner.value)
+watch(loading, function(newValue) {
+    emits("sendLoadingState", newValue)
+})
 
 watch(editableUser, ()=>{
     if (!profileOwner.value) {
@@ -334,31 +528,8 @@ watch(editableUser, ()=>{
     profileOwner.value.otherNames = editableUser.value.otherNames
     profileOwner.value.gender = editableUser.value.gender
     profileOwner.value.email = editableUser.value.email
-})
-
-function changeStep(type: string)
-{
-    if (type == 'next') {
-        steps.facilitator.step = steps.facilitator.step++
-    }
-    
-    if (type == 'previous') {
-        steps.facilitator.step = steps.facilitator.step--
-    }
-}
-
-let computedHasDataToEditInfo = computed<boolean>(()=>{
-    return Boolean(
-        data.user.email || data.user.firstName || data.user.surname || data.user.otherNames ||
-        data.user.gender
-    )
-})
-
-let computedHasDataToResetPassword = computed<boolean>(()=>{
-    return Boolean(
-        data.user.password ||
-        data.user.passwordConfirmation
-    )
+    profileOwner.value.age = editableUser.value.age
+    profileOwner.value.name = editableUser.value.name
 })
 
 watch(editableUserLoading, (newValue)=>{
@@ -369,49 +540,26 @@ watch(editableUserLoading, (newValue)=>{
     alertMessage.value = ''
 })
 
-function clickedEditInfo(type: string)
-{
-    if (!profileOwner.value?.username) {
-        return
-    }
-
-    if (type == 'reset password') {
-        alertMessage.value = 'resetting password...'
-
-        resetPassword({...data.user, id: profileOwner.value?.id})
-
-        return
+// computed
+let isProfileOwner = computed<boolean>(()=>{
+    if (!user.value || !profileOwner.value) {
+        return false
     }
     
-    alertMessage.value = 'editing profile...'
+    return user.value.username == profileOwner.value?.username
+})
 
-    editInfo({...data.user, id: profileOwner.value?.id})
-}
+let computedHasDataToEditInfo = computed<boolean>(()=>{
+    return Boolean(
+        data.user.email || data.user.firstName || data.user.surname || data.user.otherNames ||
+        data.user.gender || data.user.dob
+    )
+})
 
-async function attachJob(job: Job)
-{
-    let response = await ApiService.post(`/job/${job.id}/attach`, {})
-}
-
-function become(type: string) {
-    modalType.value = type 
-    switch (type) {
-        case 'facilitator':
-            steps.facilitator.step = 1
-            break;
-    
-        default:
-            break;
-    }
-
-    showModal.value = true
-}
-
-function closeModal() {
-    showModal.value = false
-}
+let computedHasDataToResetPassword = computed<boolean>(()=>{
+    return Boolean(
+        data.user.password ||
+        data.user.passwordConfirmation
+    )
+})
 </script>
-
-<style scoped>
-
-</style>
