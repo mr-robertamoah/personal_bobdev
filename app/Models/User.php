@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\RelationshipTypeEnum;
 use App\Interfaces\Request;
 use App\Traits\CanAddImagesTrait;
 use App\Traits\CanSendAndReceiveRequestsTrait;
@@ -199,6 +200,25 @@ class User extends Authenticatable implements Request
             ->exists();
     }
 
+    public function isParent() : bool
+    {
+        return Relation::query()
+            ->where('relationship_type', RelationshipTypeEnum::parent->value)
+            ->where(function ($query)
+            {
+                $query
+                    ->where('by_type', $this::class)
+                    ->where('by_id', $this->id);
+            })
+            ->orWhere(function ($query)
+            {
+                $query
+                    ->where('by_type', $this::class)
+                    ->where('by_id', $this->id);
+            })
+            ->exists();
+    }
+
     public function isSuperAdmin() : bool
     {
         return $this->userTypes()
@@ -265,4 +285,7 @@ class User extends Authenticatable implements Request
         });
     }
     // end of scopes
+
+    // TODO: make it possible for facilitators and admins to create users
+    // for facilitators, it is possible to create them and send the project requests to them
 }

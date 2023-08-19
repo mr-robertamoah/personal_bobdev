@@ -29,6 +29,6 @@ class EnsureUserIsAlreadyAMemberOfCompanyAction extends Action
             return;
         }
 
-        throw new CompanyException("Sorry! {$user->name} is not a {$relationshipType} in the company with name {$company->name}.");
+        throw new CompanyException("Sorry! {$user->name} is not a {$relationshipType} of {$company->name} company.");
     }
 }

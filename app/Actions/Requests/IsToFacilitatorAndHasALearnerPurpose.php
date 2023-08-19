@@ -16,6 +16,6 @@ class IsToFacilitatorAndHasALearnerPurpose extends Action
         }
         
         return $request->for->isFacilitator($request->to) && 
-            IsLearnerParticipantTypeAction::make()->execute($request->purpose);
+            IsLearnerParticipantTypeAction::make()->execute($request->type);
     }
 }

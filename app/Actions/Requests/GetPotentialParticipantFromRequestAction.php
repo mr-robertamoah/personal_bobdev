@@ -13,7 +13,7 @@ class GetPotentialParticipantFromRequestAction extends Action
     public function execute(Request $request): Model
     {
         if (
-            $request->from::class != User::class ||
+            ($request->to::class != User::class && $request->from::class == User::class) ||
             IsUserAnOfficialOfModelAction::make()->execute($request->to, $request->for) ||
             IsToFacilitatorAndHasALearnerPurpose::make()->execute($request)
         ) {

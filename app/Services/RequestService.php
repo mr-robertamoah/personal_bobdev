@@ -7,10 +7,10 @@ use App\Actions\GetModelInstanceFromIdAndClassNameIfModelIsNull;
 use App\Actions\Requests\EnsureDTOHasAppropriateModelsAction;
 use App\Actions\Requests\EnsureUserCanRespondToRequestAction;
 use App\Actions\Requests\EnsureCanSendRequestAction;
-use App\Actions\Requests\EnsureRequestPurposeIsValidAction;
 use App\Actions\Requests\EnsureRequestExistsAction;
 use App\Actions\Requests\EnsureResponseIsValidAction;
 use App\Actions\Requests\CreateRequestAction;
+use App\Actions\Requests\EnsureRequestTypeIsValidAction;
 use App\Actions\Requests\PerformActionBasedOnResponseAction;
 use App\DTOs\ActivityDTO;
 use App\DTOs\RequestDTO;
@@ -27,12 +27,24 @@ class RequestService
 
         EnsureDTOHasAppropriateModelsAction::make()->execute($requestDTO);
         
-        EnsureRequestPurposeIsValidAction::make()->execute($requestDTO);
+        EnsureRequestTypeIsValidAction::make()->execute($requestDTO);
 
         EnsureCanSendRequestAction::make()->execute($requestDTO);
 
         $request = CreateRequestAction::make()->execute($requestDTO);
 
+        if ($request->for->isofficial($requestDTO->from) ||
+            $requestDTO->from->isAdmin()
+        )
+        {
+            AddActivityAction::make()->execute(
+                ActivityDTO::new()->fromArray([
+                    'performedby' => $requestDTO->from::class != User::class ? $requestDTO->user : $requestDTO->from,
+                    'performedon' => $request,
+                    'action' => 'request',
+                ])
+            );
+        }
         // RequestSentEvent::broadcast($request);
 
         return $request->refresh();
@@ -62,17 +74,23 @@ class RequestService
 
         PerformActionBasedOnResponseAction::make()->execute($responseDTO);
         
-        AddActivityAction::make()->execute(
-            ActivityDTO::new()->fromArray([
-                'performedby' => $responseDTO->user,
-                'performedon' => $responseDTO->request,
-                'action' => 'respond',
-                'data' => [
-                    'response' => $response
-                ]
-            ])
-        );
-
+        if (
+            $responseDTO->request->for->isofficial($responseDTO->user) ||
+            $responseDTO->user->isAdmin()
+        )
+        {
+            AddActivityAction::make()->execute(
+                ActivityDTO::new()->fromArray([
+                    'performedby' => $responseDTO->user,
+                    'performedon' => $responseDTO->request,
+                    'action' => 'respond',
+                    'data' => [
+                        'response' => $response
+                    ]
+                ])
+            );
+        }
+        
         return $responseDTO->request->refresh();
     }
 

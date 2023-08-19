@@ -13,7 +13,8 @@ class RequestController extends Controller
     public function create(Request $request)
     {
         $request->validate([
-            'purpose' => 'required|string'
+            'type' => 'required|string',
+            'purpose' => 'nullable|string',
         ]);
 
         $sentRequest = (new RequestService)->createRequest(
@@ -51,12 +52,14 @@ class RequestController extends Controller
     private function getDTOInitializationData(Request $request): array
     {
         $dtoInitializationData = [
+            'user' => $request->user(),
             'from' => $request->user(),
             'toId' => $request->toId,
             'toType' => $request->toType,
             'forId' => $request->forId,
             'forType' => $request->forType,
-            'purpose' => $request->purpose
+            'purpose' => $request->purpose,
+            'type' => $request->type,
         ];
 
         if ($request->has('fromId') && $request->has('fromType')) {

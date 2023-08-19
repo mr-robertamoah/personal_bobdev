@@ -3,13 +3,13 @@
 namespace App\Services;
 
 use App\Actions\Activity\AddActivityAction;
-use App\Actions\Company\BecomeCompanyMemberAction;
 use App\Actions\Company\EnsureUserCanAddMemberAction;
 use App\Actions\Company\EnsureCompanyExistsAction;
 use App\Actions\Company\EnsureHasDataToCreateCompanyAction;
 use App\Actions\Company\EnsureHasDataToUpdateCompanyAction;
 use App\Actions\Company\EnsureIsRightCompanyRelationshipAction;
-use App\Actions\Company\EnsureMembershipIsListAction;
+use App\Actions\Company\EnsureMembershipIsValidArrayAction;
+use App\Actions\Company\EnsureRequestIsNotFromACompanyOfficialToAnotherAction;
 use App\Actions\Company\EnsureUserIsOfficialOfCompanyAction;
 use App\Actions\Company\EnsureThereIsAnAppriopriateUserAction;
 use App\Actions\Company\EnsureUserCanRemoveMemberAction;
@@ -18,11 +18,14 @@ use App\Actions\Company\EnsureUserIsAnAdultIfAdministratorRelationshipTypeAction
 use App\Actions\Company\EnsureUserIsNotAlreadyAMemberOfCompanyAction;
 use App\Actions\Company\EnsureUserIsOwnerOfCompanyAction;
 use App\Actions\Company\RemoveMemberAction;
+use App\Actions\GetUserDataForUserId;
+use App\Actions\Requests\CreateRequestAction;
 use App\Actions\Users\EnsureThereIsUserOnDTOAction;
 use App\Actions\Users\EnsureUserIsAnAdultAction;
 use App\Actions\Users\FindUserByIdAction;
 use App\DTOs\ActivityDTO;
 use App\DTOs\CompanyDTO;
+use App\DTOs\RequestDTO;
 use App\Models\Company;
 use App\Models\User;
 
@@ -114,7 +117,9 @@ class CompanyService
         return $companyDTO->company->delete();
     }
 
-    public function addMembers(CompanyDTO $companyDTO)
+    // TODO add an addMember function that just adds members and can only be used by system admins
+    
+    public function sendMembershipRequest(CompanyDTO $companyDTO)
     {
         $companyDTO = $this->setUserOnCompanyDTO($companyDTO);
 
@@ -126,43 +131,56 @@ class CompanyService
 
         EnsureUserIsOfficialOfCompanyAction::make()->execute($companyDTO);
 
-        EnsureMembershipIsListAction::make()->execute($companyDTO);
+        EnsureMembershipIsValidArrayAction::make()->execute($companyDTO);
 
-        foreach ($companyDTO->memberships as $memberId => $relationshipType) {
-            
-            $member = FindUserByIdAction::make()->execute($memberId);
+        $requests = [];
+        foreach ($companyDTO->memberships as $userId => $userData)
+        {
+            [$relationshipType, $purpose] = GetUserDataForUserId::make()->execute($userData);
+
+            $possibleMember = FindUserByIdAction::make()->execute($userId);
+
+            EnsureIsRightCompanyRelationshipAction::make()->execute($relationshipType, $possibleMember);
+
+            EnsureRequestIsNotFromACompanyOfficialToAnotherAction::make()->execute(
+                $companyDTO->withTo($possibleMember)
+            );
+
+            EnsureUserIsAnAdultIfAdministratorRelationshipTypeAction::make()->execute(
+                $possibleMember, $relationshipType
+            );
+
+            EnsureUserIsNotAlreadyAMemberOfCompanyAction::make()->execute(
+                $companyDTO->company, $possibleMember
+            );
 
             EnsureUserCanAddMemberAction::make()->execute(
                 $companyDTO->withRelationshipType($relationshipType)
             );
 
-            EnsureIsRightCompanyRelationshipAction::make()->execute($relationshipType, $member);
-
-            EnsureUserIsAnAdultIfAdministratorRelationshipTypeAction::make()->execute(
-                $member, $relationshipType
-            );
-
-            EnsureUserIsNotAlreadyAMemberOfCompanyAction::make()->execute(
-                $companyDTO->company, $member
-            );
-
-            BecomeCompanyMemberAction::make()->execute(
-                $companyDTO->company,
-                $member,
-                $relationshipType
-            );
-    
-            AddActivityAction::make()->execute(
-                ActivityDTO::new()->fromArray([
-                    'performedby' => $companyDTO->user,
-                    'performedon' => $companyDTO->company,
-                    'action' => 'addMember',
-                    'data' => ['user' => $member]
+            $requests[] = CreateRequestAction::make()->execute(
+                RequestDTO::new()->fromArray([
+                    'from' => $companyDTO->user,
+                    'for' => $companyDTO->company,
+                    'to' => $possibleMember,
+                    'type' => strtoupper($relationshipType),
+                    'purpose' => $purpose
                 ])
             );
         }
 
-        return $companyDTO->company->refresh();
+        AddActivityAction::make()->execute(
+            ActivityDTO::new()->fromArray([
+                'performedby' => $companyDTO->user,
+                'performedon' => $companyDTO->company,
+                'action' => 'removeMember',
+                'data' => [
+                    'requests' => array_map(fn($request) => $request->id, $requests)
+                ]
+            ])
+        );
+
+        return $requests;
     }
 
     public function removeMembers(CompanyDTO $companyDTO)
@@ -177,10 +195,12 @@ class CompanyService
 
         EnsureUserIsOfficialOfCompanyAction::make()->execute($companyDTO);
 
-        EnsureMembershipIsListAction::make()->execute($companyDTO);
+        EnsureMembershipIsValidArrayAction::make()->execute($companyDTO);
         
-        foreach($companyDTO->memberships as $memberId => $relationshipType) {
-            
+        foreach($companyDTO->memberships as $memberId => $userData)
+        {
+            [$relationshipType] = GetUserDataForUserId::make()->execute($userData);
+
             $member = FindUserByIdAction::make()->execute($memberId);
 
             EnsureIsRightCompanyRelationshipAction::make()->execute($relationshipType, $member);
@@ -195,7 +215,7 @@ class CompanyService
                 $companyDTO->company,
                 $member
             );
-
+            
             AddActivityAction::make()->execute(
                 ActivityDTO::new()->fromArray([
                     'performedby' => $companyDTO->user,

@@ -6,8 +6,10 @@ use App\DTOs\ProjectDTO;
 use App\DTOs\SkillDTO;
 use App\DTOs\SkillTypeDTO;
 use App\Enums\ProjectParticipantEnum;
+use App\Enums\RequestTypeEnum;
 use App\Exceptions\ProjectException;
 use App\Exceptions\SkillException;
+use App\Exceptions\UserException;
 use App\Models\User;
 use App\Models\UserType;
 use App\Services\ProjectService;
@@ -477,6 +479,38 @@ class ProjectTest extends TestCase
         ]);
     }
 
+    public function testCannotAttachInvalidSkillToProjectWhenAddedby()
+    {
+        $this->expectException(SkillException::class);
+        $this->expectExceptionMessage("Sorry, no skill with id 1 exists.");
+
+        $user = User::factory()
+            ->hasAttached(UserType::factory([
+                'name' => UserType::FACILITATOR
+            ]), [], 'userTypes')
+            ->create();
+        
+        $project = (new ProjectService)->createProject(
+            ProjectDTO::new()->fromArray([
+                'name' => 'PHP',
+                'description' => 'backend language for web sites',
+                'addedby' => $user,
+            ])
+        );
+
+        $this->assertDatabaseHas('projects', [
+            'name' => 'PHP',
+            'description' => 'backend language for web sites',
+        ]);
+
+        (new ProjectService)->addSkillsToProject(
+            ProjectDTO::new()->fromArray([
+                'addedby' => $user,
+                'projectId' => $project->id
+            ]), [1,2]
+        );
+    }
+
     public function testCanAttachValidSkillToProjectWhenAddedby()
     {
         $user = User::factory()
@@ -540,7 +574,149 @@ class ProjectTest extends TestCase
         ]);
     }
 
-    public function testCannotAttachInvalidSkillToProjectWhenAddedby()
+    public function testCanAttachValidSkillToProjectWhenFacilitatorForProject()
+    {
+        $user = User::factory()
+            ->hasAttached(UserType::factory([
+                'name' => UserType::FACILITATOR
+            ]), [], 'userTypes')
+            ->create();
+        $facilitator = User::factory()
+            ->hasAttached(UserType::factory([
+                'name' => UserType::FACILITATOR
+            ]), [], 'userTypes')
+            ->create();
+        
+        $project = (new ProjectService)->createProject(
+            ProjectDTO::new()->fromArray([
+                'name' => 'PHP',
+                'description' => 'backend language for web sites',
+                'addedby' => $user,
+            ])
+        );
+
+        $this->assertDatabaseHas('projects', [
+            'name' => 'PHP',
+            'description' => 'backend language for web sites',
+        ]);
+        
+        $participation = $project->participants()->create([
+            'participating_as' => ProjectParticipantEnum::facilitator->value
+        ]);
+        $participation->participant()->associate($facilitator);
+        $participation->save();
+
+        $skillType = (new SkillTypeService)->createSkillType(
+            SkillTypeDTO::new()->fromArray([
+                'name' => 'Programming Language',
+                'description' => 'coding for making programs and software',
+                'addedBy' => $user,
+            ])
+        );
+        
+        $skill = (new SkillService)->createSkill(
+            SkillDTO::new()->fromArray([
+                'name' => 'PHP',
+                'description' => 'backend language for web sites',
+                'user' => $user,
+                'skillTypeId' => $skillType->id
+            ])
+        );
+
+        $this->assertDatabaseHas('skill_types', [
+            'name' => 'Programming Language',
+            'description' => 'coding for making programs and software'
+        ]);
+
+        $this->assertDatabaseHas('skills', [
+            'name' => 'PHP',
+            'description' => 'backend language for web sites',
+            'skill_type_id' => $skillType->id,
+            'user_id' => $user->id,
+        ]);
+
+        (new ProjectService)->addSkillsToProject(
+            ProjectDTO::new()->fromArray([
+                'addedby' => $facilitator,
+                'projectId' => $project->id
+            ]), [$skill->id]
+        );
+
+        $this->assertDatabaseHas('project_skill', [
+            'project_id' => $project->id,
+            'skill_id' => $skill->id,
+        ]);
+    }
+
+    public function testCanAttachValidSkillToProjectWhenAdmin()
+    {
+        $user = User::factory()
+            ->hasAttached(UserType::factory([
+                'name' => UserType::FACILITATOR
+            ]), [], 'userTypes')
+            ->create();
+        $admin = User::factory()
+            ->hasAttached(UserType::factory([
+                'name' => UserType::ADMIN
+            ]), [], 'userTypes')
+            ->create();
+        
+        $project = (new ProjectService)->createProject(
+            ProjectDTO::new()->fromArray([
+                'name' => 'PHP',
+                'description' => 'backend language for web sites',
+                'addedby' => $user,
+            ])
+        );
+
+        $this->assertDatabaseHas('projects', [
+            'name' => 'PHP',
+            'description' => 'backend language for web sites',
+        ]);
+
+        $skillType = (new SkillTypeService)->createSkillType(
+            SkillTypeDTO::new()->fromArray([
+                'name' => 'Programming Language',
+                'description' => 'coding for making programs and software',
+                'addedBy' => $user,
+            ])
+        );
+        
+        $skill = (new SkillService)->createSkill(
+            SkillDTO::new()->fromArray([
+                'name' => 'PHP',
+                'description' => 'backend language for web sites',
+                'user' => $user,
+                'skillTypeId' => $skillType->id
+            ])
+        );
+
+        $this->assertDatabaseHas('skill_types', [
+            'name' => 'Programming Language',
+            'description' => 'coding for making programs and software'
+        ]);
+
+        $this->assertDatabaseHas('skills', [
+            'name' => 'PHP',
+            'description' => 'backend language for web sites',
+            'skill_type_id' => $skillType->id,
+            'user_id' => $user->id,
+        ]);
+
+        (new ProjectService)->addSkillsToProject(
+            ProjectDTO::new()->fromArray([
+                'addedby' => $admin,
+                'projectId' => $project->id
+            ]), [$skill->id]
+        );
+
+        $this->assertDatabaseHas('project_skill', [
+            'project_id' => $project->id,
+            'skill_id' => $skill->id,
+        ]);
+    }
+
+    public function testCannotDetachInvalidSkillToProjectWhenAddedby()
     {
         $this->expectException(SkillException::class);
         $this->expectExceptionMessage("Sorry, no skill with id 1 exists.");
@@ -564,7 +740,7 @@ class ProjectTest extends TestCase
             'description' => 'backend language for web sites',
         ]);
 
-        (new ProjectService)->addSkillsToProject(
+        (new ProjectService)->removeSkillsFromProject(
             ProjectDTO::new()->fromArray([
                 'addedby' => $user,
                 'projectId' => $project->id
@@ -572,7 +748,248 @@ class ProjectTest extends TestCase
         );
     }
 
-    public function testCannotAddParticipantToProjectWhenNotAuthorized()
+    public function testCanDetachValidSkillToProjectWhenAddedby()
+    {
+        $user = User::factory()
+            ->hasAttached(UserType::factory([
+                'name' => UserType::FACILITATOR
+            ]), [], 'userTypes')
+            ->create();
+        
+        $project = (new ProjectService)->createProject(
+            ProjectDTO::new()->fromArray([
+                'name' => 'PHP',
+                'description' => 'backend language for web sites',
+                'addedby' => $user,
+            ])
+        );
+
+        $this->assertDatabaseHas('projects', [
+            'name' => 'PHP',
+            'description' => 'backend language for web sites',
+        ]);
+
+        $skillType = (new SkillTypeService)->createSkillType(
+            SkillTypeDTO::new()->fromArray([
+                'name' => 'Programming Language',
+                'description' => 'coding for making programs and software',
+                'addedBy' => $user,
+            ])
+        );
+        
+        $skill = (new SkillService)->createSkill(
+            SkillDTO::new()->fromArray([
+                'name' => 'PHP',
+                'description' => 'backend language for web sites',
+                'user' => $user,
+                'skillTypeId' => $skillType->id
+            ])
+        );
+
+        $this->assertDatabaseHas('skill_types', [
+            'name' => 'Programming Language',
+            'description' => 'coding for making programs and software'
+        ]);
+
+        $this->assertDatabaseHas('skills', [
+            'name' => 'PHP',
+            'description' => 'backend language for web sites',
+            'skill_type_id' => $skillType->id,
+            'user_id' => $user->id,
+        ]);
+
+        (new ProjectService)->addSkillsToProject(
+            ProjectDTO::new()->fromArray([
+                'addedby' => $user,
+                'projectId' => $project->id
+            ]), [$skill->id]
+        );
+
+        $this->assertDatabaseHas('project_skill', [
+            'project_id' => $project->id,
+            'skill_id' => $skill->id,
+        ]);
+
+        (new ProjectService)->removeSkillsFromProject(
+            ProjectDTO::new()->fromArray([
+                'addedby' => $user,
+                'projectId' => $project->id
+            ]), [$skill->id]
+        );
+
+        $this->assertDatabaseMissing('project_skill', [
+            'project_id' => $project->id,
+            'skill_id' => $skill->id,
+        ]);
+    }
+
+    public function testCanDetachValidSkillToProjectWhenFacilitatorForProject()
+    {
+        $user = User::factory()
+            ->hasAttached(UserType::factory([
+                'name' => UserType::FACILITATOR
+            ]), [], 'userTypes')
+            ->create();
+        $facilitator = User::factory()
+            ->hasAttached(UserType::factory([
+                'name' => UserType::FACILITATOR
+            ]), [], 'userTypes')
+            ->create();
+        
+        $project = (new ProjectService)->createProject(
+            ProjectDTO::new()->fromArray([
+                'name' => 'PHP',
+                'description' => 'backend language for web sites',
+                'addedby' => $user,
+            ])
+        );
+
+        $this->assertDatabaseHas('projects', [
+            'name' => 'PHP',
+            'description' => 'backend language for web sites',
+        ]);
+        
+        $participation = $project->participants()->create([
+            'participating_as' => ProjectParticipantEnum::facilitator->value
+        ]);
+        $participation->participant()->associate($facilitator);
+        $participation->save();
+
+        $skillType = (new SkillTypeService)->createSkillType(
+            SkillTypeDTO::new()->fromArray([
+                'name' => 'Programming Language',
+                'description' => 'coding for making programs and software',
+                'addedBy' => $user,
+            ])
+        );
+        
+        $skill = (new SkillService)->createSkill(
+            SkillDTO::new()->fromArray([
+                'name' => 'PHP',
+                'description' => 'backend language for web sites',
+                'user' => $user,
+                'skillTypeId' => $skillType->id
+            ])
+        );
+
+        $this->assertDatabaseHas('skill_types', [
+            'name' => 'Programming Language',
+            'description' => 'coding for making programs and software'
+        ]);
+
+        $this->assertDatabaseHas('skills', [
+            'name' => 'PHP',
+            'description' => 'backend language for web sites',
+            'skill_type_id' => $skillType->id,
+            'user_id' => $user->id,
+        ]);
+
+        (new ProjectService)->addSkillsToProject(
+            ProjectDTO::new()->fromArray([
+                'addedby' => $user,
+                'projectId' => $project->id
+            ]), [$skill->id]
+        );
+
+        $this->assertDatabaseHas('project_skill', [
+            'project_id' => $project->id,
+            'skill_id' => $skill->id,
+        ]);
+
+        (new ProjectService)->removeSkillsFromProject(
+            ProjectDTO::new()->fromArray([
+                'addedby' => $facilitator,
+                'projectId' => $project->id
+            ]), [$skill->id]
+        );
+
+        $this->assertDatabaseMissing('project_skill', [
+            'project_id' => $project->id,
+            'skill_id' => $skill->id,
+        ]);
+    }
+
+    public function testCanDetachValidSkillToProjectWhenAdmin()
+    {
+        $user = User::factory()
+            ->hasAttached(UserType::factory([
+                'name' => UserType::FACILITATOR
+            ]), [], 'userTypes')
+            ->create();
+        $admin = User::factory()
+            ->hasAttached(UserType::factory([
+                'name' => UserType::ADMIN
+            ]), [], 'userTypes')
+            ->create();
+        
+        $project = (new ProjectService)->createProject(
+            ProjectDTO::new()->fromArray([
+                'name' => 'PHP',
+                'description' => 'backend language for web sites',
+                'addedby' => $user,
+            ])
+        );
+
+        $this->assertDatabaseHas('projects', [
+            'name' => 'PHP',
+            'description' => 'backend language for web sites',
+        ]);
+
+        $skillType = (new SkillTypeService)->createSkillType(
+            SkillTypeDTO::new()->fromArray([
+                'name' => 'Programming Language',
+                'description' => 'coding for making programs and software',
+                'addedBy' => $user,
+            ])
+        );
+        
+        $skill = (new SkillService)->createSkill(
+            SkillDTO::new()->fromArray([
+                'name' => 'PHP',
+                'description' => 'backend language for web sites',
+                'user' => $user,
+                'skillTypeId' => $skillType->id
+            ])
+        );
+
+        $this->assertDatabaseHas('skill_types', [
+            'name' => 'Programming Language',
+            'description' => 'coding for making programs and software'
+        ]);
+
+        $this->assertDatabaseHas('skills', [
+            'name' => 'PHP',
+            'description' => 'backend language for web sites',
+            'skill_type_id' => $skillType->id,
+            'user_id' => $user->id,
+        ]);
+
+        (new ProjectService)->addSkillsToProject(
+            ProjectDTO::new()->fromArray([
+                'addedby' => $user,
+                'projectId' => $project->id
+            ]), [$skill->id]
+        );
+
+        $this->assertDatabaseHas('project_skill', [
+            'project_id' => $project->id,
+            'skill_id' => $skill->id,
+        ]);
+
+        (new ProjectService)->removeSkillsFromProject(
+            ProjectDTO::new()->fromArray([
+                'addedby' => $admin,
+                'projectId' => $project->id
+            ]), [$skill->id]
+        );
+
+        $this->assertDatabaseMissing('project_skill', [
+            'project_id' => $project->id,
+            'skill_id' => $skill->id,
+        ]);
+    }
+
+    public function testCannotSendParticipantRequestForProjectWhenNotAuthorized()
     {
         $this->expectException(ProjectException::class);
         $this->expectExceptionMessage("Sorry! You are not authorized to update a project.");
@@ -608,17 +1025,17 @@ class ProjectTest extends TestCase
             'description' => 'backend language for web sites',
         ]);
         
-        (new ProjectService)->addParticipantToProject(
+        (new ProjectService)->sendParticipationRequest(
             ProjectDTO::new()->fromArray([
                 'projectId' => $project->id,
-                'participantType' => 'facilitator',
+                'participationType' => 'facilitator',
                 'participantId' => $facilitator->id,
                 'addedby' => $otherUser,
             ])
         );
     }
 
-    public function testCannotAddParticipantToProjectWithoutProjectId()
+    public function testCannotSendParticipantRequestForProjectWithoutProjectId()
     {
         $this->expectException(ProjectException::class);
         $this->expectExceptionMessage('Sorry! A valid project is required to perform this action.');
@@ -635,19 +1052,19 @@ class ProjectTest extends TestCase
             ]), [], 'userTypes')
             ->create();
         
-        (new ProjectService)->addParticipantToProject(
+        (new ProjectService)->sendParticipationRequest(
             ProjectDTO::new()->fromArray([
-                'participantType' => 'facilitator',
+                'participationType' => 'facilitator',
                 'participantId' => $facilitator->id,
                 'addedby' => $user,
             ])
         );
     }
-
-    public function testCannotAddParticipantToProjectWithInvalidParticipant()
+    
+    public function testCannotSendParticipantRequestForProjectWithInvalidParticipationArray()
     {
         $this->expectException(ProjectException::class);
-        $this->expectExceptionMessage("Sorry, no participant was provided.");
+        $this->expectExceptionMessage("Sorry! The users and their respective participation type must be specified.");
 
         $user = User::factory()
             ->hasAttached(UserType::factory([
@@ -680,16 +1097,107 @@ class ProjectTest extends TestCase
             'description' => 'backend language for web sites',
         ]);
         
-        (new ProjectService)->addParticipantToProject(
+        (new ProjectService)->sendParticipationRequest(
             ProjectDTO::new()->fromArray([
                 'projectId' => $project->id,
-                'participantType' => 'facilitator',
+                'participationType' => 'facilitator',
+                'addedby' => $admin,
+            ])
+        );
+    }
+    
+    public function testCannotSendParticipantRequestForProjectWithoutParticipants()
+    {
+        $this->expectException(ProjectException::class);
+        $this->expectExceptionMessage("Sorry! The users and their respective participation type must be specified.");
+
+        $user = User::factory()
+            ->hasAttached(UserType::factory([
+                'name' => UserType::FACILITATOR
+            ]), [], 'userTypes')
+            ->create();
+            
+        $admin = User::factory()
+            ->hasAttached(UserType::factory([
+                'name' => UserType::ADMIN
+            ]), [], 'userTypes')
+            ->create();
+        
+        $facilitator = User::factory()
+            ->hasAttached(UserType::factory([
+                'name' => UserType::FACILITATOR
+            ]), [], 'userTypes')
+            ->create();
+        
+        $project = (new ProjectService)->createProject(
+            ProjectDTO::new()->fromArray([
+                'name' => 'PHP',
+                'description' => 'backend language for web sites',
+                'addedby' => $user,
+            ])
+        );
+
+        $this->assertDatabaseHas('projects', [
+            'name' => 'PHP',
+            'description' => 'backend language for web sites',
+        ]);
+        
+        (new ProjectService)->sendParticipationRequest(
+            ProjectDTO::new()->fromArray([
+                'projectId' => $project->id,
+                'participations' => [],
                 'addedby' => $admin,
             ])
         );
     }
 
-    public function testCannotAddParticipantToProjectWithInvalidParticipantType()
+    public function testCannotSendParticipantRequestForProjectWithInvalidParticipant()
+    {
+        $this->expectException(UserException::class);
+        $this->expectExceptionMessage("Sorry! User was not found.");
+
+        $user = User::factory()
+            ->hasAttached(UserType::factory([
+                'name' => UserType::FACILITATOR
+            ]), [], 'userTypes')
+            ->create();
+            
+        $admin = User::factory()
+            ->hasAttached(UserType::factory([
+                'name' => UserType::ADMIN
+            ]), [], 'userTypes')
+            ->create();
+        
+        $facilitator = User::factory()
+            ->hasAttached(UserType::factory([
+                'name' => UserType::FACILITATOR
+            ]), [], 'userTypes')
+            ->create();
+        
+        $project = (new ProjectService)->createProject(
+            ProjectDTO::new()->fromArray([
+                'name' => 'PHP',
+                'description' => 'backend language for web sites',
+                'addedby' => $user,
+            ])
+        );
+
+        $this->assertDatabaseHas('projects', [
+            'name' => 'PHP',
+            'description' => 'backend language for web sites',
+        ]);
+        
+        (new ProjectService)->sendParticipationRequest(
+            ProjectDTO::new()->fromArray([
+                'projectId' => $project->id,
+                'participations' => [
+                    "200" => 'facilitator'],
+                'addedby' => $admin,
+            ])
+        );
+    }
+
+    public function testCannotSendParticipantRequestForProjectWithInvalidParticipantType()
     {
         $this->expectException(ProjectException::class);
         $this->expectExceptionMessage("Sorry, participant cannot participate in the project as HEY.");
@@ -725,17 +1233,18 @@ class ProjectTest extends TestCase
             'description' => 'backend language for web sites',
         ]);
         
-        (new ProjectService)->addParticipantToProject(
+        (new ProjectService)->sendParticipationRequest(
             ProjectDTO::new()->fromArray([
                 'projectId' => $project->id,
-                'participantType' => 'hey',
-                'participantId' => $facilitator->id,
+                'participations' => [
+                    $facilitator->id => 'hey',
+                ],
                 'addedby' => $admin,
             ])
         );
     }
 
-    public function testCannotAddParticipantAsFacilitatorToProjectWithoutFacilitatorUserType()
+    public function testCannotSendParticipantRequestToPotentialFacilitatorWithoutFacilitatorUserTypeForProject()
     {
         $this->expectException(ProjectException::class);
         $this->expectExceptionMessage("Sorry, participant is not a facilitator");
@@ -761,11 +1270,11 @@ class ProjectTest extends TestCase
             'description' => 'backend language for web sites',
         ]);
         
-        (new ProjectService)->addParticipantToProject(
+        (new ProjectService)->sendParticipationRequest(
             ProjectDTO::new()->fromArray([
                 'projectId' => $project->id,
-                'participantType' => 'facilitator',
-                'participantId' => $facilitator->id,
+                'participations' => [
+                    $facilitator->id => 'facilitator'],
                 'addedby' => $user,
             ])
         );
@@ -778,7 +1287,7 @@ class ProjectTest extends TestCase
         ]);
     }
 
-    public function testCannotAddParticipantAsLearnerToProjectWithoutLearnerUserType()
+    public function testCannotSendParticipantRequestToPotentialLearnerWithoutLearnerUserTypeForProject()
     {
         $this->expectException(ProjectException::class);
         $this->expectExceptionMessage("Sorry, participant is not a learner");
@@ -804,11 +1313,10 @@ class ProjectTest extends TestCase
             'description' => 'backend language for web sites',
         ]);
         
-        (new ProjectService)->addParticipantToProject(
+        (new ProjectService)->sendParticipationRequest(
             ProjectDTO::new()->fromArray([
                 'projectId' => $project->id,
-                'participantType' => 'learner',
-                'participantId' => $facilitator->id,
+                'participations' => [$facilitator->id => 'learner'],
                 'addedby' => $user,
             ])
         );
@@ -821,7 +1329,7 @@ class ProjectTest extends TestCase
         ]);
     }
 
-    public function testCannotAddParticipantThatIsAlreadyParticipatingInProject()
+    public function testCannotSendParticipatingRequestToAParticipantOfTheProject()
     {
         $this->expectException(ProjectException::class);
         $this->expectExceptionMessage("Sorry! User is already participating in this project.");
@@ -851,14 +1359,11 @@ class ProjectTest extends TestCase
             'description' => 'backend language for web sites',
         ]);
         
-        (new ProjectService)->addParticipantToProject(
-            ProjectDTO::new()->fromArray([
-                'projectId' => $project->id,
-                'participantType' => 'facilitator',
-                'participantId' => $facilitator->id,
-                'addedby' => $user,
-            ])
-        );
+        $participation = $project->participants()->create([
+            'participating_as' => ProjectParticipantEnum::facilitator->value
+        ]);
+        $participation->participant()->associate($facilitator);
+        $participation->save();
 
         $this->assertDatabaseHas('project_participant', [
             'project_id' => $project->id,
@@ -867,11 +1372,10 @@ class ProjectTest extends TestCase
             'participating_as' => ProjectParticipantEnum::facilitator->value,
         ]);
         
-        (new ProjectService)->addParticipantToProject(
+        (new ProjectService)->sendParticipationRequest(
             ProjectDTO::new()->fromArray([
                 'projectId' => $project->id,
-                'participantType' => 'learner',
-                'participantId' => $facilitator->id,
+                'participations' => [$facilitator->id => 'learner'],
                 'addedby' => $user,
             ])
         );
@@ -882,9 +1386,18 @@ class ProjectTest extends TestCase
             'participant_type' => $facilitator::class,
             'participating_as' => ProjectParticipantEnum::learner->value,
         ]);
+
+        $this->assertDatabaseMissing('requests', [
+            'from_id' => $user->id,
+            'from_type' => $user->id,
+            'for_id' => $project->id,
+            'for_type' => $project::class,
+            'to_id' => $facilitator->id,
+            'to_type' => $facilitator::class
+        ]);
     }
 
-    public function testCanAddParticipantThatIsAlreadyParticipatingInProjectAsSponsor()
+    public function testCanSendParticipationRequestToUserThatIsAlreadyParticipatingInProjectAsSponsor()
     {
         $user = User::factory()
             ->hasAttached(UserType::factory([
@@ -914,14 +1427,11 @@ class ProjectTest extends TestCase
             'description' => 'backend language for web sites',
         ]);
         
-        (new ProjectService)->addParticipantToProject(
-            ProjectDTO::new()->fromArray([
-                'projectId' => $project->id,
-                'participantType' => 'sponsor',
-                'participantId' => $facilitator->id,
-                'addedby' => $user,
-            ])
-        );
+        $participation = $project->participants()->create([
+            'participating_as' => ProjectParticipantEnum::sponsor->value
+        ]);
+        $participation->participant()->associate($facilitator);
+        $participation->save();
 
         $this->assertDatabaseHas('project_participant', [
             'project_id' => $project->id,
@@ -929,25 +1439,41 @@ class ProjectTest extends TestCase
             'participant_type' => $facilitator::class,
             'participating_as' => ProjectParticipantEnum::sponsor->value,
         ]);
-        
-        (new ProjectService)->addParticipantToProject(
+
+        (new ProjectService)->sendParticipationRequest(
             ProjectDTO::new()->fromArray([
                 'projectId' => $project->id,
-                'participantType' => 'learner',
-                'participantId' => $facilitator->id,
+                'participations' => [$facilitator->id => 'learner'],
                 'addedby' => $user,
             ])
         );
 
-        $this->assertDatabaseHas('project_participant', [
+        $this->assertDatabaseMissing('project_participant', [
             'project_id' => $project->id,
             'participant_id' => $facilitator->id,
             'participant_type' => $facilitator::class,
             'participating_as' => ProjectParticipantEnum::learner->value,
         ]);
+
+        $this->assertDatabaseHas('requests', [
+            'from_id' => $user->id,
+            'from_type' => $user::class,
+            'for_id' => $project->id,
+            'for_type' => $project::class,
+            'to_id' => $facilitator->id,
+            'to_type' => $facilitator::class
+        ]);
+
+        $this->assertDatabaseHas('activities', [
+            'performedby_id' => $user->id,
+            'performedby_type' => $user::class,
+            'performedon_id' => $project->id,
+            'performedon_type' => $project::class,
+            'action' => "sendParticipationRequests",
+        ]);
     }
 
-    public function testCanAddParticipantToProjectWhenAddedby()
+    public function testCanSendParticipationRequestToUserForProjectWhenAddedby()
     {
         $user = User::factory()
             ->hasAttached(UserType::factory([
@@ -974,24 +1500,41 @@ class ProjectTest extends TestCase
             'description' => 'backend language for web sites',
         ]);
         
-        (new ProjectService)->addParticipantToProject(
+        (new ProjectService)->sendParticipationRequest(
             ProjectDTO::new()->fromArray([
                 'projectId' => $project->id,
-                'participantType' => 'facilitator',
-                'participantId' => $facilitator->id,
+                'participations' => [$facilitator->id => 'facilitator'],
                 'addedby' => $user,
             ])
         );
 
-        $this->assertDatabaseHas('project_participant', [
+        $this->assertDatabaseMissing('project_participant', [
             'project_id' => $project->id,
             'participant_id' => $facilitator->id,
             'participant_type' => $facilitator::class,
             'participating_as' => ProjectParticipantEnum::facilitator->value,
         ]);
+
+        $this->assertDatabaseHas('requests', [
+            'from_id' => $user->id,
+            'from_type' => $user::class,
+            'for_id' => $project->id,
+            'for_type' => $project::class,
+            'to_id' => $facilitator->id,
+            'to_type' => $facilitator::class,
+            'type' => RequestTypeEnum::facilitator->value
+        ]);
+
+        $this->assertDatabaseHas('activities', [
+            'performedby_id' => $user->id,
+            'performedby_type' => $user::class,
+            'performedon_id' => $project->id,
+            'performedon_type' => $project::class,
+            'action' => "sendParticipationRequests",
+        ]);
     }
 
-    public function testCanAddParticipantAsFacilitatorToProjectWhenAnAdmin()
+    public function testCanSendParticipationRequestToFacilitatorForProjectWhenAnAdmin()
     {
         $user = User::factory()
             ->hasAttached(UserType::factory([
@@ -1024,24 +1567,40 @@ class ProjectTest extends TestCase
             'description' => 'backend language for web sites',
         ]);
         
-        (new ProjectService)->addParticipantToProject(
+        (new ProjectService)->sendParticipationRequest(
             ProjectDTO::new()->fromArray([
                 'projectId' => $project->id,
-                'participantType' => 'facilitator',
-                'participantId' => $facilitator->id,
+                'participations' => [$facilitator->id => 'facilitator'],
                 'addedby' => $admin,
             ])
         );
 
-        $this->assertDatabaseHas('project_participant', [
+        $this->assertDatabaseMissing('project_participant', [
             'project_id' => $project->id,
             'participant_id' => $facilitator->id,
             'participant_type' => $facilitator::class,
             'participating_as' => ProjectParticipantEnum::facilitator->value,
         ]);
+
+        $this->assertDatabaseMissing('requests', [
+            'from_id' => $admin->id,
+            'from_type' => $admin->id,
+            'for_id' => $project->id,
+            'for_type' => $project::class,
+            'to_id' => $facilitator->id,
+            'to_type' => $facilitator::class
+        ]);
+
+        $this->assertDatabaseHas('activities', [
+            'performedby_id' => $admin->id,
+            'performedby_type' => $admin::class,
+            'performedon_id' => $project->id,
+            'performedon_type' => $project::class,
+            'action' => "sendParticipationRequests",
+        ]);
     }
 
-    public function testCanAddParticipantAsLearnerToProjectWhenAnAdmin()
+    public function testCanSendParticipationRequestToLearnerForProjectWhenAnAdmin()
     {
         $user = User::factory()
             ->hasAttached(UserType::factory([
@@ -1074,24 +1633,40 @@ class ProjectTest extends TestCase
             'description' => 'backend language for web sites',
         ]);
         
-        (new ProjectService)->addParticipantToProject(
+        (new ProjectService)->sendParticipationRequest(
             ProjectDTO::new()->fromArray([
                 'projectId' => $project->id,
-                'participantType' => 'learner',
-                'participantId' => $student->id,
+                'participations' => [$student->id => 'learner'],
                 'addedby' => $admin,
             ])
         );
 
-        $this->assertDatabaseHas('project_participant', [
+        $this->assertDatabaseMissing('project_participant', [
             'project_id' => $project->id,
             'participant_id' => $student->id,
             'participant_type' => $student::class,
             'participating_as' => ProjectParticipantEnum::learner->value,
         ]);
+
+        $this->assertDatabaseMissing('requests', [
+            'from_id' => $admin->id,
+            'from_type' => $admin->id,
+            'for_id' => $project->id,
+            'for_type' => $project::class,
+            'to_id' => $student->id,
+            'to_type' => $student::class
+        ]);
+
+        $this->assertDatabaseHas('activities', [
+            'performedby_id' => $admin->id,
+            'performedby_type' => $admin::class,
+            'performedon_id' => $project->id,
+            'performedon_type' => $project::class,
+            'action' => "sendParticipationRequests",
+        ]);
     }
 
-    public function testCanAddParticipantAsLearnerToProjectWhenAProjectFacilitator()
+    public function testCanSendParticipationRequestToLearnerForProjectWhenAProjectFacilitator()
     {
         $user = User::factory()
             ->hasAttached(UserType::factory([
@@ -1130,14 +1705,11 @@ class ProjectTest extends TestCase
             'description' => 'backend language for web sites',
         ]);
         
-        (new ProjectService)->addParticipantToProject(
-            ProjectDTO::new()->fromArray([
-                'projectId' => $project->id,
-                'participantType' => 'facilitator',
-                'participantId' => $facilitator->id,
-                'addedby' => $admin,
-            ])
-        );
+        $participation = $project->participants()->create([
+            'participating_as' => ProjectParticipantEnum::facilitator->value
+        ]);
+        $participation->participant()->associate($facilitator);
+        $participation->save();
 
         $this->assertDatabaseHas('project_participant', [
             'project_id' => $project->id,
@@ -1146,20 +1718,125 @@ class ProjectTest extends TestCase
             'participating_as' => ProjectParticipantEnum::facilitator->value,
         ]);
         
-        (new ProjectService)->addParticipantToProject(
+        (new ProjectService)->sendParticipationRequest(
             ProjectDTO::new()->fromArray([
                 'projectId' => $project->id,
-                'participantType' => 'learner',
-                'participantId' => $student->id,
+                'participations' => [$student->id => 'learner'],
                 'addedby' => $facilitator,
             ])
         );
 
-        $this->assertDatabaseHas('project_participant', [
+        $this->assertDatabaseMissing('project_participant', [
             'project_id' => $project->id,
             'participant_id' => $student->id,
             'participant_type' => $student::class,
             'participating_as' => ProjectParticipantEnum::learner->value,
         ]);
+
+        $this->assertDatabaseMissing('requests', [
+            'from_id' => $facilitator->id,
+            'from_type' => $facilitator->id,
+            'for_id' => $project->id,
+            'for_type' => $project::class,
+            'to_id' => $student->id,
+            'to_type' => $student::class
+        ]);
+
+        $this->assertDatabaseHas('activities', [
+            'performedby_id' => $facilitator->id,
+            'performedby_type' => $facilitator::class,
+            'performedon_id' => $project->id,
+            'performedon_type' => $project::class,
+            'action' => "sendParticipationRequests",
+        ]);
     }
+
+    // test sending sponsorship request
+
+    public function testCanSendSponsorshipParticipationRequestToUserForProjectWhenAProjectFacilitator()
+    {
+        $user = User::factory()
+            ->hasAttached(UserType::factory([
+                'name' => UserType::FACILITATOR
+            ]), [], 'userTypes')
+            ->create();
+            
+        $admin = User::factory()
+            ->hasAttached(UserType::factory([
+                'name' => UserType::ADMIN
+            ]), [], 'userTypes')
+            ->create();
+        
+        $facilitator = User::factory()
+            ->hasAttached(UserType::factory([
+                'name' => UserType::FACILITATOR
+            ]), [], 'userTypes')
+            ->create();
+        
+        $student = User::factory()
+            ->hasAttached(UserType::factory([
+                'name' => UserType::STUDENT
+            ]), [], 'userTypes')
+            ->create();
+        
+        $project = (new ProjectService)->createProject(
+            ProjectDTO::new()->fromArray([
+                'name' => 'PHP',
+                'description' => 'backend language for web sites',
+                'addedby' => $user,
+            ])
+        );
+
+        $this->assertDatabaseHas('projects', [
+            'name' => 'PHP',
+            'description' => 'backend language for web sites',
+        ]);
+        
+        $participation = $project->participants()->create([
+            'participating_as' => ProjectParticipantEnum::facilitator->value
+        ]);
+        $participation->participant()->associate($facilitator);
+        $participation->save();
+
+        $this->assertDatabaseHas('project_participant', [
+            'project_id' => $project->id,
+            'participant_id' => $facilitator->id,
+            'participant_type' => $facilitator::class,
+            'participating_as' => ProjectParticipantEnum::facilitator->value,
+        ]);
+        
+        (new ProjectService)->sendParticipationRequest(
+            ProjectDTO::new()->fromArray([
+                'projectId' => $project->id,
+                'participations' => [$student->id => 'learner'],
+                'addedby' => $facilitator,
+            ])
+        );
+
+        $this->assertDatabaseMissing('project_participant', [
+            'project_id' => $project->id,
+            'participant_id' => $student->id,
+            'participant_type' => $student::class,
+            'participating_as' => ProjectParticipantEnum::learner->value,
+        ]);
+
+        $this->assertDatabaseMissing('requests', [
+            'from_id' => $facilitator->id,
+            'from_type' => $facilitator->id,
+            'for_id' => $project->id,
+            'for_type' => $project::class,
+            'to_id' => $student->id,
+            'to_type' => $student::class
+        ]);
+
+        $this->assertDatabaseHas('activities', [
+            'performedby_id' => $facilitator->id,
+            'performedby_type' => $facilitator::class,
+            'performedon_id' => $project->id,
+            'performedon_type' => $project::class,
+            'action' => "sendParticipationRequests",
+        ]);
+    }
+
+    // tests removal and leaving of participants
 }

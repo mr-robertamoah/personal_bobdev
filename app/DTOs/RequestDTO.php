@@ -13,7 +13,11 @@ class RequestDTO extends BaseDTO
 {
     public bool $isOfficial = false;
     public ?string $state = null;
+    public ?string $type = null;
     public ?string $purpose = null;
+    public ?string $userId = null;
+    public ?string $userType = null;
+    public ?User $user = null;
     public ?string $fromId = null;
     public ?string $fromType = null;
     public User|Company|null $from = null;

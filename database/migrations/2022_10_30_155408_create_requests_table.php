@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\RequestStateEnum;
+use App\Enums\RequestTypeEnum;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -19,8 +20,9 @@ return new class extends Migration
             $table->nullableMorphs('from');
             $table->nullableMorphs('to');
             $table->nullableMorphs('for');
-            $table->string('purpose');
+            $table->string('purpose')->nullable();
             $table->enum('state', RequestStateEnum::values());
+            $table->enum('type', RequestTypeEnum::values());
             $table->timestamps();
         });
     }

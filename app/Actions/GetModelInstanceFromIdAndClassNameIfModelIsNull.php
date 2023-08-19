@@ -13,8 +13,8 @@ class GetModelInstanceFromIdAndClassNameIfModelIsNull extends Action
         }
 
         $class = $this->getModelClass($type);
-
-        if (!class_exists($class)) {
+        
+        if (! class_exists($class)) {
             return null;
         }
         
@@ -25,6 +25,10 @@ class GetModelInstanceFromIdAndClassNameIfModelIsNull extends Action
     {
         if (is_null($modelName)) {
             return null;
+        }
+        
+        if (class_exists($modelName)) {
+            return $modelName;
         }
 
         return "App\\Models\\" . ucfirst(strtolower($modelName));

@@ -9,16 +9,18 @@ use App\Exceptions\ProjectException;
 
 class BecomeProjectParticipantAction extends Action
 {
-    public function execute(ProjectDTO $projectDTO)
+    public function execute(ProjectDTO $projectDTO, string $participationType)
     {
-        $action = $this->getAppropriateAction(strtoupper($projectDTO->participantType));
+        $participationType = $participationType ?? $projectDTO->participationType;
+    
+        $action = $this->getAppropriateAction(strtoupper($participationType));
 
         $action->execute($projectDTO);
     }
 
-    private function getAppropriateAction(string $participantType)
+    private function getAppropriateAction(string $participationType)
     {
-        return match ($participantType) {
+        return match ($participationType) {
             ProjectParticipantEnum::facilitator->value => 
                 BecomeFacilitatorOfProjectAction::make(),
             ProjectParticipantEnum::learner->value => 
@@ -28,7 +30,7 @@ class BecomeProjectParticipantAction extends Action
             ProjectParticipantEnum::sponsor->value => 
                 BecomeSponsorOfProjectAction::make(),
             default =>
-                throw new ProjectException("Sorry! {$participantType} cannot be used to perform this action.")
+                throw new ProjectException("Sorry! {$participationType} cannot be used to perform this action.")
         };
     }
 }

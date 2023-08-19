@@ -9,7 +9,7 @@ class Request extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['state', 'purpose'];
+    protected $fillable = ['state', 'purpose', 'type'];
 
     public function from()
     {
@@ -76,6 +76,12 @@ class Request extends Model
     {
         return $query
             ->where('state', strtoupper($state));
+    }
+
+    public function scopeWhereType($query, $type)
+    {
+        return $query
+            ->where('type', strtoupper($type));
     }
 
     public function scopeWherePurpose($query, $purpose)

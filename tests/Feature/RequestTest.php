@@ -10,7 +10,6 @@ use App\Enums\RelationshipTypeEnum;
 use App\Enums\RequestStateEnum;
 use App\Exceptions\RequestException;
 use App\Exceptions\ResponseException;
-use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Models\UserType;
 use App\Services\CompanyService;
@@ -53,7 +52,7 @@ class RequestTest extends TestCase
         $response = $this->postJson("api/request/create", [
             'toId' => $to->id,
             'toType' => 'user',
-            'purpose' => 'member',
+            'type' => 'member',
         ]);
 
         $response
@@ -104,7 +103,7 @@ class RequestTest extends TestCase
             'toType' => 'user',
             'forId' => $for->id + 1,
             'forType' => 'company',
-            'purpose' => 'member',
+            'type' => 'member',
         ]);
 
         $response
@@ -115,7 +114,7 @@ class RequestTest extends TestCase
             ]);
     }
 
-    public function testCannotCreateAnyRequestWithoutPurpose()
+    public function testCannotCreateAnyRequestWithoutType()
     {
         $user = User::create([
             'username' => "mr_robertamoah",
@@ -161,16 +160,16 @@ class RequestTest extends TestCase
         $response
             ->assertStatus(422)
             ->assertJson([
-                'message' => "The purpose field is required.",
+                'message' => "The type field is required.",
                 'errors' => [
-                    'purpose' => [
-                        'The purpose field is required.'
+                    'type' => [
+                        'The type field is required.'
                     ]
                 ]
             ]);
     }
 
-    public function testCannotCreateCompanyRequestWithWrongPurpose()
+    public function testCannotCreateCompanyRequestWithWrongType()
     {
         $user = User::create([
             'username' => "mr_robertamoah",
@@ -211,18 +210,18 @@ class RequestTest extends TestCase
             'toType' => 'user',
             'forId' => $for->id,
             'forType' => 'company',
-            'purpose' => 'hey'
+            'type' => 'hey'
         ]);
 
         $response
             ->assertStatus(500)
             ->assertJson([
-                'message' => "Sorry, hey is not a valid purpose for companies.",
+                'message' => "Sorry, hey is not a valid type for companies.",
                 'exception' => RequestException::class
             ]);
     }
 
-    public function testCannotCreateProjectRequestWithWrongPurpose()
+    public function testCannotCreateProjectRequestWithWrongType()
     {
         $user = User::create([
             'username' => "mr_robertamoah",
@@ -263,18 +262,18 @@ class RequestTest extends TestCase
             'toType' => 'user',
             'forId' => $for->id,
             'forType' => 'project',
-            'purpose' => 'hey'
+            'type' => 'hey'
         ]);
 
         $response
             ->assertStatus(500)
             ->assertJson([
-                'message' => "Sorry, hey is not a valid purpose for projects.",
+                'message' => "Sorry, hey is not a valid type for projects.",
                 'exception' => RequestException::class
             ]);
     }
 
-    public function testCanCreateProjectRequestWithLearnerOrFacilitatorPurposeAsOfficialToUserWithRightUserType()
+    public function testCanCreateProjectRequestWithLearnerOrFacilitatorTypeAsOfficialToUserWithRightUserType()
     {
         $user = User::create([
             'username' => "mr_robertamoah",
@@ -321,7 +320,7 @@ class RequestTest extends TestCase
             'toType' => 'user',
             'forId' => $for->id,
             'forType' => 'project',
-            'purpose' => 'facilitator'
+            'type' => 'facilitator'
         ]);
 
         $response
@@ -342,12 +341,12 @@ class RequestTest extends TestCase
                         'name' => $for->name,
                         'description' => $for->description,
                     ],
-                    'purpose' => ProjectParticipantEnum::facilitator->value
+                    'type' => ProjectParticipantEnum::facilitator->value
                 ]
             ]);
     }
 
-    public function testCanCreateProjectRequestWithLearnerOrFacilitatorPurposeAsUserWithRightUserTypeToOfficial()
+    public function testCanCreateProjectRequestWithLearnerOrFacilitatorTypeAsUserWithRightUserTypeToOfficial()
     {
         $official = User::create([
             'username' => "mr_robertamoah",
@@ -394,7 +393,7 @@ class RequestTest extends TestCase
             'toType' => 'user',
             'forId' => $for->id,
             'forType' => 'project',
-            'purpose' => 'facilitator'
+            'type' => 'facilitator'
         ]);
 
         $response
@@ -415,12 +414,12 @@ class RequestTest extends TestCase
                         'name' => $for->name,
                         'description' => $for->description,
                     ],
-                    'purpose' => ProjectParticipantEnum::facilitator->value
+                    'type' => ProjectParticipantEnum::facilitator->value
                 ]
             ]);
     }
 
-    public function testCanCreateProjectRequestWithSponsorPurposeAsOfficialToUserWithDonorUserType()
+    public function testCanCreateProjectRequestWithSponsorTypeAsOfficialToUserWithDonorUserType()
     {
         $user = User::create([
             'username' => "mr_robertamoah",
@@ -467,7 +466,7 @@ class RequestTest extends TestCase
             'toType' => 'user',
             'forId' => $for->id,
             'forType' => 'project',
-            'purpose' => 'sponsor'
+            'type' => 'sponsor'
         ]);
 
         $response
@@ -488,12 +487,12 @@ class RequestTest extends TestCase
                         'name' => $for->name,
                         'description' => $for->description,
                     ],
-                    'purpose' => ProjectParticipantEnum::sponsor->value
+                    'type' => ProjectParticipantEnum::sponsor->value
                 ]
             ]);
     }
 
-    public function testCanCreateProjectRequestWithSponsorPurposeAsCompanyToOfficial()
+    public function testCanCreateProjectRequestWithSponsorTypeAsCompanyToOfficial()
     {
         $official = User::create([
             'username' => "mr_robertamoah",
@@ -548,7 +547,7 @@ class RequestTest extends TestCase
             'fromType' => 'company',
             'forId' => $for->id,
             'forType' => 'project',
-            'purpose' => 'sponsor'
+            'type' => 'sponsor'
         ]);
 
         $response
@@ -569,12 +568,12 @@ class RequestTest extends TestCase
                         'name' => $for->name,
                         'description' => $for->description,
                     ],
-                    'purpose' => ProjectParticipantEnum::sponsor->value
+                    'type' => ProjectParticipantEnum::sponsor->value
                 ]
             ]);
     }
 
-    public function testCanCreateCompanyRequestWithMemberPurposeAsUserToOfficial()
+    public function testCanCreateCompanyRequestWithMemberTypeAsUserToOfficial()
     {
         $user = User::create([
             'username' => "mr_robertamoah",
@@ -626,14 +625,12 @@ class RequestTest extends TestCase
             ])
         );
         
-        (new CompanyService)->addMembers(
-            CompanyDTO::new()->fromArray([
-                'user' => $user,
-                'company' => $company,
-                'memberships' => [$official->id => RelationshipTypeEnum::companyAdministrator->value],
-            ])
-        );
-
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyAdministrator->value
+        ]);
+        $relation->to()->associate($official);
+        $relation->save();
+        
         $this->actingAs($from);
 
         $response = $this->postJson("api/request/create", [
@@ -641,7 +638,7 @@ class RequestTest extends TestCase
             'toType' => 'user',
             'forId' => $company->id,
             'forType' => 'company',
-            'purpose' => 'member'
+            'type' => 'member'
         ]);
 
         $response
@@ -662,12 +659,12 @@ class RequestTest extends TestCase
                         'name' => $company->name,
                         'about' => $company->about,
                     ],
-                    'purpose' => "MEMBER"
+                    'type' => "MEMBER"
                 ]
             ]);
     }
 
-    public function testCanCreateCompanyRequestWithMemberPurposeAsOfficialToUser()
+    public function testCanCreateCompanyRequestWithMemberTypeAsOfficialToUser()
     {
         $user = User::create([
             'username' => "mr_robertamoah",
@@ -719,13 +716,11 @@ class RequestTest extends TestCase
             ])
         );
         
-        (new CompanyService)->addMembers(
-            CompanyDTO::new()->fromArray([
-                'user' => $user,
-                'company' => $company,
-                'memberships' => [$official->id => RelationshipTypeEnum::companyAdministrator->value],
-            ])
-        );
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyAdministrator->value
+        ]);
+        $relation->to()->associate($official);
+        $relation->save();
 
         $this->actingAs($official);
 
@@ -734,7 +729,7 @@ class RequestTest extends TestCase
             'toType' => 'user',
             'forId' => $company->id,
             'forType' => 'company',
-            'purpose' => 'member'
+            'type' => 'member'
         ]);
 
         $response
@@ -755,12 +750,12 @@ class RequestTest extends TestCase
                         'name' => $company->name,
                         'about' => $company->about,
                     ],
-                    'purpose' => "MEMBER"
+                    'type' => "MEMBER"
                 ]
             ]);
     }
 
-    public function testCanCreateCompanyRequestWithAdministratorPurposeAsOwnerToUser()
+    public function testCanCreateCompanyRequestWithAdministratorTypeAsOwnerToUser()
     {
         $user = User::create([
             'username' => "mr_robertamoah",
@@ -808,7 +803,7 @@ class RequestTest extends TestCase
             'toType' => 'user',
             'forId' => $company->id,
             'forType' => 'company',
-            'purpose' => 'member'
+            'type' => 'member'
         ]);
 
         $response
@@ -829,12 +824,12 @@ class RequestTest extends TestCase
                         'name' => $company->name,
                         'about' => $company->about,
                     ],
-                    'purpose' => "MEMBER"
+                    'type' => "MEMBER"
                 ]
             ]);
     }
 
-    public function testCanCreateCompanyRequestWithAdministratorPurposeAsUserToOwner()
+    public function testCanCreateCompanyRequestWithAdministratorTypeAsUserToOwner()
     {
         $user = User::create([
             'username' => "mr_robertamoah",
@@ -882,7 +877,7 @@ class RequestTest extends TestCase
             'toType' => 'user',
             'forId' => $company->id,
             'forType' => 'company',
-            'purpose' => 'member'
+            'type' => 'member'
         ]);
 
         $response
@@ -903,7 +898,7 @@ class RequestTest extends TestCase
                         'name' => $company->name,
                         'about' => $company->about,
                     ],
-                    'purpose' => "MEMBER"
+                    'type' => "MEMBER"
                 ]
             ]);
     }
@@ -954,7 +949,7 @@ class RequestTest extends TestCase
                 'from' => $user,
                 'to' => $potentialAdministrator,
                 'for' => $company,
-                'purpose' => RelationshipTypeEnum::companyAdministrator->value,
+                'type' => RelationshipTypeEnum::companyAdministrator->value,
             ])
         );
 
@@ -965,7 +960,7 @@ class RequestTest extends TestCase
             'to_id' => $potentialAdministrator->id,
             'for_type' => $company::class,
             'for_id' => $company->id,
-            'purpose' => RelationshipTypeEnum::companyAdministrator->value
+            'type' => RelationshipTypeEnum::companyAdministrator->value
         ]);
 
         $this->actingAs($user);
@@ -1032,7 +1027,7 @@ class RequestTest extends TestCase
                 'from' => $user,
                 'to' => $potentialAdministrator,
                 'for' => $company,
-                'purpose' => RelationshipTypeEnum::companyAdministrator->value,
+                'type' => RelationshipTypeEnum::companyAdministrator->value,
             ])
         );
 
@@ -1043,7 +1038,7 @@ class RequestTest extends TestCase
             'to_id' => $potentialAdministrator->id,
             'for_type' => $company::class,
             'for_id' => $company->id,
-            'purpose' => RelationshipTypeEnum::companyAdministrator->value
+            'type' => RelationshipTypeEnum::companyAdministrator->value
         ]);
 
         $this->actingAs($user);
@@ -1106,7 +1101,7 @@ class RequestTest extends TestCase
                 'from' => $user,
                 'to' => $potentialAdministrator,
                 'for' => $company,
-                'purpose' => RelationshipTypeEnum::companyAdministrator->value,
+                'type' => RelationshipTypeEnum::companyAdministrator->value,
             ])
         );
 
@@ -1117,7 +1112,7 @@ class RequestTest extends TestCase
             'to_id' => $potentialAdministrator->id,
             'for_type' => $company::class,
             'for_id' => $company->id,
-            'purpose' => RelationshipTypeEnum::companyAdministrator->value
+            'type' => RelationshipTypeEnum::companyAdministrator->value
         ]);
 
         $this->actingAs($user);
@@ -1180,7 +1175,7 @@ class RequestTest extends TestCase
                 'from' => $user,
                 'to' => $potentialAdministrator,
                 'for' => $company,
-                'purpose' => RelationshipTypeEnum::companyAdministrator->value,
+                'type' => RelationshipTypeEnum::companyAdministrator->value,
             ])
         );
 
@@ -1191,7 +1186,7 @@ class RequestTest extends TestCase
             'to_id' => $potentialAdministrator->id,
             'for_type' => $company::class,
             'for_id' => $company->id,
-            'purpose' => RelationshipTypeEnum::companyAdministrator->value
+            'type' => RelationshipTypeEnum::companyAdministrator->value
         ]);
 
         $this->actingAs($potentialAdministrator);
@@ -1207,7 +1202,7 @@ class RequestTest extends TestCase
                 'request' => [
                     'id' => $request->id,
                     'state' => RequestStateEnum::accepted->value,
-                    'purpose' => RelationshipTypeEnum::companyAdministrator->value,
+                    'type' => RelationshipTypeEnum::companyAdministrator->value,
                 ]
             ]);
     }
@@ -1264,20 +1259,18 @@ class RequestTest extends TestCase
             ])
         );
 
-        (new CompanyService)->addMembers(
-            CompanyDTO::new()->fromArray([
-                'user' => $user,
-                'company' => $company,
-                'memberships' => [$official->id => RelationshipTypeEnum::companyAdministrator->value]
-            ])
-        );
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyAdministrator->value
+        ]);
+        $relation->to()->associate($official);
+        $relation->save();
 
         $request = (new RequestService)->createRequest(
             RequestDTO::new()->fromArray([
                 'from' => $potentialMember,
                 'to' => $official,
                 'for' => $company,
-                'purpose' => RelationshipTypeEnum::companyMember->value,
+                'type' => RelationshipTypeEnum::companyMember->value,
             ])
         );
 
@@ -1288,7 +1281,7 @@ class RequestTest extends TestCase
             'to_id' => $official->id,
             'for_type' => $company::class,
             'for_id' => $company->id,
-            'purpose' => RelationshipTypeEnum::companyMember->value
+            'type' => RelationshipTypeEnum::companyMember->value
         ]);
 
         $this->actingAs($user);
@@ -1304,7 +1297,7 @@ class RequestTest extends TestCase
                 'request' => [
                     'id' => $request->id,
                     'state' => RequestStateEnum::accepted->value,
-                    'purpose' => RelationshipTypeEnum::companyMember->value,
+                    'type' => RelationshipTypeEnum::companyMember->value,
                 ]
             ]);
     }
@@ -1370,7 +1363,7 @@ class RequestTest extends TestCase
                 'from' => $potentialMember,
                 'to' => $user,
                 'for' => $company,
-                'purpose' => RelationshipTypeEnum::companyMember->value,
+                'type' => RelationshipTypeEnum::companyMember->value,
             ])
         );
 
@@ -1381,7 +1374,7 @@ class RequestTest extends TestCase
             'to_id' => $user->id,
             'for_type' => $company::class,
             'for_id' => $company->id,
-            'purpose' => RelationshipTypeEnum::companyMember->value
+            'type' => RelationshipTypeEnum::companyMember->value
         ]);
 
         $this->actingAs($admin);
@@ -1397,7 +1390,7 @@ class RequestTest extends TestCase
                 'request' => [
                     'id' => $request->id,
                     'state' => RequestStateEnum::accepted->value,
-                    'purpose' => RelationshipTypeEnum::companyMember->value,
+                    'type' => RelationshipTypeEnum::companyMember->value,
                 ]
             ]);
     }

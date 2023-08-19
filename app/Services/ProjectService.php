@@ -2,20 +2,25 @@
 
 namespace App\Services;
 
-use App\Actions\Project\BecomeFacilitatorOfProjectAction;
-use App\Actions\Project\BecomeLearnerOfProjectAction;
+use App\Actions\Activity\AddActivityAction;
+use App\Actions\Project\EnsureParticipationIsValidArrayAction;
+use App\Actions\GetUserDataForUserId;
 use App\Actions\Project\BecomeProjectParticipantAction;
-use App\Actions\Project\BecomeSponsorOfProjectAction;
 use App\Actions\Project\EnsureAddedByExistsAction;
-use App\Actions\Project\EnsureIsAuthorizedAction;
+use App\Actions\Project\EnsureAddedbyIsAuthorizedAction;
 use App\Actions\Project\CheckDataAppropriatenessAction;
-use App\Actions\Project\EnsureIsValidParticipantTypeAction;
+use App\Actions\Project\EnsureIsValidParticipationTypeAction;
 use App\Actions\Project\EnsureProjectExistsAction;
-use App\Actions\Project\EnsureParticipantExistsAction;
-use App\Actions\Project\EnsureParticipantNotAlreadyAParticipantAction;
+use App\Actions\Project\EnsurePotentialParticipantIsNotAlreadyAParticipantAction;
+use App\Actions\Project\EnsurePotentialParticipantExistsAction;
+use App\Actions\Project\EnsureProjectHasSkillsAction;
+use App\Actions\Project\EnsureUserIsParticipatingAsTypeAction;
+use App\Actions\Requests\CreateRequestAction;
 use App\Actions\Skills\CheckIfValidSkillsAction;
+use App\Actions\Users\FindUserByIdAction;
+use App\DTOs\ActivityDTO;
 use App\DTOs\ProjectDTO;
-use App\Enums\ProjectParticipantEnum;
+use App\DTOs\RequestDTO;
 use App\Models\Project;
 use App\Models\User;
 use App\Models\UserType;
@@ -35,7 +40,7 @@ class ProjectService
     {
         EnsureAddedByExistsAction::make()->execute($projectDTO);
 
-        EnsureIsAuthorizedAction::make()->execute($projectDTO, 'create');
+        EnsureAddedbyIsAuthorizedAction::make()->execute($projectDTO, 'create');
 
         CheckDataAppropriatenessAction::make()->execute($projectDTO, 'create');
 
@@ -55,7 +60,7 @@ class ProjectService
 
         EnsureProjectExistsAction::make()->execute($projectDTO);
 
-        EnsureIsAuthorizedAction::make()->execute($projectDTO, 'update');
+        EnsureAddedbyIsAuthorizedAction::make()->execute($projectDTO, 'update');
         
         CheckDataAppropriatenessAction::make()->execute($projectDTO, 'update');
 
@@ -72,7 +77,7 @@ class ProjectService
 
         EnsureProjectExistsAction::make()->execute($projectDTO);
 
-        EnsureIsAuthorizedAction::make()->execute($projectDTO, 'update');
+        EnsureAddedbyIsAuthorizedAction::make()->execute($projectDTO, 'update');
 
         $projectDTO->project->update($this->setDates($projectDTO));
 
@@ -87,7 +92,7 @@ class ProjectService
 
         EnsureProjectExistsAction::make()->execute($projectDTO);
 
-        EnsureIsAuthorizedAction::make()->execute($projectDTO, 'delete');
+        EnsureAddedbyIsAuthorizedAction::make()->execute($projectDTO, 'delete');
         
         CheckDataAppropriatenessAction::make()->execute($projectDTO, 'delete');
 
@@ -102,16 +107,19 @@ class ProjectService
 
         EnsureProjectExistsAction::make()->execute($projectDTO);
 
-        EnsureIsAuthorizedAction::make()->execute($projectDTO, 'update');
+        EnsureAddedbyIsAuthorizedAction::make()->execute(
+            projectDTO: $projectDTO, what: 'skill');
 
         CheckIfValidSkillsAction::make()->execute($ids);
 
-        $projectDTO->project->skills()->sync($ids);
+        $ids = array_diff($ids, $projectDTO->project->skills()->allRelatedIds()->toArray());
+
+        $projectDTO->project->skills()->attach($ids);
 
         return $projectDTO->project->refresh();
     }
 
-    public function addParticipantToProject(ProjectDTO $projectDTO)
+    public function removeSkillsFromProject(ProjectDTO $projectDTO, array $ids)
     {
         EnsureAddedByExistsAction::make()->execute($projectDTO);
         
@@ -119,17 +127,133 @@ class ProjectService
 
         EnsureProjectExistsAction::make()->execute($projectDTO);
 
-        EnsureIsAuthorizedAction::make()->execute($projectDTO, 'update');
+        EnsureAddedbyIsAuthorizedAction::make()->execute(
+            projectDTO: $projectDTO, what: 'skill');
+
+        CheckIfValidSkillsAction::make()->execute($ids);
+
+        $ids = array_intersect($ids, $projectDTO->project->skills()->allRelatedIds()->toArray());
+
+        $projectDTO->project->skills()->detach($ids);
+
+        return $projectDTO->project->refresh();
+    }
+
+    // TODO remove participant or participant leaving
+
+    public function removeParticipants(ProjectDTO $projectDTO)
+    {
+        $projectDTO = $this->setProjectOnDTO($projectDTO);
+
+        EnsureAddedByExistsAction::make()->execute($projectDTO);
         
-        $projectDTO = $this->setParticipantOnDTO($projectDTO);
+        EnsureProjectExistsAction::make()->execute($projectDTO);
+
+        EnsureAddedbyIsAuthorizedAction::make()->execute($projectDTO, 'remove');
         
-        EnsureParticipantExistsAction::make()->execute($projectDTO);
+        foreach ($projectDTO->participations as $userId => $userData)
+        {
+            [$participationType, $purpose] = GetUserDataForUserId::make()->execute($userData);
+            
+            $participant = FindUserByIdAction::make()->execute($userId);
 
-        EnsureParticipantNotAlreadyAParticipantAction::make()->execute($projectDTO);
+            $projectDTO = $projectDTO->withParticipant($participant);
+            
+            EnsurePotentialParticipantExistsAction::make()->execute($projectDTO);
 
-        EnsureIsValidParticipantTypeAction::make()->execute($projectDTO);
+            EnsureUserIsParticipatingAsTypeAction::make()->execute($projectDTO, $participationType);
 
-        BecomeProjectParticipantAction::make()->execute($projectDTO);
+            EnsureIsValidParticipationTypeAction::make()->execute($projectDTO, $participationType);
+
+            EnsureCannotRemoveFacilitatorIfFacilitatorAction::make()->execute($projectDTO, $participationType);
+
+            $requests[] = CreateRequestAction::make()->execute(
+                RequestDTO::new()->fromArray([
+                    'from' => $projectDTO->addedby,
+                    'for' => $projectDTO->project,
+                    'to' => $possibleParticipant,
+                    'type' => strtoupper(
+                        $participationType ? $participationType : $projectDTO->participationType),
+                    'purpose' => $purpose
+                ])
+            );
+        }
+
+        AddActivityAction::make()->execute(
+            ActivityDTO::new()->fromArray([
+                'performedby' => $projectDTO->addedby,
+                'performedon' => $projectDTO->project,
+                'action' => 'sendParticipationRequests',
+                'data' => [
+                    'requests' => array_map(fn($request) => $request->id, $requests)
+                ]
+            ])
+        );
+
+        return $requests;
+    }
+    
+    // TODO add an addParticipant function that just adds participants and can only be used by system admins
+    
+    public function sendParticipationRequest(ProjectDTO $projectDTO)
+    {
+        $projectDTO = $this->setProjectOnDTO($projectDTO);
+
+        EnsureAddedByExistsAction::make()->execute($projectDTO);
+        
+        EnsureProjectExistsAction::make()->execute($projectDTO);
+
+        if ($isNotFacilitator = $projectDTO->project->isNotFacilitator($projectDTO->addedby))
+        {
+            EnsureAddedbyIsAuthorizedAction::make()->execute($projectDTO, 'update');
+        }
+
+        EnsureParticipationIsValidArrayAction::make()->execute($projectDTO);
+        
+        $requests = [];
+        foreach ($projectDTO->participations as $userId => $userData)
+        {
+            [$participationType, $purpose] = GetUserDataForUserId::make()->execute($userData);
+            
+            $possibleParticipant = FindUserByIdAction::make()->execute($userId);
+
+            $projectDTO = $projectDTO->withParticipant($possibleParticipant);
+            
+            EnsurePotentialParticipantExistsAction::make()->execute($projectDTO);
+
+            EnsurePotentialParticipantIsNotAlreadyAParticipantAction::make()->execute($projectDTO);
+
+            EnsureIsValidParticipationTypeAction::make()->execute($projectDTO, $participationType);
+
+            if (! $isNotFacilitator)
+            {
+                EnsureAddedbyIsAuthorizedAction::make()->execute($projectDTO, 'update', $participationType);
+            }
+
+            $requests[] = CreateRequestAction::make()->execute(
+                RequestDTO::new()->fromArray([
+                    'from' => $projectDTO->addedby,
+                    'for' => $projectDTO->project,
+                    'to' => $possibleParticipant,
+                    'type' => strtoupper(
+                        $participationType ? $participationType : $projectDTO->participationType),
+                    'purpose' => $purpose
+                ])
+            );
+        }
+
+        AddActivityAction::make()->execute(
+            ActivityDTO::new()->fromArray([
+                'performedby' => $projectDTO->addedby,
+                'performedon' => $projectDTO->project,
+                'action' => 'sendParticipationRequests',
+                'data' => [
+                    'requests' => array_map(fn($request) => $request->id, $requests)
+                ]
+            ])
+        );
+
+        return $requests;
     }
 
     private function getData(ProjectDTO $projectDTO) : array
@@ -160,7 +284,7 @@ class ProjectService
     private function setParticipantOnDTO(ProjectDTO $projectDTO): ProjectDTO
     {
         return $projectDTO->withParticipant(
-            $projectDTO->participant ?? User::find($projectDTO->participantId)
+            User::find($projectDTO->participantId)
         );
     }
 

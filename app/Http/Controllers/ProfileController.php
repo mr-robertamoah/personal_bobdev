@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\DTOs\ProfileDTO;
+use App\Http\Resources\CompanyProfileResource;
 use App\Http\Resources\UserProfileResource;
 use App\Services\ProfileService;
 use Illuminate\Http\Request;
@@ -11,15 +12,18 @@ class ProfileController extends Controller
 {
     public function getUserProfile(Request $request)
     {
-        $user = (new ProfileService)->getUserProfile(
+        $profile = (new ProfileService)->getProfile(
             ProfileDTO::new()->fromArray([
-                'userId' => $request->id
+                'profileableId' => $request->id,
+                'profileableType' => $request->type,
             ])
         );
 
         return response()->json([
             "status" => true,
-            "profile" => new UserProfileResource($user)
+            "profile" => $request->type == 'user' ? 
+                new UserProfileResource($profile) :
+                new CompanyProfileResource($profile)
         ]);
     }
 }

@@ -32,6 +32,7 @@ class RequestResource extends JsonResource
                 new ProjectResource($this->for)
             ),
             'purpose' => $this->purpose,
+            'type' => $this->type,
             'state' => $this->state,
             'createAt' => $this->created_at
         ];

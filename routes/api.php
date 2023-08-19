@@ -98,7 +98,8 @@ Route::group(['middleware' => 'auth:sanctum'], function() {
         Route::get('/verify', [AdminController::class, 'verify']);
     });
 
-    Route::get('profile/user/{id}', [ProfileController::class, 'getUserProfile']);
+    Route::get('profile/{type}/{id}', [ProfileController::class, 'getUserProfile'])
+        ->whereIn('type', ['user', 'company']);
     
 });
 

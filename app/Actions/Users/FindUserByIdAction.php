@@ -14,7 +14,7 @@ class FindUserByIdAction extends Action
         $user = User::find($userId);
 
         if ($throwException && !$user) {
-            throw new UserException("Sorry! user was not found.");
+            throw new UserException("Sorry! User was not found.");
         }
 
         return $user;

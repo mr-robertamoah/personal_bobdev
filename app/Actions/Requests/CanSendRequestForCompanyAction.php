@@ -26,12 +26,14 @@ class CanSendRequestForCompanyAction extends Action
 
         try {
 
+            EnsureIsRightCompanyRelationshipAction::make()->execute($requestDTO->type, $this->otherUser);
+
             EnsureRequestIsNotFromACompanyOfficialToAnotherAction::make()->execute($requestDTO);
 
             EnsureSenderOrRecepientIsOfficialOfCompanyAction::make()->execute($requestDTO);
     
             EnsureUserIsAnAdultIfAdministratorRelationshipTypeAction::make()->execute(
-                $this->otherUser, $requestDTO->purpose
+                $this->otherUser, $requestDTO->type
             );
     
             EnsureUserIsNotAlreadyAMemberOfCompanyAction::make()->execute(
@@ -42,7 +44,7 @@ class CanSendRequestForCompanyAction extends Action
                 CompanyDTO::new()->fromArray([
                     'user' => $this->companyOfficial,
                     'company' => $requestDTO->for,
-                    'relationshipType' => $requestDTO->purpose
+                    'relationshipType' => $requestDTO->type
                 ]),
                 true
             );
@@ -62,7 +64,8 @@ class CanSendRequestForCompanyAction extends Action
             return;
         }
             
-        $this->companyOfficial = $requestDTO->to;
+        // if it is not sent to a specific official then have it sent to owner
+        $this->companyOfficial = $requestDTO->to ? $requestDTO->to : $requestDTO->for->owner;
         $this->otherUser = $requestDTO->from;
     }
 }

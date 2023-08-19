@@ -2,53 +2,78 @@
 
 namespace App\Services;
 
+use App\Actions\GetModelInstanceFromIdAndClassNameIfModelIsNull;
 use App\Actions\Profile\CreateProfileAction;
+use App\Actions\Profile\EnsureDoesNotAlreadyHaveProfileAction;
+use App\Actions\Profile\ProfileableHasProfileAction;
+use App\Actions\Profile\EnsureProfileableExistsAction;
+use App\Actions\Profile\EnsureProfileableIsAppropriateModelAction;
+use App\Actions\Profile\GetCompanyProfileAction;
 use App\Actions\Profile\GetProfileWithLoadedAccountsAction;
+use App\Actions\Profile\GetUserProfileAction;
+use App\Actions\Profile\ProfileableDoesntHaveProfileAction;
 use App\Actions\Users\FindUserByIdAction;
+use App\Actions\Users\IsUserModelAction;
 use App\DTOs\ProfileDTO;
 use App\Exceptions\ProfileException;
+use App\Models\Company;
+use App\Models\Profile;
 use App\Models\User;
 
 class ProfileService extends Service
 {
-    public function initProfileCreation(User $user) 
+    public function initProfileCreation(User|Company $profileable): Profile
     {
-        CreateProfileAction::make()->execute(
+        return CreateProfileAction::make()->execute(
             ProfileDTO::fromArray([
-                'settings' => [],
-                'about' => null,
-                'profileable' => $user
+                'profileable' => $profileable
             ])
         );
     }
 
-    public function getUserProfile(ProfileDTO $profileDTO)
+    public function createProfile(ProfileDTO $profileDTO)
     {
-        $user = FindUserByIdAction::make()->execute($profileDTO->userId);
+        $profileDTO = $profileDTO->WithProfileable(
+            GetModelInstanceFromIdAndClassNameIfModelIsNull::make()->execute(
+                id: $profileDTO->profileableId,
+                type: $profileDTO->profileableType,
+                model: $profileDTO->profileable
+            )
+        );
 
-        $profile = GetProfileWithLoadedAccountsAction::make()->execute($user);
+        $profileDTO = $profileDTO->withAction("create");
 
-        if (is_null($profile)) {
-            throw new ProfileException("Sorry! Profile for user with name {$user->name} was not found.");
+        EnsureProfileableExistsAction::make()->execute($profileDTO);
+
+        EnsureProfileableIsAppropriateModelAction::make()->execute($profileDTO);
+
+        EnsureDoesNotAlreadyHaveProfileAction::make()->execute($profileDTO);
+        
+        return CreateProfileAction::make()->execute($profileDTO);
+    }
+
+    public function getProfile(ProfileDTO $profileDTO): Profile
+    {
+        $profileDTO = $profileDTO->WithProfileable(
+            GetModelInstanceFromIdAndClassNameIfModelIsNull::make()->execute(
+                id: $profileDTO->profileableId,
+                type: $profileDTO->profileableType,
+                model: $profileDTO->profileable
+            )
+        );
+
+        $profileDTO = $profileDTO->withAction("get");
+
+        EnsureProfileableExistsAction::make()->execute($profileDTO);
+
+        if (ProfileableDoesntHaveProfileAction::make()->execute($profileDTO)) {
+            return CreateProfileAction::make()->execute($profileDTO);
         }
 
-        if ($profile->isFacilitator()) {
-            $profile->loadFacilitatorProjects();
+        if (IsUserModelAction::make()->execute($profileDTO->profileable)) {
+            return GetUserProfileAction::make()->execute($profileDTO);
         }
 
-        if ($profile->isLearner()) {
-            $profile->loadLearnerProjects();
-        }
-
-        if ($profile->isSponsor()) {
-            $profile->loadSponsorProjects();
-        }
-
-        if ($profile->isParent()) {
-            $profile->loadParentProjects();
-        }
-
-        return $profile;
-            
+        return GetCompanyProfileAction::make()->execute($profileDTO);
     }
 }

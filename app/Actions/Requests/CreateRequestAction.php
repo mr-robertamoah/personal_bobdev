@@ -13,7 +13,10 @@ class CreateRequestAction extends Action
     {
         $request = new Request([
             'state' => RequestStateEnum::pending->value,
-            'purpose' => strtoupper($requestDTO->purpose),
+            'type' => strtoupper(
+                strtolower($requestDTO->type) == "learner" ? "student" : $requestDTO->type
+            ),
+            'purpose' => $requestDTO->purpose,
         ]);
 
         $request->from()->associate($requestDTO->from);

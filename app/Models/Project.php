@@ -8,8 +8,9 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Abstract\Requestable;
 
-class Project extends Model
+class Project extends Requestable
 {
     use HasFactory,
     HasRequestForTrait,
@@ -80,9 +81,24 @@ class Project extends Model
             ->withTimestamps();
     }
 
-    public function isFacilitator(Model $model)
+    public function hasAnyOfSkills(array $skillIds) : bool
+    {
+        return count(array_intersect($this->skills()->allRelatedIds()->toArray(), $skillIds)) > 0;
+    }
+
+    public function doesNotHaveAnyOfSkills(array $skillIds) : bool
+    {
+        return count(array_intersect($this->skills()->allRelatedIds()->toArray(), $skillIds)) == 0;
+    }
+
+    public function isFacilitator(Model $model) : bool
     {
         return $this->isParticipantType($model, ProjectParticipantEnum::facilitator->value);
+    }
+
+    public function isNotFacilitator(Model $model) : bool
+    {
+        return !$this->isFacilitator($model, ProjectParticipantEnum::facilitator->value);
     }
 
     public function isLearner(Model $model)
@@ -131,7 +147,7 @@ class Project extends Model
         return !$this->isParticipant($model);
     }
 
-    public function isOfficial($model): bool
+    public function isOfficial(Model $model): bool
     {
         if (is_null($model)) {
             return false;

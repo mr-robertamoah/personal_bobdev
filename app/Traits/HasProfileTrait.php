@@ -13,7 +13,7 @@ trait HasProfileTrait
 
     public function hasProfile() : bool
     {
-        return $this->has('profile');
+        return $this->profile()->exists();
     }
 
     public function doesntHaveProfile() : bool

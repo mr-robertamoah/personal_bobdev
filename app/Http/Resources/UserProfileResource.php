@@ -14,6 +14,7 @@ class UserProfileResource extends JsonResource
      */
     public function toArray($request)
     {
+        ds("user is facilitator", $this->user->isFacilitator());
         return [
             'id' => $this->id,
             'userId' => $this->user->id,
@@ -33,10 +34,7 @@ class UserProfileResource extends JsonResource
                 $this->user->isparent(), 
                 $this->parentProjects()
             ),
-            'ownedProjects' => $this->when(
-                $this->user->hasOwnedProjects(), 
-                $this->ownedProjects()
-            )
+            'ownedProjects' => $this->ownedProjects()
         ];
     }
 }

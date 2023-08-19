@@ -10,8 +10,8 @@ enum RelationshipTypeEnum: string
     
     case ward = 'WARD';
     case parent = 'PARENT';
-    case companyAdministrator = 'COMPANYADMINISTRATOR';
-    case companyMember = 'COMPANYMEMBER';
+    case companyAdministrator = 'ADMINISTRATOR';
+    case companyMember = 'MEMBER';
 
     const COMPANYMEMBERALIASES = ['member', 'companymember',];
     const COMPANYADMINISTRATORALIASES = ['administrator', 'companyadministrator'];

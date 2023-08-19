@@ -6,6 +6,7 @@ use App\DTOs\CompanyDTO;
 use App\Http\Requests\CreateCompanyRequest;
 use App\Http\Requests\UpdateCompanyRequest;
 use App\Http\Resources\CompanyResource;
+use App\Http\Resources\RequestResource;
 use App\Models\Company;
 use App\Services\CompanyService;
 use Illuminate\Http\Request;
@@ -78,7 +79,7 @@ class CompanyController extends Controller
     {
         DB::beginTransaction();
 
-        $company = (new CompanyService)->addMembers(
+        $requests = (new CompanyService)->sendMembershipRequest(
             CompanyDTO::new()->fromArray([
                 'user' => $request->user(),
                 'companyId' => $request->company_id,
@@ -90,7 +91,7 @@ class CompanyController extends Controller
 
         return response()->json([
             'status' => true,
-            'company' => new CompanyResource($company)
+            'requests' => RequestResource::collection($requests)
         ]);
     }
 

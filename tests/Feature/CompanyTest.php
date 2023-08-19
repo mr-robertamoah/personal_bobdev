@@ -9,7 +9,6 @@ use App\Models\User;
 use App\Models\UserType;
 use App\Services\CompanyService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 
 class CompanyTest extends TestCase
@@ -474,13 +473,11 @@ class CompanyTest extends TestCase
             ])
         );
 
-        $company = (new CompanyService)->addMembers(
-            CompanyDTO::new()->fromArray([
-                'user' => $user,
-                'companyId' => $company->id,
-                'memberships' => [$manager->id => RelationshipTypeEnum::companyAdministrator->value],
-            ])
-        );
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyAdministrator->value
+        ]);
+        $relation->to()->associate($manager);
+        $relation->save();
 
         $this->assertDatabaseHas('companies', [
             'name' => 'the great enterprise',
@@ -934,13 +931,11 @@ class CompanyTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $company = (new CompanyService)->addMembers(
-            CompanyDTO::new()->fromArray([
-                'user' => $user,
-                'companyId' => $company->id,
-                'memberships' => [$other->id => 'administrator'],
-            ])
-        );
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyAdministrator->value
+        ]);
+        $relation->to()->associate($other);
+        $relation->save();
 
         $this->assertDatabaseHas('relations', [
             'by_type' => $company::class,
@@ -980,7 +975,7 @@ class CompanyTest extends TestCase
         ]);
     }
 
-    public function testCanAddMultipleUsersAsMembersToCompanyWhenAnAdmin()
+    public function testCanSendMemberRequestsToMultipleUsersWhenAnAdmin()
     {
         $user = User::create([
             'username' => "mr_robertamoah",
@@ -1062,24 +1057,28 @@ class CompanyTest extends TestCase
                 "status" => true
             ]);
         
-        $this->assertDatabaseHas('relations', [
-            'by_type' => $company::class,
-            'by_id' => $company->id,
+        $this->assertDatabaseHas('requests', [
+            'from_type' => $admin::class,
+            'from_id' => $admin->id,
+            'for_type' => $company::class,
+            'for_id' => $company->id,
             'to_type' => $member1::class,
             'to_id' => $member1->id,
-            'relationship_type' => RelationshipTypeEnum::companyMember->value
+            'type' => RelationshipTypeEnum::companyMember->value
         ]);
         
-        $this->assertDatabaseHas('relations', [
-            'by_type' => $company::class,
-            'by_id' => $company->id,
+        $this->assertDatabaseHas('requests', [
+            'from_type' => $admin::class,
+            'from_id' => $admin->id,
+            'for_type' => $company::class,
+            'for_id' => $company->id,
             'to_type' => $member2::class,
             'to_id' => $member2->id,
-            'relationship_type' => RelationshipTypeEnum::companyMember->value
+            'type' => RelationshipTypeEnum::companyMember->value
         ]);
     }
 
-    public function testCanAddMultipleUsersAsMembersToCompanyWhenCompanyOwner()
+    public function testCanSendMemberRequestToMultipleUsersWhenCompanyOwner()
     {
         $user = User::create([
             'username' => "mr_robertamoah",
@@ -1161,24 +1160,28 @@ class CompanyTest extends TestCase
                 "status" => true
             ]);
         
-        $this->assertDatabaseHas('relations', [
-            'by_type' => $company::class,
-            'by_id' => $company->id,
+        $this->assertDatabaseHas('requests', [
+            'from_type' => $user::class,
+            'from_id' => $user->id,
+            'for_type' => $company::class,
+            'for_id' => $company->id,
             'to_type' => $member1::class,
             'to_id' => $member1->id,
-            'relationship_type' => RelationshipTypeEnum::companyMember->value
+            'type' => RelationshipTypeEnum::companyMember->value
         ]);
         
-        $this->assertDatabaseHas('relations', [
-            'by_type' => $company::class,
-            'by_id' => $company->id,
+        $this->assertDatabaseHas('requests', [
+            'from_type' => $user::class,
+            'from_id' => $user->id,
+            'for_type' => $company::class,
+            'for_id' => $company->id,
             'to_type' => $member2::class,
             'to_id' => $member2->id,
-            'relationship_type' => RelationshipTypeEnum::companyMember->value
+            'type' => RelationshipTypeEnum::companyMember->value
         ]);
     }
 
-    public function testCanAddMultipleUsersAsAdministratorsToCompanyWhenCompanyOwner()
+    public function testCanSendAdministratorRequestToMultipleUsersWhenCompanyOwner()
     {
         $user = User::create([
             'username' => "mr_robertamoah",
@@ -1260,24 +1263,28 @@ class CompanyTest extends TestCase
                 "status" => true
             ]);
         
-        $this->assertDatabaseHas('relations', [
-            'by_type' => $company::class,
-            'by_id' => $company->id,
+        $this->assertDatabaseHas('requests', [
+            'from_type' => $user::class,
+            'from_id' => $user->id,
+            'for_type' => $company::class,
+            'for_id' => $company->id,
             'to_type' => $member1::class,
             'to_id' => $member1->id,
-            'relationship_type' => RelationshipTypeEnum::companyAdministrator->value
+            'type' => RelationshipTypeEnum::companyAdministrator->value
         ]);
         
-        $this->assertDatabaseHas('relations', [
-            'by_type' => $company::class,
-            'by_id' => $company->id,
+        $this->assertDatabaseHas('requests', [
+            'from_type' => $user::class,
+            'from_id' => $user->id,
+            'for_type' => $company::class,
+            'for_id' => $company->id,
             'to_type' => $member2::class,
             'to_id' => $member2->id,
-            'relationship_type' => RelationshipTypeEnum::companyAdministrator->value
+            'type' => RelationshipTypeEnum::companyAdministrator->value
         ]);
     }
 
-    public function testCanAddMultipleUsersAsAdministratorsOrMembersToCompanyWhenCompanyOwnerOrAdmin()
+    public function testCanSendAdministratorRequestsToMultipleUsersWhenCompanyOwnerOrAdmin()
     {
         $user = User::create([
             'username' => "mr_robertamoah",
@@ -1359,24 +1366,28 @@ class CompanyTest extends TestCase
                 "status" => true
             ]);
         
-        $this->assertDatabaseHas('relations', [
-            'by_type' => $company::class,
-            'by_id' => $company->id,
+        $this->assertDatabaseHas('requests', [
+            'from_type' => $user::class,
+            'from_id' => $user->id,
+            'for_type' => $company::class,
+            'for_id' => $company->id,
             'to_type' => $member1::class,
             'to_id' => $member1->id,
-            'relationship_type' => RelationshipTypeEnum::companyAdministrator->value
+            'type' => RelationshipTypeEnum::companyAdministrator->value
         ]);
         
-        $this->assertDatabaseHas('relations', [
-            'by_type' => $company::class,
-            'by_id' => $company->id,
+        $this->assertDatabaseHas('requests', [
+            'from_type' => $user::class,
+            'from_id' => $user->id,
+            'for_type' => $company::class,
+            'for_id' => $company->id,
             'to_type' => $member2::class,
             'to_id' => $member2->id,
-            'relationship_type' => RelationshipTypeEnum::companyMember->value
+            'type' => RelationshipTypeEnum::companyMember->value
         ]);
     }
 
-    public function testCanAddMultipleUsersAsMembersToCompanyWhenCompanyAdministrator()
+    public function testCanSendMemberRequestsToMultipleUsersWhenCompanyAdministrator()
     {
         $user = User::create([
             'username' => "mr_robertamoah",
@@ -1453,13 +1464,11 @@ class CompanyTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        (new CompanyService)->addMembers(
-            CompanyDTO::new()->fromArray([
-                'user' => $user,
-                'companyId' => $company->id,
-                'memberships' => [$companyAdmin->id => 'administrator'],
-            ])
-        );
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyAdministrator->value
+        ]);
+        $relation->to()->associate($companyAdmin);
+        $relation->save();
         
         $this->assertDatabaseHas('relations', [
             'by_type' => $company::class,
@@ -1482,20 +1491,24 @@ class CompanyTest extends TestCase
                 "status" => true
             ]);
         
-        $this->assertDatabaseHas('relations', [
-            'by_type' => $company::class,
-            'by_id' => $company->id,
+        $this->assertDatabaseHas('requests', [
+            'from_type' => $companyAdmin::class,
+            'from_id' => $companyAdmin->id,
+            'for_type' => $company::class,
+            'for_id' => $company->id,
             'to_type' => $member1::class,
             'to_id' => $member1->id,
-            'relationship_type' => RelationshipTypeEnum::companyMember->value
+            'type' => RelationshipTypeEnum::companyMember->value
         ]);
         
-        $this->assertDatabaseHas('relations', [
-            'by_type' => $company::class,
-            'by_id' => $company->id,
+        $this->assertDatabaseHas('requests', [
+            'for_type' => $company::class,
+            'for_id' => $company->id,
+            'from_type' => $companyAdmin::class,
+            'from_id' => $companyAdmin->id,
             'to_type' => $member2::class,
             'to_id' => $member2->id,
-            'relationship_type' => RelationshipTypeEnum::companyMember->value
+            'type' => RelationshipTypeEnum::companyMember->value
         ]);
     }
 
@@ -1565,14 +1578,18 @@ class CompanyTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $company = (new CompanyService)->addMembers(
-            CompanyDTO::new()->fromArray([
-                'user' => $user,
-                'companyId' => $company->id,
-                'memberships' => [$member1->id => 'member', $member2->id => 'member'],
-            ])
-        );
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyMember->value
+        ]);
+        $relation->to()->associate($member1);
+        $relation->save();
         
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyMember->value
+        ]);
+        $relation->to()->associate($member2);
+        $relation->save();
+
         $this->assertDatabaseHas('relations', [
             'by_type' => $company::class,
             'by_id' => $company->id,
@@ -1674,13 +1691,17 @@ class CompanyTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $company = (new CompanyService)->addMembers(
-            CompanyDTO::new()->fromArray([
-                'user' => $user,
-                'companyId' => $company->id,
-                'memberships' => [$member1->id => 'member', $member2->id => 'member'],
-            ])
-        );
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyMember->value
+        ]);
+        $relation->to()->associate($member1);
+        $relation->save();
+
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyMember->value
+        ]);
+        $relation->to()->associate($member2);
+        $relation->save();
         
         $this->assertDatabaseHas('relations', [
             'by_type' => $company::class,
@@ -1798,13 +1819,17 @@ class CompanyTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $company = (new CompanyService)->addMembers(
-            CompanyDTO::new()->fromArray([
-                'user' => $user,
-                'companyId' => $company->id,
-                'memberships' => [$member1->id => 'administrator', $member2->id => 'administrator'],
-            ])
-        );
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyAdministrator->value
+        ]);
+        $relation->to()->associate($member1);
+        $relation->save();
+
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyAdministrator->value
+        ]);
+        $relation->to()->associate($member2);
+        $relation->save();
         
         $this->assertDatabaseHas('relations', [
             'by_type' => $company::class,
@@ -1922,13 +1947,17 @@ class CompanyTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $company = (new CompanyService)->addMembers(
-            CompanyDTO::new()->fromArray([
-                'user' => $user,
-                'companyId' => $company->id,
-                'memberships' => [$member1->id => 'administrator', $member2->id => 'member'],
-            ])
-        );
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyAdministrator->value
+        ]);
+        $relation->to()->associate($member1);
+        $relation->save();
+
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyMember->value
+        ]);
+        $relation->to()->associate($member2);
+        $relation->save();
         
         $this->assertDatabaseHas('relations', [
             'by_type' => $company::class,
@@ -2045,13 +2074,17 @@ class CompanyTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $company = (new CompanyService)->addMembers(
-            CompanyDTO::new()->fromArray([
-                'user' => $user,
-                'companyId' => $company->id,
-                'memberships' => [$member1->id => 'administrator', $member2->id => 'member'],
-            ])
-        );
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyAdministrator->value
+        ]);
+        $relation->to()->associate($member1);
+        $relation->save();
+
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyMember->value
+        ]);
+        $relation->to()->associate($member2);
+        $relation->save();
         
         $this->assertDatabaseHas('relations', [
             'by_type' => $company::class,
@@ -2153,13 +2186,17 @@ class CompanyTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $company = (new CompanyService)->addMembers(
-            CompanyDTO::new()->fromArray([
-                'user' => $user,
-                'companyId' => $company->id,
-                'memberships' => [$member1->id => 'administrator', $member2->id => 'member'],
-            ])
-        );
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyAdministrator->value
+        ]);
+        $relation->to()->associate($member1);
+        $relation->save();
+
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyMember->value
+        ]);
+        $relation->to()->associate($member2);
+        $relation->save();
         
         $this->assertDatabaseHas('relations', [
             'by_type' => $company::class,
@@ -2246,13 +2283,11 @@ class CompanyTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $company = (new CompanyService)->addMembers(
-            CompanyDTO::new()->fromArray([
-                'user' => $user,
-                'companyId' => $company->id,
-                'memberships' => [$member1->id => 'administrator'],
-            ])
-        );
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyAdministrator->value
+        ]);
+        $relation->to()->associate($member1);
+        $relation->save();
         
         $this->assertDatabaseHas('relations', [
             'by_type' => $company::class,
@@ -2326,13 +2361,11 @@ class CompanyTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $company = (new CompanyService)->addMembers(
-            CompanyDTO::new()->fromArray([
-                'user' => $user,
-                'companyId' => $company->id,
-                'memberships' => [$member1->id => 'member'],
-            ])
-        );
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyMember->value
+        ]);
+        $relation->to()->associate($member1);
+        $relation->save();
         
         $this->assertDatabaseHas('relations', [
             'by_type' => $company::class,
@@ -2402,13 +2435,11 @@ class CompanyTest extends TestCase
             'user_id' => $user->id
         ]);
 
-        $company = (new CompanyService)->addMembers(
-            CompanyDTO::new()->fromArray([
-                'user' => $user,
-                'companyId' => $company->id,
-                'memberships' => [$member1->id => 'administrator'],
-            ])
-        );
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyAdministrator->value
+        ]);
+        $relation->to()->associate($member1);
+        $relation->save();
         
         $this->assertDatabaseHas('relations', [
             'by_type' => $company::class,

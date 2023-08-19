@@ -3,11 +3,9 @@
 namespace App\Actions\Requests;
 
 use App\Actions\Action;
-use App\Actions\IsUserAnOfficialOfModelAction;
 use App\Actions\Project\BecomeProjectParticipantAction;
 use App\DTOs\ProjectDTO;
 use App\DTOs\ResponseDTO;
-use App\Models\Request;
 
 class ProjectResponseAction extends Action
 {
@@ -19,7 +17,7 @@ class ProjectResponseAction extends Action
         $projectDTO = ProjectDTO::new()->fromArray([
             'project' => $responseDTO->request->for,
             'participant' => $potentialParticipant,
-            'participantType' => $responseDTO->request->purpose
+            'participationType' => $responseDTO->request->type
         ]);
 
         BecomeProjectParticipantAction::make()->execute($projectDTO);

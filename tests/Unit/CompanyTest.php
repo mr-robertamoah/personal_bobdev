@@ -513,13 +513,11 @@ class CompanyTest extends TestCase
             'user_id' => $owner->id
         ]);
             
-        (new CompanyService)->addMembers(
-            companyDTO: CompanyDTO::new()->fromArray([
-                'userId' => $user->id,
-                'companyId' => $company->id,
-                'memberships' => [$manager->id => 'administrator']
-            ])
-        );
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyAdministrator->value
+        ]);
+        $relation->to()->associate($manager);
+        $relation->save();
 
         $this->assertDatabaseHas('relations', [
             'by_type' => $company::class,
@@ -808,13 +806,11 @@ class CompanyTest extends TestCase
             'user_id' => $owner->id
         ]);
             
-        (new CompanyService)->addMembers(
-            companyDTO: CompanyDTO::new()->fromArray([
-                'userId' => $user->id,
-                'companyId' => $company->id,
-                'memberships' => [$manager->id => 'administrator']
-            ])
-        );
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyAdministrator->value
+        ]);
+        $relation->to()->associate($manager);
+        $relation->save();
 
         $this->assertDatabaseHas('relations', [
             'by_type' => $company::class,
@@ -837,7 +833,7 @@ class CompanyTest extends TestCase
         ]);
     }
 
-    public function testCannotAddMemberWithoutUser()
+    public function testCannotSendMembershipRequestWithoutUser()
     {
         $this->expectException(UserException::class);
         $this->expectExceptionMessage("Sorry! User is required.");
@@ -865,14 +861,14 @@ class CompanyTest extends TestCase
             'user_id' => $owner->id
         ]);
             
-        (new CompanyService)->addMembers(
+        (new CompanyService)->sendMembershipRequest(
             companyDTO: CompanyDTO::new()->fromArray([
                 'companyId' => $company->id,
             ])
         );
     }
 
-    public function testCannotAddMemberToCompanyWithoutProvidingCompanyId()
+    public function testUserCannotSendMembershipRequestToCompanyWithoutProvidingCompanyId()
     {
         $this->expectException(CompanyException::class);
         $this->expectExceptionMessage("Sorry! You need to provide a company to be able to perform this action.");
@@ -911,14 +907,14 @@ class CompanyTest extends TestCase
             'user_id' => $owner->id
         ]);
             
-        (new CompanyService)->addMembers(
+        (new CompanyService)->sendMembershipRequest(
             companyDTO: CompanyDTO::new()->fromArray([
                 'userId' => $owner->id,
             ])
         );
     }
 
-    public function testCannotAddMemberToCompanyWithoutBeingAdminOrCompanyOfficial()
+    public function testCannotSendMembershipRequestFromCompanyWithoutBeingAdminOrCompanyOfficial()
     {
         $this->expectException(CompanyException::class);
         $this->expectExceptionMessage("Sorry! You are not authorized to perform this action on company with name The great enterprise.");
@@ -967,7 +963,7 @@ class CompanyTest extends TestCase
             'user_id' => $owner->id
         ]);
             
-        (new CompanyService)->addMembers(
+        (new CompanyService)->sendMembershipRequest(
             companyDTO: CompanyDTO::new()->fromArray([
                 'userId' => $other->id,
                 'companyId' => $company->id,
@@ -975,7 +971,7 @@ class CompanyTest extends TestCase
         );
     }
 
-    public function testCannotAddMemberAsAdministratorOfCompanyWithoutBeingAdminOrCompanyOwner()
+    public function testCannotSendMembershipRequestToPotentialAdministratorOfCompanyWithoutBeingAdminOrCompanyOwner()
     {
         $this->expectException(CompanyException::class);
         $this->expectExceptionMessage("Sorry! You are not authorized to perform this action on company with name The great enterprise.");
@@ -1034,13 +1030,11 @@ class CompanyTest extends TestCase
             'user_id' => $owner->id
         ]);
             
-        (new CompanyService)->addMembers(
-            companyDTO: CompanyDTO::new()->fromArray([
-                'userId' => $owner->id,
-                'companyId' => $company->id,
-                'memberships' => [$member->id => 'member']
-            ])
-        );
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyMember->value
+        ]);
+        $relation->to()->associate($member);
+        $relation->save();
 
         $this->assertDatabaseHas('relations', [
             'by_type' => $company::class,
@@ -1050,7 +1044,7 @@ class CompanyTest extends TestCase
             'relationship_type' => RelationshipTypeEnum::companyMember->value
         ]);
             
-        (new CompanyService)->addMembers(
+        (new CompanyService)->sendMembershipRequest(
             companyDTO: CompanyDTO::new()->fromArray([
                 'userId' => $member->id,
                 'companyId' => $company->id,
@@ -1060,7 +1054,7 @@ class CompanyTest extends TestCase
         );
     }
 
-    public function testCannotAddMemberToCompanyWithEmptyMembershipList()
+    public function testCannotSendMembershipRequestFromCompanyWithEmptyMembershipList()
     {
         $this->expectException(CompanyException::class);
         $this->expectExceptionMessage('Sorry! The users and their respective membership type must be specified.');
@@ -1109,7 +1103,7 @@ class CompanyTest extends TestCase
             'user_id' => $owner->id
         ]);
             
-        (new CompanyService)->addMembers(
+        (new CompanyService)->sendMembershipRequest(
             companyDTO: CompanyDTO::new()->fromArray([
                 'userId' => $user->id,
                 'companyId' => $company->id,
@@ -1126,7 +1120,7 @@ class CompanyTest extends TestCase
         ]);
     }
 
-    public function testCannotAddMemberToCompanyWithMembershipListOfIds()
+    public function testCannotSendMembershipRequestFromCompanyWithMembershipListOfIdsWithoutMainRelationshipType()
     {
         $this->expectException(CompanyException::class);
         $this->expectExceptionMessage('Sorry! You need to provide a list of user ids pointing to the membership type you wish to establish with the company.');
@@ -1175,7 +1169,7 @@ class CompanyTest extends TestCase
             'user_id' => $owner->id
         ]);
             
-        (new CompanyService)->addMembers(
+        (new CompanyService)->sendMembershipRequest(
             companyDTO: CompanyDTO::new()->fromArray([
                 'userId' => $user->id,
                 'companyId' => $company->id,
@@ -1192,7 +1186,7 @@ class CompanyTest extends TestCase
         ]);
     }
 
-    public function testCannotMemberToCompanyIfAnAdminOrCompanyOwner()
+    public function testCannotSendMembershipRequestForCompanyWithNonIdKeysForMembershipArray()
     {
         $this->expectException(CompanyException::class);
         $this->expectExceptionMessage('Sorry! The user ids must point to respective membership types.');
@@ -1241,7 +1235,7 @@ class CompanyTest extends TestCase
             'user_id' => $owner->id
         ]);
             
-        (new CompanyService)->addMembers(
+        (new CompanyService)->sendMembershipRequest(
             companyDTO: CompanyDTO::new()->fromArray([
                 'userId' => $user->id,
                 'companyId' => $company->id,
@@ -1258,10 +1252,10 @@ class CompanyTest extends TestCase
         ]);
     }
 
-    public function testCannotAddInvalidUserAsMemberOfCompanyIfAnAdminOrCompanyOwner()
+    public function testCannotSendMembershipRequestToInvalidUserForCompanyIfAnAdminOrCompanyOwner()
     {
         $this->expectException(UserException::class);
-        $this->expectExceptionMessage("Sorry! user was not found.");
+        $this->expectExceptionMessage("Sorry! User was not found.");
 
         $user = User::factory()
             ->hasAttached(UserType::factory([
@@ -1307,7 +1301,7 @@ class CompanyTest extends TestCase
             'user_id' => $owner->id
         ]);
             
-        (new CompanyService)->addMembers(
+        (new CompanyService)->sendMembershipRequest(
             companyDTO: CompanyDTO::new()->fromArray([
                 'userId' => $user->id,
                 'companyId' => $company->id,
@@ -1324,7 +1318,7 @@ class CompanyTest extends TestCase
         ]);
     }
 
-    public function testCannotAddMemberAsMemberOfCompanyWithoutSpecifyingRelationshipType()
+    public function testCannotSendMembershipRequestAsMemberOfCompanyWithoutSpecifyingRelationshipType()
     {
         $this->expectException(CompanyException::class);
         $this->expectExceptionMessage("Sorry! the relationship type you wish to establish must be specified for user with name Amoah Kwame.");
@@ -1373,7 +1367,7 @@ class CompanyTest extends TestCase
             'user_id' => $owner->id
         ]);
             
-        (new CompanyService)->addMembers(
+        (new CompanyService)->sendMembershipRequest(
             companyDTO: CompanyDTO::new()->fromArray([
                 'userId' => $user->id,
                 'companyId' => $company->id,
@@ -1389,7 +1383,7 @@ class CompanyTest extends TestCase
         ]);
     }
 
-    public function testCannotAddANonAdultUserAsAdministratorOfCompanyIfCompanyOwner()
+    public function testCannotSendMembershipRequestToANonAdultUserToBeAdministratorOfCompanyIfCompanyOwner()
     {
         $this->expectException(CompanyException::class);
         $this->expectExceptionMessage("Sorry! Amoah Kwame must be an adult in order to have such a relationship with a company.");
@@ -1438,7 +1432,7 @@ class CompanyTest extends TestCase
             'user_id' => $owner->id
         ]);
             
-        (new CompanyService)->addMembers(
+        (new CompanyService)->sendMembershipRequest(
             companyDTO: CompanyDTO::new()->fromArray([
                 'userId' => $owner->id,
                 'companyId' => $company->id,
@@ -1455,7 +1449,7 @@ class CompanyTest extends TestCase
         ]);
     }
 
-    public function testCanAddANonAdultUserAsMemberOfCompanyIfCompanyOwner()
+    public function testCanSendMembershipRequestToANonAdultUserToBeMemberOfCompanyIfCompanyOwner()
     {
         $user = User::factory()
             ->hasAttached(UserType::factory([
@@ -1501,7 +1495,7 @@ class CompanyTest extends TestCase
             'user_id' => $owner->id
         ]);
             
-        (new CompanyService)->addMembers(
+        (new CompanyService)->sendMembershipRequest(
             companyDTO: CompanyDTO::new()->fromArray([
                 'userId' => $owner->id,
                 'companyId' => $company->id,
@@ -1509,7 +1503,17 @@ class CompanyTest extends TestCase
             ])
         );
 
-        $this->assertDatabaseHas('relations', [
+        $this->assertDatabaseHas('requests', [
+            'from_type' => $owner::class,
+            'from_id' => $owner->id,
+            'for_type' => $company::class,
+            'for_id' => $company->id,
+            'to_type' => $other::class,
+            'to_id' => $other->id,
+            'type' => RelationshipTypeEnum::companyMember->value
+        ]);
+
+        $this->assertDatabaseMissing('relations', [
             'by_type' => $company::class,
             'by_id' => $company->id,
             'to_type' => $other::class,
@@ -1518,7 +1522,7 @@ class CompanyTest extends TestCase
         ]);
     }
 
-    public function testCanAddMemberAsAdministratorOfCompanyIfAnAdmin()
+    public function testCanSendMembershipRequestToPotentialAdministratorOfCompanyIfAnAdmin()
     {
         $user = User::factory()
             ->hasAttached(UserType::factory([
@@ -1564,7 +1568,7 @@ class CompanyTest extends TestCase
             'user_id' => $owner->id
         ]);
             
-        (new CompanyService)->addMembers(
+        (new CompanyService)->sendMembershipRequest(
             companyDTO: CompanyDTO::new()->fromArray([
                 'userId' => $user->id,
                 'companyId' => $company->id,
@@ -1572,7 +1576,17 @@ class CompanyTest extends TestCase
             ])
         );
 
-        $this->assertDatabaseHas('relations', [
+        $this->assertDatabaseHas('requests', [
+            'from_type' => $user::class,
+            'from_id' => $user->id,
+            'for_type' => $company::class,
+            'for_id' => $company->id,
+            'to_type' => $other::class,
+            'to_id' => $other->id,
+            'type' => RelationshipTypeEnum::companyAdministrator->value
+        ]);
+
+        $this->assertDatabaseMissing('relations', [
             'by_type' => $company::class,
             'by_id' => $company->id,
             'to_type' => $other::class,
@@ -1581,7 +1595,7 @@ class CompanyTest extends TestCase
         ]);
     }
 
-    public function testCanAddMemberAsMemberOfCompanyIfAnAdmin()
+    public function testCanSendMembershipRequestToPotentialMemberOfCompanyIfAnAdmin()
     {
         $user = User::factory()
             ->hasAttached(UserType::factory([
@@ -1627,7 +1641,7 @@ class CompanyTest extends TestCase
             'user_id' => $owner->id
         ]);
             
-        (new CompanyService)->addMembers(
+        (new CompanyService)->sendMembershipRequest(
             companyDTO: CompanyDTO::new()->fromArray([
                 'userId' => $user->id,
                 'companyId' => $company->id,
@@ -1635,7 +1649,17 @@ class CompanyTest extends TestCase
             ])
         );
 
-        $this->assertDatabaseHas('relations', [
+        $this->assertDatabaseHas('requests', [
+            'from_type' => $user::class,
+            'from_id' => $user->id,
+            'for_type' => $company::class,
+            'for_id' => $company->id,
+            'to_type' => $other::class,
+            'to_id' => $other->id,
+            'type' => RelationshipTypeEnum::companyMember->value
+        ]);
+
+        $this->assertDatabaseMissing('relations', [
             'by_type' => $company::class,
             'by_id' => $company->id,
             'to_type' => $other::class,
@@ -1644,7 +1668,7 @@ class CompanyTest extends TestCase
         ]);
     }
 
-    public function testCanAddMemberAsAdministratorOfCompanyIfCompanyOwner()
+    public function testCanSendMembershipRequestToPotentialAdministratorOfCompanyIfCompanyOwner()
     {
         $user = User::factory()
             ->hasAttached(UserType::factory([
@@ -1690,7 +1714,7 @@ class CompanyTest extends TestCase
             'user_id' => $owner->id
         ]);
             
-        (new CompanyService)->addMembers(
+        (new CompanyService)->sendMembershipRequest(
             companyDTO: CompanyDTO::new()->fromArray([
                 'userId' => $owner->id,
                 'companyId' => $company->id,
@@ -1698,7 +1722,17 @@ class CompanyTest extends TestCase
             ])
         );
 
-        $this->assertDatabaseHas('relations', [
+        $this->assertDatabaseHas('requests', [
+            'from_type' => $owner::class,
+            'from_id' => $owner->id,
+            'for_type' => $company::class,
+            'for_id' => $company->id,
+            'to_type' => $other::class,
+            'to_id' => $other->id,
+            'type' => RelationshipTypeEnum::companyAdministrator->value
+        ]);
+
+        $this->assertDatabaseMissing('relations', [
             'by_type' => $company::class,
             'by_id' => $company->id,
             'to_type' => $other::class,
@@ -1707,7 +1741,7 @@ class CompanyTest extends TestCase
         ]);
     }
 
-    public function testCanAddMemberAsMemberOfCompanyIfCompanyOwner()
+    public function testCanSendMembershipRequestToPotentialMemberOfCompanyIfCompanyOwner()
     {
         $user = User::factory()
             ->hasAttached(UserType::factory([
@@ -1753,7 +1787,7 @@ class CompanyTest extends TestCase
             'user_id' => $owner->id
         ]);
             
-        (new CompanyService)->addMembers(
+        (new CompanyService)->sendMembershipRequest(
             companyDTO: CompanyDTO::new()->fromArray([
                 'userId' => $owner->id,
                 'companyId' => $company->id,
@@ -1761,7 +1795,17 @@ class CompanyTest extends TestCase
             ])
         );
 
-        $this->assertDatabaseHas('relations', [
+        $this->assertDatabaseHas('requests', [
+            'from_type' => $owner::class,
+            'from_id' => $owner->id,
+            'for_type' => $company::class,
+            'for_id' => $company->id,
+            'to_type' => $other::class,
+            'to_id' => $other->id,
+            'type' => RelationshipTypeEnum::companyMember->value
+        ]);
+
+        $this->assertDatabaseMissing('relations', [
             'by_type' => $company::class,
             'by_id' => $company->id,
             'to_type' => $other::class,
@@ -1770,7 +1814,7 @@ class CompanyTest extends TestCase
         ]);
     }
 
-    public function testCanAddMemberAsMemberToCompanyWhenCompanyAdministrator()
+    public function testCanSendMembershipRequestToPotentialMemberForCompanyWhenCompanyAdministrator()
     {
         $user = User::factory()
             ->hasAttached(UserType::factory([
@@ -1826,13 +1870,11 @@ class CompanyTest extends TestCase
             'user_id' => $owner->id
         ]);
         
-        (new CompanyService)->addMembers(
-            companyDTO: CompanyDTO::new()->fromArray([
-                'userId' => $owner->id,
-                'companyId' => $company->id,
-                'memberships' => [$companyAdministrator->id => 'administrator']
-            ])
-        );
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyAdministrator->value
+        ]);
+        $relation->to()->associate($companyAdministrator);
+        $relation->save();
 
         $this->assertDatabaseHas('relations', [
             'by_type' => $company::class,
@@ -1844,7 +1886,7 @@ class CompanyTest extends TestCase
 
         $this->assertTrue($company->refresh()->isOfficial($companyAdministrator));
             
-        (new CompanyService)->addMembers(
+        (new CompanyService)->sendMembershipRequest(
             companyDTO: CompanyDTO::new()->fromArray([
                 'userId' => $companyAdministrator->id,
                 'companyId' => $company->id,
@@ -1852,7 +1894,17 @@ class CompanyTest extends TestCase
             ])
         );
 
-        $this->assertDatabaseHas('relations', [
+        $this->assertDatabaseHas('requests', [
+            'from_type' => $companyAdministrator::class,
+            'from_id' => $companyAdministrator->id,
+            'for_type' => $company::class,
+            'for_id' => $company->id,
+            'to_type' => $other::class,
+            'to_id' => $other->id,
+            'type' => RelationshipTypeEnum::companyMember->value
+        ]);
+
+        $this->assertDatabaseMissing('relations', [
             'by_type' => $company::class,
             'by_id' => $company->id,
             'to_type' => $other::class,
@@ -1861,7 +1913,7 @@ class CompanyTest extends TestCase
         ]);
     }
 
-    public function testCanAddMultipleMembersAsDifferentRelationshipTypesOfCompanyIfAuthorized()
+    public function testCanSendMultipleMembershipRequestsWithDifferentRelationshipTypesForCompanyIfAuthorized()
     {
         $user = User::factory()
             ->hasAttached(UserType::factory([
@@ -1917,7 +1969,7 @@ class CompanyTest extends TestCase
             'user_id' => $owner->id
         ]);
             
-        (new CompanyService)->addMembers(
+        (new CompanyService)->sendMembershipRequest(
             companyDTO: CompanyDTO::new()->fromArray([
                 'userId' => $user->id,
                 'companyId' => $company->id,
@@ -1925,7 +1977,27 @@ class CompanyTest extends TestCase
             ])
         );
 
-        $this->assertDatabaseHas('relations', [
+        $this->assertDatabaseHas('requests', [
+            'from_type' => $user::class,
+            'from_id' => $user->id,
+            'for_type' => $company::class,
+            'for_id' => $company->id,
+            'to_type' => $otherMember1::class,
+            'to_id' => $otherMember1->id,
+            'type' => RelationshipTypeEnum::companyMember->value
+        ]);
+
+        $this->assertDatabaseHas('requests', [
+            'from_type' => $user::class,
+            'from_id' => $user->id,
+            'for_type' => $company::class,
+            'for_id' => $company->id,
+            'to_type' => $otherMember2::class,
+            'to_id' => $otherMember2->id,
+            'type' => RelationshipTypeEnum::companyAdministrator->value
+        ]);
+
+        $this->assertDatabaseMissing('relations', [
             'by_type' => $company::class,
             'by_id' => $company->id,
             'to_type' => $otherMember1::class,
@@ -1933,7 +2005,7 @@ class CompanyTest extends TestCase
             'relationship_type' => RelationshipTypeEnum::companyMember->value
         ]);
 
-        $this->assertDatabaseHas('relations', [
+        $this->assertDatabaseMissing('relations', [
             'by_type' => $company::class,
             'by_id' => $company->id,
             'to_type' => $otherMember2::class,
@@ -1942,10 +2014,10 @@ class CompanyTest extends TestCase
         ]);
     }
 
-    public function testCannotRemoveInvalidUserAsMemberFromCompanyIfAnAdminOrCompanyOwner()
+    public function testCannotRemoveMemberWhoIsAnInvalidUserFromCompanyIfAnAdminOrCompanyOwner()
     {
         $this->expectException(UserException::class);
-        $this->expectExceptionMessage("Sorry! user was not found.");
+        $this->expectExceptionMessage("Sorry! User was not found.");
 
         $user = User::factory()
             ->hasAttached(UserType::factory([
@@ -1991,13 +2063,11 @@ class CompanyTest extends TestCase
             'user_id' => $owner->id
         ]);
             
-        (new CompanyService)->addMembers(
-            companyDTO: CompanyDTO::new()->fromArray([
-                'userId' => $user->id,
-                'companyId' => $company->id,
-                'memberships' => [$other->id => 'member']
-            ])
-        );
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyMember->value
+        ]);
+        $relation->to()->associate($other);
+        $relation->save();
 
         $this->assertDatabaseHas('relations', [
             'by_type' => $company::class,
@@ -2024,7 +2094,7 @@ class CompanyTest extends TestCase
         ]);
     }
 
-    public function testCannotRemoveANonMemberAsMemberFromCompanyIfAnAdminOrCompanyOwner()
+    public function testCannotRemoveANonMemberFromCompanyIfAnAdminOrCompanyOwner()
     {
         $this->expectException(CompanyException::class);
         $this->expectExceptionMessage("Sorry! Atta Ofori must be a member of The great enterprise company.");
@@ -2083,13 +2153,11 @@ class CompanyTest extends TestCase
             'user_id' => $owner->id
         ]);
             
-        (new CompanyService)->addMembers(
-            companyDTO: CompanyDTO::new()->fromArray([
-                'userId' => $user->id,
-                'companyId' => $company->id,
-                'memberships' => [$member->id => 'member']
-            ])
-        );
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyMember->value
+        ]);
+        $relation->to()->associate($member);
+        $relation->save();
 
         $this->assertDatabaseHas('relations', [
             'by_type' => $company::class,
@@ -2108,7 +2176,7 @@ class CompanyTest extends TestCase
         );
     }
 
-    public function testCannotRemoveAUserAsAdministratorFromCompanyIfAnAdministratorOfCompany()
+    public function testCannotRemoveAnAdministratorFromCompanyIfAnAdministratorOfCompany()
     {
         $this->expectException(CompanyException::class);
         $this->expectExceptionMessage("Sorry! You are not authorized to perform this action on the company with name The great enterprise");
@@ -2167,13 +2235,11 @@ class CompanyTest extends TestCase
             'user_id' => $owner->id
         ]);
             
-        (new CompanyService)->addMembers(
-            companyDTO: CompanyDTO::new()->fromArray([
-                'userId' => $user->id,
-                'companyId' => $company->id,
-                'memberships' => [$administrator->id => 'administrator', $member->id => 'administrator']
-            ])
-        );
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyAdministrator->value
+        ]);
+        $relation->to()->associate($administrator);
+        $relation->save();
 
         $this->assertDatabaseHas('relations', [
             'by_type' => $company::class,
@@ -2182,6 +2248,12 @@ class CompanyTest extends TestCase
             'to_id' => $administrator->id,
             'relationship_type' => RelationshipTypeEnum::companyAdministrator->value
         ]);
+
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyAdministrator->value
+        ]);
+        $relation->to()->associate($member);
+        $relation->save();
 
         $this->assertDatabaseHas('relations', [
             'by_type' => $company::class,
@@ -2202,10 +2274,10 @@ class CompanyTest extends TestCase
         );
     }
 
-    public function testCannotRemoveAUserAsAdministratorWhenMemberFromCompanyIfAuthorized()
+    public function testCannotRemoveANonMemberIfAdministratorOfCompany()
     {
         $this->expectException(CompanyException::class);
-        $this->expectExceptionMessage("Sorry! Atta Ofori is not a member in the company with name The great enterprise.");
+        $this->expectExceptionMessage("Sorry! Atta Ofori must be a member of The great enterprise company.");
 
         $user = User::factory()
             ->hasAttached(UserType::factory([
@@ -2260,14 +2332,12 @@ class CompanyTest extends TestCase
             'name' => 'The great enterprise',
             'user_id' => $owner->id
         ]);
-            
-        (new CompanyService)->addMembers(
-            companyDTO: CompanyDTO::new()->fromArray([
-                'userId' => $user->id,
-                'companyId' => $company->id,
-                'memberships' => [$administrator->id => 'administrator', $member->id => 'administrator']
-            ])
-        );
+
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyAdministrator->value
+        ]);
+        $relation->to()->associate($administrator);
+        $relation->save();
 
         $this->assertDatabaseHas('relations', [
             'by_type' => $company::class,
@@ -2277,15 +2347,15 @@ class CompanyTest extends TestCase
             'relationship_type' => RelationshipTypeEnum::companyAdministrator->value
         ]);
 
-        $this->assertDatabaseHas('relations', [
+        $this->assertDatabaseMissing('relations', [
             'by_type' => $company::class,
             'by_id' => $company->id,
             'to_type' => $member::class,
             'to_id' => $member->id,
-            'relationship_type' => RelationshipTypeEnum::companyAdministrator->value
+            'relationship_type' => RelationshipTypeEnum::companyMember->value
         ]);
 
-        $this->assertTrue($company->refresh()->isOfficial($member));
+        $this->assertFalse($company->refresh()->isMember($member));
             
         (new CompanyService)->removeMembers(
             companyDTO: CompanyDTO::new()->fromArray([
@@ -2352,13 +2422,17 @@ class CompanyTest extends TestCase
             'user_id' => $owner->id
         ]);
             
-        (new CompanyService)->addMembers(
-            companyDTO: CompanyDTO::new()->fromArray([
-                'userId' => $user->id,
-                'companyId' => $company->id,
-                'memberships' => [$administrator->id => 'administrator', $member->id => 'member']
-            ])
-        );
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyMember->value
+        ]);
+        $relation->to()->associate($member);
+        $relation->save();
+
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyAdministrator->value
+        ]);
+        $relation->to()->associate($administrator);
+        $relation->save();
 
         $this->assertDatabaseHas('relations', [
             'by_type' => $company::class,
@@ -2451,13 +2525,17 @@ class CompanyTest extends TestCase
             'user_id' => $owner->id
         ]);
             
-        (new CompanyService)->addMembers(
-            companyDTO: CompanyDTO::new()->fromArray([
-                'userId' => $user->id,
-                'companyId' => $company->id,
-                'memberships' => [$administrator->id => 'administrator', $member->id => 'member']
-            ])
-        );
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyAdministrator->value
+        ]);
+        $relation->to()->associate($administrator);
+        $relation->save();
+
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyMember->value
+        ]);
+        $relation->to()->associate($member);
+        $relation->save();
 
         $this->assertDatabaseHas('relations', [
             'by_type' => $company::class,
@@ -2558,14 +2636,18 @@ class CompanyTest extends TestCase
             'user_id' => $owner->id
         ]);
             
-        (new CompanyService)->addMembers(
-            companyDTO: CompanyDTO::new()->fromArray([
-                'userId' => $user->id,
-                'companyId' => $company->id,
-                'memberships' => [$administrator->id => 'administrator', $member->id => 'member']
-            ])
-        );
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyAdministrator->value
+        ]);
+        $relation->to()->associate($administrator);
+        $relation->save();
 
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyMember->value
+        ]);
+        $relation->to()->associate($member);
+        $relation->save();
+        
         $this->assertDatabaseHas('relations', [
             'by_type' => $company::class,
             'by_id' => $company->id,
@@ -2734,7 +2816,7 @@ class CompanyTest extends TestCase
     public function testCannotLeaveCompanyAsAdministratorIfMember()
     {
         $this->expectException(CompanyException::class);
-        $this->expectExceptionMessage("Sorry! Atta Ofori is not a administrator in the company with name The great enterprise.");
+        $this->expectExceptionMessage("Sorry! Atta Ofori is not a administrator of The great enterprise company.");
 
         $user = User::factory()
             ->hasAttached(UserType::factory([
@@ -2780,13 +2862,11 @@ class CompanyTest extends TestCase
             'user_id' => $owner->id
         ]);
             
-        (new CompanyService)->addMembers(
-            companyDTO: CompanyDTO::new()->fromArray([
-                'userId' => $user->id,
-                'companyId' => $company->id,
-                'memberships' => [$member->id => 'member']
-            ])
-        );
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyMember->value
+        ]);
+        $relation->to()->associate($member);
+        $relation->save();
 
         $this->assertDatabaseHas('relations', [
             'by_type' => $company::class,
@@ -2818,7 +2898,7 @@ class CompanyTest extends TestCase
     public function testCannotLeaveCompanyAsMemberIfAdministrator()
     {
         $this->expectException(CompanyException::class);
-        $this->expectExceptionMessage("Sorry! Atta Ofori is not a member in the company with name The great enterprise.");
+        $this->expectExceptionMessage("Sorry! Atta Ofori is not a member of The great enterprise company.");
 
         $user = User::factory()
             ->hasAttached(UserType::factory([
@@ -2863,14 +2943,12 @@ class CompanyTest extends TestCase
             'name' => 'The great enterprise',
             'user_id' => $owner->id
         ]);
-            
-        (new CompanyService)->addMembers(
-            companyDTO: CompanyDTO::new()->fromArray([
-                'userId' => $user->id,
-                'companyId' => $company->id,
-                'memberships' => [$member->id => 'administrator']
-            ])
-        );
+    
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyAdministrator->value
+        ]);
+        $relation->to()->associate($member);
+        $relation->save();
 
         $this->assertDatabaseHas('relations', [
             'by_type' => $company::class,
@@ -2899,7 +2977,7 @@ class CompanyTest extends TestCase
         ]);
     }
 
-    public function testCanLeaveCompanyIfMember()
+    public function testCanLeaveCompanyWhenAMember()
     {
         $user = User::factory()
             ->hasAttached(UserType::factory([
@@ -2945,13 +3023,11 @@ class CompanyTest extends TestCase
             'user_id' => $owner->id
         ]);
             
-        (new CompanyService)->addMembers(
-            companyDTO: CompanyDTO::new()->fromArray([
-                'userId' => $user->id,
-                'companyId' => $company->id,
-                'memberships' => [$member->id => 'member']
-            ])
-        );
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyMember->value
+        ]);
+        $relation->to()->associate($member);
+        $relation->save();
 
         $this->assertDatabaseHas('relations', [
             'by_type' => $company::class,
@@ -2980,7 +3056,7 @@ class CompanyTest extends TestCase
         ]);
     }
 
-    public function testCanLeaveCompanyIfAdministrator()
+    public function testCanLeaveIfCompanyAdministrator()
     {
         $user = User::factory()
             ->hasAttached(UserType::factory([
@@ -3026,13 +3102,11 @@ class CompanyTest extends TestCase
             'user_id' => $owner->id
         ]);
             
-        (new CompanyService)->addMembers(
-            companyDTO: CompanyDTO::new()->fromArray([
-                'userId' => $user->id,
-                'companyId' => $company->id,
-                'memberships' => [$member->id => 'administrator']
-            ])
-        );
+        $relation = $company->addedByRelations()->create([
+            'relationship_type' => RelationshipTypeEnum::companyAdministrator->value
+        ]);
+        $relation->to()->associate($member);
+        $relation->save();
 
         $this->assertDatabaseHas('relations', [
             'by_type' => $company::class,

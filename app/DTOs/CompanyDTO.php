@@ -16,6 +16,7 @@ class CompanyDTO extends BaseDTO
     public User|Company|null $to = null;
     public ?string $relationshipType = null;
     public ?string $name = null;
+    public ?string $purpose = null;
     public ?string $alias = null;
     public ?string $about = null;
     public ?string $userId = null;

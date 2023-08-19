@@ -13,7 +13,8 @@ class ProjectDTO extends BaseDTO
 {
     public ?Project $project = null;
     public ?string $projectId = null;
-    public ?string $participantType = null;
+    public ?array $participations = [];
+    public ?string $participationType = null;
     public ?string $name = null;
     public ?string $description = null;
     public string|DateTime|Carbon|null $startDate = null;

@@ -13,7 +13,7 @@ class CanSendRequestForProjectAction extends Action
 {
     private bool $isFromOfficial = false;
     private bool $isToOfficial = false;
-    private ?string $purpose = null;
+    private ?string $type = null;
     private ?string $projectParticipatingMethod = null;
 
     public function execute(RequestDTO $requestDTO)
@@ -57,8 +57,8 @@ class CanSendRequestForProjectAction extends Action
     {
         $this->isFromOfficial = $this->isOfficial($requestDTO, 'from');
         $this->isToOfficial = $this->isOfficial($requestDTO, 'to');
-        $this->purpose = strtolower($requestDTO->purpose);
-        $this->projectParticipatingMethod = 'is' . ucfirst($this->purpose);
+        $this->type = strtolower($requestDTO->type);
+        $this->projectParticipatingMethod = 'is' . ucfirst($this->type);
     }
 
     private function isOfficial(RequestDTO $requestDTO, string $property): bool
@@ -66,13 +66,13 @@ class CanSendRequestForProjectAction extends Action
         return $requestDTO->for->isOfficial($requestDTO->$property) ||
             (
                 $requestDTO->for->isFacilitator($requestDTO->$property) && 
-                IsLearnerParticipantTypeAction::make()->execute($requestDTO->purpose)
+                IsLearnerParticipantTypeAction::make()->execute($requestDTO->type)
             );
     }
 
     public function ensureFacilitatorOrLearnerRequestsAreSentByOrToUsers(RequestDTO $requestDTO)
     {
-        if (!in_array(strtoupper($this->purpose), [ProjectParticipantEnum::facilitator->value, ProjectParticipantEnum::learner->value])) {
+        if (!in_array(strtoupper($this->type), [ProjectParticipantEnum::facilitator->value, ProjectParticipantEnum::learner->value])) {
             return;
         }
 
@@ -95,7 +95,7 @@ class CanSendRequestForProjectAction extends Action
 
     public function ensureUserHasAppropriateUserType(RequestDTO $requestDTO)
     {
-        if (!in_array(strtoupper($this->purpose), [
+        if (!in_array(strtoupper($this->type), [
             ProjectParticipantEnum::facilitator->value, 
             ProjectParticipantEnum::learner->value,
             ProjectParticipantEnum::sponsor->value,
@@ -111,7 +111,7 @@ class CanSendRequestForProjectAction extends Action
             $this->isUser($requestDTO->to) &&
             !$requestDTO->to->$projectParticipatingMethod()
         ) {
-            $message = "Sorry, you cannot send this request because the recepient is not a {$this->getPurpose()}.";
+            $message = "Sorry, you cannot send this request because the recepient is not a {$this->getType()}.";
         }
 
         if (
@@ -119,7 +119,7 @@ class CanSendRequestForProjectAction extends Action
             $this->isUser($requestDTO->from) &&
             !$requestDTO->from->$projectParticipatingMethod()
         ) {
-            $message = "Sorry, you need to be a {$this->getPurpose()} to request to be a {$this->getPurpose()} in a project";
+            $message = "Sorry, you need to be a {$this->getType()} to request to be a {$this->getType()} in a project";
         }
 
         if (is_null($message)) {
@@ -131,30 +131,30 @@ class CanSendRequestForProjectAction extends Action
 
     public function ensureFacilitatorRequestsAreSentByOrToUsersNotAlreadyFacilitatorsOfProject(RequestDTO $requestDTO)
     {
-        $this->ensureRequestsAreSentByOrToUsersNotAlreadyParticipatingAsPurposeOfProject(
+        $this->ensureRequestsAreSentByOrToUsersNotAlreadyParticipatingAsTypeOfProject(
             $requestDTO, ProjectParticipantEnum::facilitator->value
         );
     }
 
     public function ensureLearnerRequestsAreSentByOrToUsersNotAlreadyLearnersOfProject(RequestDTO $requestDTO)
     {
-        $this->ensureRequestsAreSentByOrToUsersNotAlreadyParticipatingAsPurposeOfProject(
+        $this->ensureRequestsAreSentByOrToUsersNotAlreadyParticipatingAsTypeOfProject(
             $requestDTO, ProjectParticipantEnum::learner->value
         );
     }
 
     public function ensureSponsorRequestsAreSentByOrToUsersNotAlreadySponsorsOfProject(RequestDTO $requestDTO)
     {
-        $this->ensureRequestsAreSentByOrToUsersNotAlreadyParticipatingAsPurposeOfProject(
+        $this->ensureRequestsAreSentByOrToUsersNotAlreadyParticipatingAsTypeOfProject(
             $requestDTO, ProjectParticipantEnum::sponsor->value
         );
     }
     
-    public function ensureRequestsAreSentByOrToUsersNotAlreadyParticipatingAsPurposeOfProject(RequestDTO $requestDTO, string $purpose)
+    public function ensureRequestsAreSentByOrToUsersNotAlreadyParticipatingAsTypeOfProject(RequestDTO $requestDTO, string $type)
     {
-        $purpose = strtolower($purpose);
+        $type = strtolower($type);
         
-        if ($this->purpose !== $purpose) {
+        if ($this->type !== $type) {
             return;
         }
 
@@ -162,11 +162,11 @@ class CanSendRequestForProjectAction extends Action
         $projectParticipatingMethod = $this->projectParticipatingMethod;
         
         if ($this->isFromOfficial && $requestDTO->for->$projectParticipatingMethod($requestDTO->to)) {
-            $message = "Sorry, you cannot send this request because the recepient is already a {$this->getPurpose()}.";
+            $message = "Sorry, you cannot send this request because the recepient is already a {$this->getType()}.";
         }
 
         if ($this->isToOfficial && $requestDTO->for->$projectParticipatingMethod($requestDTO->from)) {
-            $message = "Sorry, you cannot send this request because you are already a {$this->getPurpose()}.";
+            $message = "Sorry, you cannot send this request because you are already a {$this->getType()}.";
         }
 
         if (is_null($message)) {
@@ -176,11 +176,11 @@ class CanSendRequestForProjectAction extends Action
         throw new RequestException($message);
     }
 
-    private function getPurpose()
+    private function getType()
     {
-        $purpose = $this->purpose == 'learner' ? 'student' : $this->purpose;
+        $type = $this->type == 'learner' ? 'student' : $this->type;
 
-        $value = ProjectParticipantEnum::tryFrom(strtoupper($purpose))?->name;
+        $value = ProjectParticipantEnum::tryFrom(strtoupper($type))?->name;
 
         return $value ? strtolower($value) : null;
     }
