@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Abstract\Requestable;
+use App\Abstracts\Requestable;
 use App\Enums\RelationshipTypeEnum;
 use App\Traits\HasProfileTrait;
 use App\Traits\HasRequestForTrait;

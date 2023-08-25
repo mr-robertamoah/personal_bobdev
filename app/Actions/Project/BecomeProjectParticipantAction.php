@@ -9,10 +9,15 @@ use App\Exceptions\ProjectException;
 
 class BecomeProjectParticipantAction extends Action
 {
-    public function execute(ProjectDTO $projectDTO, string $participationType)
+    public function execute(ProjectDTO $projectDTO, ?string $participationType)
     {
         $participationType = $participationType ?? $projectDTO->participationType;
     
+        if (is_null($participationType))
+        {
+            throw new ProjectException("Sorry! No participation type (facilitator, learner/student, sponsor) found.");
+        }
+
         $action = $this->getAppropriateAction(strtoupper($participationType));
 
         $action->execute($projectDTO);

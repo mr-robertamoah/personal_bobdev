@@ -15,7 +15,9 @@ use App\Actions\Project\EnsurePotentialParticipantIsNotAlreadyAParticipantAction
 use App\Actions\Project\EnsurePotentialParticipantExistsAction;
 use App\Actions\Project\EnsureProjectHasSkillsAction;
 use App\Actions\Project\EnsureUserIsParticipatingAsTypeAction;
+use App\Actions\Project\RemoveParticipantAction;
 use App\Actions\Requests\CreateRequestAction;
+use App\Actions\Requests\EnsureFacilitatorCannotRemoveFacilitatorAction;
 use App\Actions\Skills\CheckIfValidSkillsAction;
 use App\Actions\Users\FindUserByIdAction;
 use App\DTOs\ActivityDTO;
@@ -165,32 +167,21 @@ class ProjectService
 
             EnsureIsValidParticipationTypeAction::make()->execute($projectDTO, $participationType);
 
-            EnsureCannotRemoveFacilitatorIfFacilitatorAction::make()->execute($projectDTO, $participationType);
+            EnsureFacilitatorCannotRemoveFacilitatorAction::make()->execute($projectDTO, $participationType);
 
-            $requests[] = CreateRequestAction::make()->execute(
-                RequestDTO::new()->fromArray([
-                    'from' => $projectDTO->addedby,
-                    'for' => $projectDTO->project,
-                    'to' => $possibleParticipant,
-                    'type' => strtoupper(
-                        $participationType ? $participationType : $projectDTO->participationType),
-                    'purpose' => $purpose
-                ])
-            );
+            RemoveParticipantAction::make()->execute($projectDTO, $participant);
         }
 
         AddActivityAction::make()->execute(
             ActivityDTO::new()->fromArray([
                 'performedby' => $projectDTO->addedby,
                 'performedon' => $projectDTO->project,
-                'action' => 'sendParticipationRequests',
+                'action' => 'removeParticipants',
                 'data' => [
-                    'requests' => array_map(fn($request) => $request->id, $requests)
+                    'participations' => $projectDTO->participations
                 ]
             ])
         );
-
-        return $requests;
     }
     
     // TODO add an addParticipant function that just adds participants and can only be used by system admins

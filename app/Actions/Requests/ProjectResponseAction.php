@@ -20,6 +20,6 @@ class ProjectResponseAction extends Action
             'participationType' => $responseDTO->request->type
         ]);
 
-        BecomeProjectParticipantAction::make()->execute($projectDTO);
+        BecomeProjectParticipantAction::make()->execute($projectDTO,null);
     }
 }
