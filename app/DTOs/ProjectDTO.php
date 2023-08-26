@@ -2,6 +2,7 @@
 
 namespace App\DTOs;
 
+use App\Models\Company;
 use App\Models\Project;
 use App\Models\User;
 use Carbon\Carbon;
@@ -21,7 +22,7 @@ class ProjectDTO extends BaseDTO
     public  string|DateTime|Carbon|null $endDate = null;
     public ?User $addedby = null;
     public ?string $participantId = null;
-    public ?User $participant = null;
+    public User|Company|null $participant = null;
     
     /**
      * assign data (filled or validated) to the dto properties as an 

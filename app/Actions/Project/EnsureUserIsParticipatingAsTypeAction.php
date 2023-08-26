@@ -4,19 +4,18 @@ namespace App\Actions\Project;
 
 use App\Actions\Action;
 use App\DTOs\ProjectDTO;
-use App\Enums\ProjectParticipantEnum;
 use App\Exceptions\ProjectException;
 
 class EnsureUserIsParticipatingAsTypeAction extends Action
 {
-    public function execute(ProjectDTO $projectDTO, string $participationType)
+    public function execute(ProjectDTO $projectDTO, ?string $participationType=null)
     {
         $participationType = $participationType ?? $projectDTO->participationType;
         if (
             $projectDTO->project->isParticipantType(
                 $projectDTO->participant,
-                $participationType)
-        ) {
+                $participationType
+        )) {
             return;
         }
 

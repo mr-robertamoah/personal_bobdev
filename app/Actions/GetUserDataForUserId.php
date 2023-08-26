@@ -8,15 +8,20 @@ class GetUserDataForUserId extends Action
     {
         if (is_string($userData))
         {
-            return [$userData, null];
+            return [$userData, null, null];
         }
 
         if (count($userData) == 0)
         {
-            $userData = [null, null];
+            $userData = [null, null, null];
         }
 
-        if (count($userData) == 1)
+        if (count($userData) < 2)
+        {
+            $userData[] = null;
+        }
+
+        if (count($userData) < 3)
         {
             $userData[] = null;
         }

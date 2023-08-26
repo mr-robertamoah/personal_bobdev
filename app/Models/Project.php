@@ -119,9 +119,8 @@ class Project extends Requestable
     public function isParticipantType(Model $model, string $type)
     {
         return $this->participants()
-            ->where('participant_type', $model::class)
-            ->where('participant_id', $model->id)
-            ->where('participating_as', $type)
+            ->whereParticipant($model)
+            ->whereParticipationType($type)
             ->exists();
     }
 
@@ -137,8 +136,7 @@ class Project extends Requestable
         }
         
         return $this->participants()
-            ->where('participant_type', $model::class)
-            ->where('participant_id', $model->id)
+            ->whereParticipant($model)
             ->exists();
     }
 
@@ -166,5 +164,13 @@ class Project extends Requestable
     public function isOwnedByCompany()
     {
         return $this->addedby::class === Company::class;
+    }
+
+    public function getProjectParticipant(Model $model, string $type): ?ProjectParticipant
+    {
+        return $this->participants()
+            ->whereParticipant($model)
+            ->whereParticipationType($type)
+            ->first();
     }
 }

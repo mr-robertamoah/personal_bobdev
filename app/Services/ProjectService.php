@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Actions\Activity\AddActivityAction;
+use App\Actions\GetModelAction;
 use App\Actions\Project\EnsureParticipationIsValidArrayAction;
 use App\Actions\GetUserDataForUserId;
 use App\Actions\Project\BecomeProjectParticipantAction;
@@ -10,16 +11,18 @@ use App\Actions\Project\EnsureAddedByExistsAction;
 use App\Actions\Project\EnsureAddedbyIsAuthorizedAction;
 use App\Actions\Project\CheckDataAppropriatenessAction;
 use App\Actions\Project\EnsureIsValidParticipationTypeAction;
+use App\Actions\Project\EnsureParticipantExistsAction;
+use App\Actions\Project\EnsureParticipantIsOfValidParticipantClassAction;
 use App\Actions\Project\EnsureProjectExistsAction;
 use App\Actions\Project\EnsurePotentialParticipantIsNotAlreadyAParticipantAction;
 use App\Actions\Project\EnsurePotentialParticipantExistsAction;
 use App\Actions\Project\EnsureProjectHasSkillsAction;
 use App\Actions\Project\EnsureUserIsParticipatingAsTypeAction;
+use App\Actions\Project\LeaveProjectAction;
 use App\Actions\Project\RemoveParticipantAction;
 use App\Actions\Requests\CreateRequestAction;
 use App\Actions\Requests\EnsureFacilitatorCannotRemoveFacilitatorAction;
 use App\Actions\Skills\CheckIfValidSkillsAction;
-use App\Actions\Users\FindUserByIdAction;
 use App\DTOs\ActivityDTO;
 use App\DTOs\ProjectDTO;
 use App\DTOs\RequestDTO;
@@ -142,6 +145,28 @@ class ProjectService
     }
 
     // TODO remove participant or participant leaving
+    // TODO broadcast successfull leaving to owner and facilitators
+
+    public function leaveProject(ProjectDTO $projectDTO)
+    {
+        $projectDTO = $this->setProjectOnDTO($projectDTO);
+
+        EnsureAddedByExistsAction::make()->execute($projectDTO);
+        
+        EnsureProjectExistsAction::make()->execute($projectDTO);
+
+        $projectDTO = $projectDTO->withParticipant($projectDTO->addedby);
+
+        EnsureParticipantExistsAction::make()->execute($projectDTO);
+
+        EnsureParticipantIsOfValidParticipantClassAction::make()->execute($projectDTO);
+
+        EnsureIsValidParticipationTypeAction::make()->execute($projectDTO);
+
+        EnsureUserIsParticipatingAsTypeAction::make()->execute($projectDTO);
+
+        LeaveProjectAction::make()->execute($projectDTO);
+    }
 
     public function removeParticipants(ProjectDTO $projectDTO)
     {
@@ -151,25 +176,37 @@ class ProjectService
         
         EnsureProjectExistsAction::make()->execute($projectDTO);
 
-        EnsureAddedbyIsAuthorizedAction::make()->execute($projectDTO, 'remove');
+        $isNotFacilitator = $projectDTO->project->isNotFacilitator($projectDTO->addedby);
+
+        if ($isNotFacilitator)
+        {
+            EnsureAddedbyIsAuthorizedAction::make()->execute($projectDTO, 'remove');
+        }
         
+        EnsureParticipationIsValidArrayAction::make()->execute($projectDTO);
+
         foreach ($projectDTO->participations as $userId => $userData)
         {
-            [$participationType, $purpose] = GetUserDataForUserId::make()->execute($userData);
+            [$participationType, $class] = GetUserDataForUserId::make()->execute($userData);
             
-            $participant = FindUserByIdAction::make()->execute($userId);
+            $participant = GetModelAction::make()->execute($class ?? 'user', $userId);
 
             $projectDTO = $projectDTO->withParticipant($participant);
-            
-            EnsurePotentialParticipantExistsAction::make()->execute($projectDTO);
 
-            EnsureUserIsParticipatingAsTypeAction::make()->execute($projectDTO, $participationType);
+            EnsureParticipantExistsAction::make()->execute($projectDTO);
+
+            EnsureParticipantIsOfValidParticipantClassAction::make()->execute($projectDTO);
 
             EnsureIsValidParticipationTypeAction::make()->execute($projectDTO, $participationType);
 
-            EnsureFacilitatorCannotRemoveFacilitatorAction::make()->execute($projectDTO, $participationType);
+            EnsureUserIsParticipatingAsTypeAction::make()->execute($projectDTO, $participationType);
+    
+            if (!$isNotFacilitator)
+            {
+                EnsureFacilitatorCannotRemoveFacilitatorAction::make()->execute($projectDTO, $participationType);
+            }
 
-            RemoveParticipantAction::make()->execute($projectDTO, $participant);
+            RemoveParticipantAction::make()->execute($projectDTO, $participationType);
         }
 
         AddActivityAction::make()->execute(
@@ -194,7 +231,9 @@ class ProjectService
         
         EnsureProjectExistsAction::make()->execute($projectDTO);
 
-        if ($isNotFacilitator = $projectDTO->project->isNotFacilitator($projectDTO->addedby))
+        $isNotFacilitator = $projectDTO->project->isNotFacilitator($projectDTO->addedby);
+
+        if ($isNotFacilitator)
         {
             EnsureAddedbyIsAuthorizedAction::make()->execute($projectDTO, 'update');
         }
@@ -204,9 +243,9 @@ class ProjectService
         $requests = [];
         foreach ($projectDTO->participations as $userId => $userData)
         {
-            [$participationType, $purpose] = GetUserDataForUserId::make()->execute($userData);
+            [$participationType, $class, $purpose] = GetUserDataForUserId::make()->execute($userData);
             
-            $possibleParticipant = FindUserByIdAction::make()->execute($userId);
+            $possibleParticipant = GetModelAction::make()->execute($class ?? 'user', $userId);
 
             $projectDTO = $projectDTO->withParticipant($possibleParticipant);
             

@@ -300,15 +300,12 @@ class RequestTest extends TestCase
                 'addedby' => $user,
             ])
         );
-
-        (new ProjectService)->addParticipantToProject(
-            ProjectDTO::new()->fromArray([
-                'project' => $for,
-                'participant' => $from,
-                'addedby' => $user,
-                'participationType' => RequestTypeEnum::facilitator->value
-            ])
-        );
+        
+        $participation = $for->participants()->create([
+            'participating_as' => RequestTypeEnum::facilitator->value
+        ]);
+        $participation->participant()->associate($from);
+        $participation->save();
 
         $this->assertDatabaseHas('project_participant', [
             'project_id' => $for->id,
@@ -388,15 +385,12 @@ class RequestTest extends TestCase
                 'addedby' => $user,
             ])
         );
-
-        (new ProjectService)->addParticipantToProject(
-            ProjectDTO::new()->fromArray([
-                'project' => $for,
-                'participant' => $from,
-                'addedby' => $user,
-                'participationType' => RequestTypeEnum::learner->value
-            ])
-        );
+        
+        $participation = $for->participants()->create([
+            'participating_as' => RequestTypeEnum::learner->value
+        ]);
+        $participation->participant()->associate($from);
+        $participation->save();
 
         $this->assertDatabaseHas('project_participant', [
             'project_id' => $for->id,
@@ -1799,14 +1793,11 @@ class RequestTest extends TestCase
             ])
         );
         
-        (new ProjectService)->addParticipantToProject(
-            ProjectDTO::new()->fromArray([
-                'project' => $project,
-                'participant' => $facilitator,
-                'participationType' => 'facilitator',
-                'addedby' => $user,
-            ])
-        );
+        $participation = $project->participants()->create([
+            'participating_as' => RequestTypeEnum::facilitator->value
+        ]);
+        $participation->participant()->associate($facilitator);
+        $participation->save();
         
         $request = (new RequestService)->createRequest(
             RequestDTO::new()->fromArray([
@@ -2510,15 +2501,12 @@ class RequestTest extends TestCase
                 'addedby' => $user,
             ])
         );
-
-        (new ProjectService)->addParticipantToProject(
-            ProjectDTO::new()->fromArray([
-                'participant' => $official,
-                'participationType' => 'facilitator',
-                'project' => $project,
-                'addedby' => $user,
-            ])
-        );
+        
+        $participation = $project->participants()->create([
+            'participating_as' => RequestTypeEnum::facilitator->value
+        ]);
+        $participation->participant()->associate($official);
+        $participation->save();
         
         $request = (new RequestService)->createRequest(
             RequestDTO::new()->fromArray([

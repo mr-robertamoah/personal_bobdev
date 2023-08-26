@@ -9,7 +9,7 @@ use App\Exceptions\ProjectException;
 
 class EnsureIsValidParticipationTypeAction extends Action
 {
-    public function execute(ProjectDTO $projectDTO, string $participationType)
+    public function execute(ProjectDTO $projectDTO, ?string $participationType=null)
     {
         $participationType = strtoupper($participationType ?? $projectDTO->participationType);
 
