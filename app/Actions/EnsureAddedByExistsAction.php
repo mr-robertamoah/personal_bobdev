@@ -1,16 +1,17 @@
 <?php
 
-namespace App\Actions\Project;
+namespace App\Actions;
 
 use App\Actions\Action;
 use App\DTOs\ProjectDTO;
 use App\Exceptions\ProjectException;
+use MrRobertAmoah\DTO\BaseDTO;
 
 class EnsureAddedByExistsAction extends Action
 {
-    public function execute(ProjectDTO $projectDTO)
+    public function execute(BaseDTO $dto)
     {
-        if ($projectDTO->addedby) {
+        if ($dto->addedby) {
             return;
         }
         

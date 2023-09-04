@@ -483,7 +483,7 @@ class ProjectTest extends TestCase
     public function testCannotAttachInvalidSkillToProjectWhenAddedby()
     {
         $this->expectException(SkillException::class);
-        $this->expectExceptionMessage("Sorry, no skill with id 1 exists.");
+        $this->expectExceptionMessage("Sorry, (1, 2) ids do not point to valid skills.");
 
         $user = User::factory()
             ->hasAttached(UserType::factory([
@@ -720,7 +720,7 @@ class ProjectTest extends TestCase
     public function testCannotDetachInvalidSkillToProjectWhenAddedby()
     {
         $this->expectException(SkillException::class);
-        $this->expectExceptionMessage("Sorry, no skill with id 1 exists.");
+        $this->expectExceptionMessage("Sorry, (1, 2) ids do not point to valid skills.");
 
         $user = User::factory()
             ->hasAttached(UserType::factory([
@@ -1154,8 +1154,8 @@ class ProjectTest extends TestCase
 
     public function testCannotSendParticipantRequestForProjectWithInvalidParticipant()
     {
-        $this->expectException(UserException::class);
-        $this->expectExceptionMessage("Sorry! User was not found.");
+        $this->expectException(ProjectException::class);
+        $this->expectExceptionMessage("Sorry, no participant was provided.");
 
         $user = User::factory()
             ->hasAttached(UserType::factory([
@@ -1831,8 +1831,6 @@ class ProjectTest extends TestCase
         ]);
     }
 
-    // tests removal and leaving of participants
-
     public function testCannotRemoveAParticipantFromAProjectWithoutAddedby()
     {
         $this->expectException(ProjectException::class);
@@ -2033,7 +2031,7 @@ class ProjectTest extends TestCase
             'participant_id' => $participant->id,
         ]);
         
-        $this->expectExceptionMessage("Sorry! You need to provide a list of user ids pointing to the participation type you wish to establish with the company.");
+        $this->expectExceptionMessage("Sorry! You need to provide a list of user ids pointing to the participation type you wish to establish with the company/project.");
 
         $projectService->removeParticipants(
             ProjectDTO::new()->fromArray([
@@ -2474,6 +2472,326 @@ class ProjectTest extends TestCase
                 'participations' => [
                     $participant->id => 'learner'
                 ],
+                'projectId' => $project->id
+            ]));
+
+        $this->assertDatabaseMissing("project_participant", [
+            'project_id' => $project->id,
+            'participating_as' => ProjectParticipantEnum::learner->value,
+            'participant_type' => $participant::class,
+            'participant_id' => $participant->id,
+        ]);
+    }
+
+    public function testCannotLeaveAProjectWithoutAddedby()
+    {
+        $this->expectException(ProjectException::class);
+
+        $owner = User::factory()->hasAttached(UserType::factory([
+            'name' => UserType::STUDENT
+        ]),[], 'userTypes')->create();
+
+        $participant = User::factory()->hasAttached(UserType::factory([
+            'name' => UserType::STUDENT
+        ]),[], 'userTypes')->create();
+
+        $projectService = (new ProjectService);
+
+        $project = $projectService->createProject(
+            ProjectDTO::new()->fromArray([
+                'name' => $this->faker->name(),
+                'description' => $this->faker->sentence(),
+                'addedby' => $owner
+            ])
+        );
+
+        $this->assertDatabaseHas("projects", [
+            'name' => $project->name,
+            'description' => $project->description,
+            'addedby_type' => $owner::class,
+            'addedby_id' => $owner->id,
+        ]);
+        
+        $participation = $project->participants()->create([
+            'participating_as' => ProjectParticipantEnum::learner->value
+        ]);
+        $participation->participant()->associate($participant);
+        $participation->save();
+
+        $this->assertDatabaseHas("project_participant", [
+            'project_id' => $project->id,
+            'participating_as' => ProjectParticipantEnum::learner->value,
+            'participant_type' => $participant::class,
+            'participant_id' => $participant->id,
+        ]);
+        
+        $this->expectExceptionMessage('Sorry! A valid user is required to perform this action.');
+
+        $projectService->leaveProject(
+            ProjectDTO::new()->fromArray([
+                'projectId' => $project->id
+            ]));
+    }
+
+    public function testCannotLeaveAProjectWithoutProjectId()
+    {
+        $this->expectException(ProjectException::class);
+
+        $owner = User::factory()->hasAttached(UserType::factory([
+            'name' => UserType::STUDENT
+        ]),[], 'userTypes')->create();
+
+        $participant = User::factory()->hasAttached(UserType::factory([
+            'name' => UserType::STUDENT
+        ]),[], 'userTypes')->create();
+
+        $projectService = (new ProjectService);
+
+        $project = $projectService->createProject(
+            ProjectDTO::new()->fromArray([
+                'name' => $this->faker->name(),
+                'description' => $this->faker->sentence(),
+                'addedby' => $owner
+            ])
+        );
+
+        $this->assertDatabaseHas("projects", [
+            'name' => $project->name,
+            'description' => $project->description,
+            'addedby_type' => $owner::class,
+            'addedby_id' => $owner->id,
+        ]);
+        
+        $participation = $project->participants()->create([
+            'participating_as' => ProjectParticipantEnum::learner->value
+        ]);
+        $participation->participant()->associate($participant);
+        $participation->save();
+
+        $this->assertDatabaseHas("project_participant", [
+            'project_id' => $project->id,
+            'participating_as' => ProjectParticipantEnum::learner->value,
+            'participant_type' => $participant::class,
+            'participant_id' => $participant->id,
+        ]);
+        
+        $this->expectExceptionMessage('Sorry! A valid project is required to perform this action.');
+
+        $projectService->removeParticipants(
+            ProjectDTO::new()->fromArray([
+                'addedby' => $participant
+            ]));
+    }
+
+    public function testCannotLeaveAProjectWithFakeParticipationType()
+    {
+        $this->expectException(ProjectException::class);
+
+        $owner = User::factory()->hasAttached(UserType::factory([
+            'name' => UserType::STUDENT
+        ]),[], 'userTypes')->create();
+
+        $participant = User::factory()->hasAttached(UserType::factory([
+            'name' => UserType::STUDENT
+        ]),[], 'userTypes')->create();
+
+        $projectService = (new ProjectService);
+
+        $project = $projectService->createProject(
+            ProjectDTO::new()->fromArray([
+                'name' => $this->faker->name(),
+                'description' => $this->faker->sentence(),
+                'addedby' => $owner
+            ])
+        );
+
+        $this->assertDatabaseHas("projects", [
+            'name' => $project->name,
+            'description' => $project->description,
+            'addedby_type' => $owner::class,
+            'addedby_id' => $owner->id,
+        ]);
+        
+        $participation = $project->participants()->create([
+            'participating_as' => ProjectParticipantEnum::learner->value
+        ]);
+        $participation->participant()->associate($participant);
+        $participation->save();
+
+        $this->assertDatabaseHas("project_participant", [
+            'project_id' => $project->id,
+            'participating_as' => ProjectParticipantEnum::learner->value,
+            'participant_type' => $participant::class,
+            'participant_id' => $participant->id,
+        ]);
+        
+        $this->expectExceptionMessage("Sorry, participant cannot participate in the project as FAKEPARTICIPATIONTYPE.");
+
+        $projectService->leaveProject(
+            ProjectDTO::new()->fromArray([
+                'participationType' => "fakeParticipationType",
+                'addedby' => $participant,
+                'projectId' => $project->id
+            ]));
+    }
+
+    public function testCannotLeaveAProjectWithWrongParticipationType()
+    {
+        $this->expectException(ProjectException::class);
+
+        $owner = User::factory()->hasAttached(UserType::factory([
+            'name' => UserType::STUDENT
+        ]),[], 'userTypes')->create();
+
+        $participant = User::factory()->hasAttached(UserType::factory([
+            'name' => UserType::STUDENT
+        ]),[], 'userTypes')->hasAttached(UserType::factory([
+            'name' => UserType::FACILITATOR
+        ]),[], 'userTypes')->create();
+
+        $projectService = (new ProjectService);
+
+        $project = $projectService->createProject(
+            ProjectDTO::new()->fromArray([
+                'name' => $this->faker->name(),
+                'description' => $this->faker->sentence(),
+                'addedby' => $owner
+            ])
+        );
+
+        $this->assertDatabaseHas("projects", [
+            'name' => $project->name,
+            'description' => $project->description,
+            'addedby_type' => $owner::class,
+            'addedby_id' => $owner->id,
+        ]);
+        
+        $participation = $project->participants()->create([
+            'participating_as' => ProjectParticipantEnum::learner->value
+        ]);
+        $participation->participant()->associate($participant);
+        $participation->save();
+
+        $this->assertDatabaseHas("project_participant", [
+            'project_id' => $project->id,
+            'participating_as' => ProjectParticipantEnum::learner->value,
+            'participant_type' => $participant::class,
+            'participant_id' => $participant->id,
+        ]);
+        
+        $this->expectExceptionMessage("Sorry! User with name {$participant->name} is not participating as facilitator in this project.");
+
+        $projectService->leaveProject(
+            ProjectDTO::new()->fromArray([
+                'participationType' => "facilitator",
+                'addedby' => $participant,
+                'projectId' => $project->id
+            ]));
+    }
+
+    public function testCanLeaveAProjectAsLearner()
+    {
+        $owner = User::factory()->hasAttached(UserType::factory([
+            'name' => UserType::STUDENT
+        ]),[], 'userTypes')->create();
+
+        $participant = User::factory()->hasAttached(UserType::factory([
+            'name' => UserType::STUDENT
+        ]),[], 'userTypes')->hasAttached(UserType::factory([
+            'name' => UserType::FACILITATOR
+        ]),[], 'userTypes')->create();
+
+        $projectService = (new ProjectService);
+
+        $project = $projectService->createProject(
+            ProjectDTO::new()->fromArray([
+                'name' => $this->faker->name(),
+                'description' => $this->faker->sentence(),
+                'addedby' => $owner
+            ])
+        );
+
+        $this->assertDatabaseHas("projects", [
+            'name' => $project->name,
+            'description' => $project->description,
+            'addedby_type' => $owner::class,
+            'addedby_id' => $owner->id,
+        ]);
+        
+        $participation = $project->participants()->create([
+            'participating_as' => ProjectParticipantEnum::learner->value
+        ]);
+        $participation->participant()->associate($participant);
+        $participation->save();
+
+        $this->assertDatabaseHas("project_participant", [
+            'project_id' => $project->id,
+            'participating_as' => ProjectParticipantEnum::learner->value,
+            'participant_type' => $participant::class,
+            'participant_id' => $participant->id,
+        ]);
+        
+        $projectService->leaveProject(
+            ProjectDTO::new()->fromArray([
+                'participationType' => "learner",
+                'addedby' => $participant,
+                'projectId' => $project->id
+            ]));
+
+        $this->assertDatabaseMissing("project_participant", [
+            'project_id' => $project->id,
+            'participating_as' => ProjectParticipantEnum::learner->value,
+            'participant_type' => $participant::class,
+            'participant_id' => $participant->id,
+        ]);
+    }
+
+    public function testCanLeaveAProjectAsFacilitator()
+    {
+        $owner = User::factory()->hasAttached(UserType::factory([
+            'name' => UserType::STUDENT
+        ]),[], 'userTypes')->create();
+
+        $participant = User::factory()->hasAttached(UserType::factory([
+            'name' => UserType::STUDENT
+        ]),[], 'userTypes')->hasAttached(UserType::factory([
+            'name' => UserType::FACILITATOR
+        ]),[], 'userTypes')->create();
+
+        $projectService = (new ProjectService);
+
+        $project = $projectService->createProject(
+            ProjectDTO::new()->fromArray([
+                'name' => $this->faker->name(),
+                'description' => $this->faker->sentence(),
+                'addedby' => $owner
+            ])
+        );
+
+        $this->assertDatabaseHas("projects", [
+            'name' => $project->name,
+            'description' => $project->description,
+            'addedby_type' => $owner::class,
+            'addedby_id' => $owner->id,
+        ]);
+        
+        $participation = $project->participants()->create([
+            'participating_as' => ProjectParticipantEnum::facilitator->value
+        ]);
+        $participation->participant()->associate($participant);
+        $participation->save();
+
+        $this->assertDatabaseHas("project_participant", [
+            'project_id' => $project->id,
+            'participating_as' => ProjectParticipantEnum::facilitator->value,
+            'participant_type' => $participant::class,
+            'participant_id' => $participant->id,
+        ]);
+        
+        $projectService->leaveProject(
+            ProjectDTO::new()->fromArray([
+                'participationType' => "facilitator",
+                'addedby' => $participant,
                 'projectId' => $project->id
             ]));
 

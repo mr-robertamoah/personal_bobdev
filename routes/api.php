@@ -101,6 +101,16 @@ Route::group(['middleware' => 'auth:sanctum'], function() {
     Route::get('profile/{type}/{id}', [ProfileController::class, 'getUserProfile'])
         ->whereIn('type', ['user', 'company']);
     
+    Route::post('/project/create', [ProjectController::class, 'create']);
+    Route::post('/project/{project_id}/update', [ProjectController::class, 'update']);
+    Route::delete('/project/{project_id}', [ProjectController::class, 'delete']);
+    Route::post('/project/{project_id}/invite_participants', [ProjectController::class, 'sendParticipationInvitation']);
+    Route::post('/project/{project_id}/remove_participants', [ProjectController::class, 'removeParticipants']);
+    Route::post('/project/{project_id}/add_skills', [ProjectController::class, 'addSkills']);
+    Route::post('/project/{project_id}/remove_skills', [ProjectController::class, 'removeSkills']);
+    Route::post('/project/{project_id}/leave', [ProjectController::class, 'leave']);
+    Route::get('/projects/{project_id}', [ProjectController::class, 'getProject']);
+    Route::get('/projects', [ProjectController::class, 'getProjects']);
 });
 
 Route::post('/login', [AuthController::class, 'login']);

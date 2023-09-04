@@ -36,6 +36,7 @@ class EnsureAddedbyIsAuthorizedAction extends Action
             'update' => "Sorry! You are not authorized to update a project.",
             'delete' => 'Sorry! You are not authorized to delete a project.',
             'create' => "Sorry! You are not authorized to create a project.",
+            default => "Sorry! You are not authorized to perform this action on this project.",
         };
     }
 
@@ -78,12 +79,5 @@ class EnsureAddedbyIsAuthorizedAction extends Action
         }
 
         return false;
-    }
-
-    private function isNotAuthorized(ProjectDTO $projectDTO, string $action = 'create')
-    {
-        return !$this->isAuthorized(
-            projectDTO: $projectDTO, action: $action
-        );
     }
 }

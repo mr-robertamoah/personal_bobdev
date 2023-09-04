@@ -75,6 +75,11 @@ class Project extends Requestable
         return $this->morphTo();
     }
 
+    public function projectSessions()
+    {
+        return $this->hasMany(ProjectSession::class);
+    }
+
     public function skills()
     {
         return $this->belongsToMany(Skill::class)

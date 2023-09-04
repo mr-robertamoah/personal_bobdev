@@ -10,17 +10,25 @@ class CheckIfValidSkillsAction extends Action
 {
     public function execute(array $ids)
     {
-        foreach ($ids as $key => $value) {
-            $this->checkValidity($value);
-        }
-    }
-
-    private function checkValidity($id)
-    {
-        if (Skill::find($id)) {
+        $validSkillIds = Skill::query()
+            ->whereIn('id', $ids)
+            ->pluck('id')
+            ->toArray();
+        
+        if (count($ids) == count($validSkillIds)) {
             return;
         }
 
-        throw new SkillException("Sorry, no skill with id {$id} exists.");
+        $ids = array_reduce(
+            array_diff($ids, $validSkillIds), 
+            function($carry, $item) {
+                if ($carry)
+                {
+                    return str($carry) . ", " . str($item);
+                }
+
+                return str($item);
+            });
+        throw new SkillException("Sorry, ({$ids}) ids do not point to valid skills.");
     }
 }

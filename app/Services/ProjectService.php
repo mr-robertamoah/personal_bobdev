@@ -3,11 +3,10 @@
 namespace App\Services;
 
 use App\Actions\Activity\AddActivityAction;
+use App\Actions\EnsureAddedByExistsAction;
 use App\Actions\GetModelAction;
 use App\Actions\Project\EnsureParticipationIsValidArrayAction;
 use App\Actions\GetUserDataForUserId;
-use App\Actions\Project\BecomeProjectParticipantAction;
-use App\Actions\Project\EnsureAddedByExistsAction;
 use App\Actions\Project\EnsureAddedbyIsAuthorizedAction;
 use App\Actions\Project\CheckDataAppropriatenessAction;
 use App\Actions\Project\EnsureIsValidParticipationTypeAction;
@@ -16,12 +15,12 @@ use App\Actions\Project\EnsureParticipantIsOfValidParticipantClassAction;
 use App\Actions\Project\EnsureProjectExistsAction;
 use App\Actions\Project\EnsurePotentialParticipantIsNotAlreadyAParticipantAction;
 use App\Actions\Project\EnsurePotentialParticipantExistsAction;
-use App\Actions\Project\EnsureProjectHasSkillsAction;
 use App\Actions\Project\EnsureUserIsParticipatingAsTypeAction;
 use App\Actions\Project\LeaveProjectAction;
 use App\Actions\Project\RemoveParticipantAction;
 use App\Actions\Requests\CreateRequestAction;
 use App\Actions\Requests\EnsureFacilitatorCannotRemoveFacilitatorAction;
+use App\Actions\SetStartAndEndDatesAction;
 use App\Actions\Skills\CheckIfValidSkillsAction;
 use App\DTOs\ActivityDTO;
 use App\DTOs\ProjectDTO;
@@ -29,10 +28,8 @@ use App\DTOs\RequestDTO;
 use App\Models\Project;
 use App\Models\User;
 use App\Models\UserType;
-use Carbon\Carbon;
-use DateTime;
 
-class ProjectService
+class ProjectService extends Service
 {
     const AUTHORIZEDUSERTYPES = [
         UserType::ADMIN,
@@ -41,7 +38,7 @@ class ProjectService
         UserType::STUDENT,
     ];
     
-    public function createProject(ProjectDTO $projectDTO): Project
+    public function createProject(ProjectDTO $projectDTO): Project|null
     {
         EnsureAddedByExistsAction::make()->execute($projectDTO);
 
@@ -49,12 +46,19 @@ class ProjectService
 
         CheckDataAppropriatenessAction::make()->execute($projectDTO, 'create');
 
-        return $projectDTO->addedby->addedProjects()->create(
+        $project = $projectDTO->addedby->addedProjects()->create(
             [
                 ...$projectDTO->getData(filled: true),
-                ...$this->setDates($projectDTO)
+                ...SetStartAndEndDatesAction::make()->execute($projectDTO)
             ]
         );
+
+        if ($project instanceOf Project)
+        {
+            return $project;
+        }
+
+        return null;
     }
 
     public function updateProject(ProjectDTO $projectDTO)
@@ -84,7 +88,9 @@ class ProjectService
 
         EnsureAddedbyIsAuthorizedAction::make()->execute($projectDTO, 'update');
 
-        $projectDTO->project->update($this->setDates($projectDTO));
+        $projectDTO->project->update(
+            SetStartAndEndDatesAction::make()->execute($projectDTO)
+        );
 
         return $projectDTO->project->refresh();
     }
@@ -113,13 +119,15 @@ class ProjectService
         EnsureProjectExistsAction::make()->execute($projectDTO);
 
         EnsureAddedbyIsAuthorizedAction::make()->execute(
-            projectDTO: $projectDTO, what: 'skill');
+            projectDTO: $projectDTO, what: 'skills', action: 'update');
 
         CheckIfValidSkillsAction::make()->execute($ids);
 
         $ids = array_diff($ids, $projectDTO->project->skills()->allRelatedIds()->toArray());
 
         $projectDTO->project->skills()->attach($ids);
+
+        // TODO broadcast on project
 
         return $projectDTO->project->refresh();
     }
@@ -133,7 +141,7 @@ class ProjectService
         EnsureProjectExistsAction::make()->execute($projectDTO);
 
         EnsureAddedbyIsAuthorizedAction::make()->execute(
-            projectDTO: $projectDTO, what: 'skill');
+            projectDTO: $projectDTO, what: 'skills', action: 'update');
 
         CheckIfValidSkillsAction::make()->execute($ids);
 
@@ -144,7 +152,6 @@ class ProjectService
         return $projectDTO->project->refresh();
     }
 
-    // TODO remove participant or participant leaving
     // TODO broadcast successfull leaving to owner and facilitators
 
     public function leaveProject(ProjectDTO $projectDTO)
@@ -156,8 +163,6 @@ class ProjectService
         EnsureProjectExistsAction::make()->execute($projectDTO);
 
         $projectDTO = $projectDTO->withParticipant($projectDTO->addedby);
-
-        EnsureParticipantExistsAction::make()->execute($projectDTO);
 
         EnsureParticipantIsOfValidParticipantClassAction::make()->execute($projectDTO);
 
@@ -300,7 +305,7 @@ class ProjectService
 
         return [
             ...$data,
-            ...$this->setDates($projectDTO)
+            ...SetStartAndEndDatesAction::make()->execute($projectDTO)
         ];
     }
 
@@ -316,41 +321,5 @@ class ProjectService
         return $projectDTO->withParticipant(
             User::find($projectDTO->participantId)
         );
-    }
-
-    private function setDates(ProjectDTO $projectDTO)
-    {
-        $dates = [];
-
-        if ($projectDTO->startDate) {
-            $dates['start_date'] = $this->transformDate($projectDTO->startDate);
-        }
-
-        if ($projectDTO->endDate) {
-            $dates['end_date'] = $this->transformDate($projectDTO->endDate);
-        }
-
-        return $dates;
-    }
-
-    private function transformDate(string|DateTime|Carbon|null $date): string|null
-    {
-        if (is_null($date)) {
-            return $date;
-        }
-        
-        if (is_string($date) && Carbon::parse($date)->isValid()) {
-            return Carbon::parse($date)->toDateTimeString();
-        }
-        
-        if ($date instanceof Carbon) {
-            return $date->toDateTimeString();
-        }
-        
-        if ($date instanceof DateTime) {
-            return $date->format('Y-m-d H:i:s Z');
-        }
-
-        return null;
     }
 }

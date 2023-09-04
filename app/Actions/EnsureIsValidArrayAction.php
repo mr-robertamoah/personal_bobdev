@@ -14,7 +14,7 @@ class EnsureIsValidArrayAction extends Action
         }
         
         if (array_is_list($dto->items)) {
-            throw new $dto->exception("Sorry! You need to provide a list of user ids pointing to the {$dto->itemsName} type you wish to establish with the company.");
+            throw new $dto->exception("Sorry! You need to provide a list of user ids pointing to the {$dto->itemsName} type you wish to establish with the company/project.");
         }
 
         $values = array_values($dto->items);

@@ -15,7 +15,7 @@ class EnsureMembershipIsListAction extends Action
         }
         
         if (array_is_list($companyDTO->memberships)) {
-            throw new CompanyException('Sorry! You need to provide a list of user ids pointing to the membership type you wish to establish with the company.');
+            throw new CompanyException('Sorry! You need to provide a list of user ids pointing to the membership type you wish to establish with the company/project.');
         }
 
         $values = array_values($companyDTO->memberships);

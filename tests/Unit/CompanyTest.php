@@ -1123,7 +1123,7 @@ class CompanyTest extends TestCase
     public function testCannotSendMembershipRequestFromCompanyWithMembershipListOfIdsWithoutMainRelationshipType()
     {
         $this->expectException(CompanyException::class);
-        $this->expectExceptionMessage('Sorry! You need to provide a list of user ids pointing to the membership type you wish to establish with the company.');
+        $this->expectExceptionMessage('Sorry! You need to provide a list of user ids pointing to the membership type you wish to establish with the company/project.');
 
         $user = User::factory()
             ->hasAttached(UserType::factory([

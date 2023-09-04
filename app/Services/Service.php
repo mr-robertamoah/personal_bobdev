@@ -12,6 +12,11 @@ class Service
         return new static;
     }
 
+    public static function new(): self
+    {
+        return new static;
+    }
+
     public static function __callStatic($name, $arguments)
     {
         if (method_exists($class = static::class, $name)) {
