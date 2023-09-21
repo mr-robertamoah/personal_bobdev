@@ -47,6 +47,11 @@ class EnsureAddedbyIsAuthorizedAction extends Action
         string $what = null,
     )
     {
+        $isAddedby = $projectDTO->addedby->is($projectDTO->project?->addedby);
+        $isAdmin = $projectDTO->addedby->isAdmin();
+
+        if ($isAddedby || $isAdmin) return true;
+
         if (in_array($action, ['create']))
         {
             return $projectDTO->addedby->hasUserTypes(ProjectService::AUTHORIZEDUSERTYPES);            
@@ -59,23 +64,19 @@ class EnsureAddedbyIsAuthorizedAction extends Action
             return true;
         }
 
-        $isAddedby = $projectDTO->addedby->is($projectDTO->project?->addedby);
-        $isAdmin = $projectDTO->addedby->isAdmin();
-
         if (
             in_array($action, ['remove']) &&
-            ($isAdmin || $isAddedby || $isFacilitator)
+            ($isFacilitator)
         ) {
             return true;
         }
 
-        if (in_array($action, ['update', 'delete'])) {
-
-            return $isAddedby || $isAdmin ||
-                (
-                    $isFacilitator && 
-                    IsLearnerParticipantTypeAction::make()->execute($participationType ?? $projectDTO->participationType)
-                );
+        if (in_array($action, ['update', 'delete']))
+        {
+            return (
+                $isFacilitator && 
+                IsLearnerParticipantTypeAction::make()->execute($participationType ?? $projectDTO->participationType)
+            );
         }
 
         return false;

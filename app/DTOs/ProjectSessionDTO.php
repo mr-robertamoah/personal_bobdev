@@ -3,6 +3,7 @@
 namespace App\DTOs;
 
 use App\Models\Company;
+use App\Models\Project;
 use App\Models\ProjectSession;
 use App\Models\User;
 use Carbon\Carbon;
@@ -14,7 +15,9 @@ class ProjectSessionDTO extends BaseDTO
 {
     public ProjectSession|null $projectSession = null;
     public int|string|null $projectId = null;
+    public Project|null $project = null;
     public string|null $period = null;
+    public string|null $name = null;
     public string|null $type = null;
     public Carbon|DateTime|string|null $startDate = null;
     public Carbon|DateTime|string|null $endDate = null;

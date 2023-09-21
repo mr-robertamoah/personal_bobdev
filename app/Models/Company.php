@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Abstracts\Requestable;
 use App\Enums\RelationshipTypeEnum;
+use App\Traits\HasAuthorizableTrait;
 use App\Traits\HasProfileTrait;
 use App\Traits\HasRequestForTrait;
 use App\Traits\HasProjectParticipantTrait;
@@ -18,6 +19,7 @@ class Company extends Requestable
     HasProjectParticipantTrait,
     HasProfileTrait,
     HasRequestForTrait,
+    HasAuthorizableTrait,
     SoftDeletes;
     
     const ALIASLENGTH = 8;

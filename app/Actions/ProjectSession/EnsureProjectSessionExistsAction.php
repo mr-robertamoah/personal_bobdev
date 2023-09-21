@@ -10,7 +10,7 @@ class EnsureProjectSessionExistsAction extends Action
 {
     public function execute(ProjectSessionDTO $projectSessionDTO)
     {
-        if ($projectSessionDTO->project) {
+        if ($projectSessionDTO->projectSession) {
             return;
         }
         

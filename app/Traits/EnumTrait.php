@@ -12,11 +12,11 @@ trait EnumTrait
         }, self::cases());
     }
 
-    public static function getValueOf(string $name)
+    public static function getValueOf(string $name) : ?string
     {
         foreach (self::cases() as $case)
         {
-            if ($case->name == $name) return $case->value;
+            if (strtolower($case->name) == strtolower($name)) return $case->value;
         }
 
         return null;

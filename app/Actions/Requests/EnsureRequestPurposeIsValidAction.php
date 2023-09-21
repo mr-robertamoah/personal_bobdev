@@ -19,7 +19,7 @@ class EnsureRequestPurposeIsValidAction extends Action
         }
         
         if (
-            isProjectPurpose::make()->execute($requestDTO->purpose) ||
+            IsProjectPurpose::make()->execute($requestDTO->purpose) ||
             $this->isCompanyPurpose($requestDTO->purpose)
         ) {
             return; 

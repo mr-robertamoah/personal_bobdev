@@ -106,6 +106,7 @@ Route::group(['middleware' => 'auth:sanctum'], function() {
     Route::delete('/project/{project_id}', [ProjectController::class, 'delete']);
     Route::post('/project/{project_id}/invite_participants', [ProjectController::class, 'sendParticipationInvitation']);
     Route::post('/project/{project_id}/remove_participants', [ProjectController::class, 'removeParticipants']);
+    Route::post('/project/{project_id}/become', [ProjectController::class, 'becomeParticipant']);
     Route::post('/project/{project_id}/add_skills', [ProjectController::class, 'addSkills']);
     Route::post('/project/{project_id}/remove_skills', [ProjectController::class, 'removeSkills']);
     Route::post('/project/{project_id}/leave', [ProjectController::class, 'leave']);

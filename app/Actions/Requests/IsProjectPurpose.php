@@ -5,7 +5,7 @@ namespace App\Actions\Requests;
 use App\Actions\Action;
 use App\Enums\ProjectParticipantEnum;
 
-class isProjectPurpose extends Action
+class IsProjectPurpose extends Action
 {
     public function execute(string $purpose): bool
     {

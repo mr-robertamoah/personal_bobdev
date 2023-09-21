@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Actions;
+namespace App\Actions\Company;
 
+use App\Actions\Action;
 use App\DTOs\RequestDTO;
 
 class SendCompanyMembershipRequestToUserAction extends Action

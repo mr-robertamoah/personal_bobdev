@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Actions\Activity\AddActivityAction;
-use App\Actions\EnsureAddedByExistsAction;
+use App\Actions\EnsureUserExistsAction;
 use App\Actions\GetModelAction;
 use App\Actions\Project\EnsureParticipationIsValidArrayAction;
 use App\Actions\GetUserDataForUserId;
@@ -40,7 +40,7 @@ class ProjectService extends Service
     
     public function createProject(ProjectDTO $projectDTO): Project|null
     {
-        EnsureAddedByExistsAction::make()->execute($projectDTO);
+        EnsureUserExistsAction::make()->execute($projectDTO);
 
         EnsureAddedbyIsAuthorizedAction::make()->execute($projectDTO, 'create');
 
@@ -63,7 +63,7 @@ class ProjectService extends Service
 
     public function updateProject(ProjectDTO $projectDTO)
     {
-        EnsureAddedByExistsAction::make()->execute($projectDTO);
+        EnsureUserExistsAction::make()->execute($projectDTO);
         
         $projectDTO = $this->setProjectOnDTO($projectDTO);
 
@@ -80,7 +80,7 @@ class ProjectService extends Service
 
     public function updateProjectDates(ProjectDTO $projectDTO)
     {
-        EnsureAddedByExistsAction::make()->execute($projectDTO);
+        EnsureUserExistsAction::make()->execute($projectDTO);
         
         $projectDTO = $this->setProjectOnDTO($projectDTO);
 
@@ -97,7 +97,7 @@ class ProjectService extends Service
 
     public function deleteProject(ProjectDTO $projectDTO)
     {
-        EnsureAddedByExistsAction::make()->execute($projectDTO);
+        EnsureUserExistsAction::make()->execute($projectDTO);
         
         $projectDTO = $this->setProjectOnDTO($projectDTO);
 
@@ -112,7 +112,7 @@ class ProjectService extends Service
 
     public function addSkillsToProject(ProjectDTO $projectDTO, array $ids)
     {
-        EnsureAddedByExistsAction::make()->execute($projectDTO);
+        EnsureUserExistsAction::make()->execute($projectDTO);
         
         $projectDTO = $this->setProjectOnDTO($projectDTO);
 
@@ -134,7 +134,7 @@ class ProjectService extends Service
 
     public function removeSkillsFromProject(ProjectDTO $projectDTO, array $ids)
     {
-        EnsureAddedByExistsAction::make()->execute($projectDTO);
+        EnsureUserExistsAction::make()->execute($projectDTO);
         
         $projectDTO = $this->setProjectOnDTO($projectDTO);
 
@@ -158,7 +158,7 @@ class ProjectService extends Service
     {
         $projectDTO = $this->setProjectOnDTO($projectDTO);
 
-        EnsureAddedByExistsAction::make()->execute($projectDTO);
+        EnsureUserExistsAction::make()->execute($projectDTO);
         
         EnsureProjectExistsAction::make()->execute($projectDTO);
 
@@ -177,7 +177,7 @@ class ProjectService extends Service
     {
         $projectDTO = $this->setProjectOnDTO($projectDTO);
 
-        EnsureAddedByExistsAction::make()->execute($projectDTO);
+        EnsureUserExistsAction::make()->execute($projectDTO);
         
         EnsureProjectExistsAction::make()->execute($projectDTO);
 
@@ -232,7 +232,7 @@ class ProjectService extends Service
     {
         $projectDTO = $this->setProjectOnDTO($projectDTO);
 
-        EnsureAddedByExistsAction::make()->execute($projectDTO);
+        EnsureUserExistsAction::make()->execute($projectDTO);
         
         EnsureProjectExistsAction::make()->execute($projectDTO);
 
@@ -313,13 +313,6 @@ class ProjectService extends Service
     {
         return $projectDTO->withProject(
             $projectDTO->project ?? Project::find($projectDTO->projectId)
-        );
-    }
-
-    private function setParticipantOnDTO(ProjectDTO $projectDTO): ProjectDTO
-    {
-        return $projectDTO->withParticipant(
-            User::find($projectDTO->participantId)
         );
     }
 }

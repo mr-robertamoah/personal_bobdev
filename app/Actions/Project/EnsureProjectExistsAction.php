@@ -3,14 +3,14 @@
 namespace App\Actions\Project;
 
 use App\Actions\Action;
-use App\DTOs\ProjectDTO;
 use App\Exceptions\ProjectException;
+use MrRobertAmoah\DTO\BaseDTO;
 
 class EnsureProjectExistsAction extends Action
 {
-    public function execute(ProjectDTO $projectDTO)
+    public function execute(BaseDTO $dto)
     {
-        if ($projectDTO->project) {
+        if ($dto->project) {
             return;
         }
         

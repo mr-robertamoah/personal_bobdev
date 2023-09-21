@@ -14,6 +14,7 @@ use Carbon\Carbon;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -155,6 +156,56 @@ class User extends Authenticatable implements Request
     {
         return $this->morphMany(Relation::class, 'to');
     }
+
+    public function addedRoles()
+    {
+        return $this->hasMany(Role::class, 'user_id');
+    }
+
+    public function addedPermissions()
+    {
+        return $this->hasMany(Permission::class, 'user_id');
+    }
+
+    public function authorizations()
+    {
+        return $this->hasMany(Authorization::class);
+    }
+
+    public function permissionsAuthorized()
+    {
+        return $this->morphedByMany(Permission::class, "authorized", "authorizations");
+    }
+
+    public function rolesAuthorized()
+    {
+        return $this->morphedByMany(Role::class, "authorized", "authorizations");
+    }
+
+    public function companyAuthorizables()
+    {
+        return $this->morphedByMany(Company::class, "authorizable", "authorizations");
+    }
+
+    public function projectAuthorizables()
+    {
+        return $this->morphedByMany(Project::class, "authorizable", "authorizations");
+    }
+
+    public function isAuthorizedFor(Model $authorizable, Model  $authorized)
+    {
+        return $this->authorizations()
+            ->whereAuthorizable($authorizable)
+            ->whereAuthorized($authorized)
+            ->exists();
+    }
+
+    public function hasAuthorizationForPermissionWithName(string $name)
+    {
+        return $this->authorizations()
+            ->whereAuthorizedHasPermissionName($name)
+            ->exists();
+    }
     // end of relationships
 
     // start of methods
@@ -267,6 +318,21 @@ class User extends Authenticatable implements Request
             Project::class,
             Company::class
         ];
+    }
+
+    public function ownsCompany() : bool
+    {
+        return $this->addedCompanies()->exists();
+    }
+
+    public function ownsProject() : bool
+    {
+        return $this->addedProjects()->exists();
+    }
+
+    public function isPermittedTo(string $permit) : bool
+    {
+        return $this->hasAuthorizationForPermissionWithName($permit);
     }
     // end of methods
 

@@ -8,6 +8,7 @@ use App\DTOs\SkillTypeDTO;
 use App\Enums\ProjectParticipantEnum;
 use App\Enums\RequestTypeEnum;
 use App\Exceptions\ProjectException;
+use App\Exceptions\ServiceException;
 use App\Exceptions\SkillException;
 use App\Exceptions\UserException;
 use App\Models\User;
@@ -25,7 +26,7 @@ class ProjectTest extends TestCase
 
     public function testCannotCreateProjectWithoutAnAddedByUser()
     {
-        $this->expectException(ProjectException::class);
+        $this->expectException(ServiceException::class);
         $this->expectExceptionMessage('Sorry! A valid user is required to perform this action.');
         
         (new ProjectService)->createProject(
@@ -141,7 +142,7 @@ class ProjectTest extends TestCase
 
     public function testCannotUpdateProjectWithoutAddedby()
     {
-        $this->expectException(ProjectException::class);
+        $this->expectException(ServiceException::class);
         $this->expectExceptionMessage('Sorry! A valid user is required to perform this action.');
         
         $user = User::factory()
@@ -383,7 +384,7 @@ class ProjectTest extends TestCase
 
     public function testCannotDeleteProjectWithoutBeingOwnerOrAdmin()
     {
-        $this->expectException(ProjectException::class);
+        $this->expectException(ServiceException::class);
         $this->expectExceptionMessage('Sorry! A valid user is required to perform this action.');
         
         $user = User::factory()
@@ -1833,7 +1834,7 @@ class ProjectTest extends TestCase
 
     public function testCannotRemoveAParticipantFromAProjectWithoutAddedby()
     {
-        $this->expectException(ProjectException::class);
+        $this->expectException(ServiceException::class);
 
         $owner = User::factory()->hasAttached(UserType::factory([
             'name' => UserType::STUDENT
@@ -2485,7 +2486,7 @@ class ProjectTest extends TestCase
 
     public function testCannotLeaveAProjectWithoutAddedby()
     {
-        $this->expectException(ProjectException::class);
+        $this->expectException(ServiceException::class);
 
         $owner = User::factory()->hasAttached(UserType::factory([
             'name' => UserType::STUDENT

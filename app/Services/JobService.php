@@ -2,11 +2,9 @@
 
 namespace App\Services;
 
-use App\DTOs\ActivityDTO;
 use App\DTOs\JobDTO;
 use App\Exceptions\JobException;
 use App\Models\Job;
-use App\Models\User;
 use App\Models\UserType;
 
 class JobService

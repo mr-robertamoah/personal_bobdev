@@ -143,6 +143,11 @@ class ProjectController extends Controller
         ]);
     }
     
+    public function become(Request $request)
+    {
+        
+    }
+    
     public function leave(Request $request)
     {
         

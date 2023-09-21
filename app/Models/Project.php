@@ -9,12 +9,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Abstracts\Requestable;
+use App\Traits\HasAuthorizableTrait;
 
 class Project extends Requestable
 {
     use HasFactory,
     HasRequestForTrait,
-    SoftDeletes;
+    SoftDeletes,
+    HasAuthorizableTrait;
 
     protected $fillable = ['name', 'description', 'start_date', 'end_date'];
 
