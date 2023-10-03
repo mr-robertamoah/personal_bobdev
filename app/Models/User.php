@@ -172,14 +172,19 @@ class User extends Authenticatable implements Request
         return $this->hasMany(Authorization::class);
     }
 
+    public function authorized()
+    {
+        return $this->morphMany(Authorization::class, "authorized");
+    }
+
     public function permissionsAuthorized()
     {
-        return $this->morphedByMany(Permission::class, "authorized", "authorizations");
+        return $this->morphedByMany(Permission::class, "authorization", "authorizations");
     }
 
     public function rolesAuthorized()
     {
-        return $this->morphedByMany(Role::class, "authorized", "authorizations");
+        return $this->morphedByMany(Role::class, "authorization", "authorizations");
     }
 
     public function companyAuthorizables()
@@ -192,18 +197,34 @@ class User extends Authenticatable implements Request
         return $this->morphedByMany(Project::class, "authorizable", "authorizations");
     }
 
-    public function isAuthorizedFor(Model $authorizable, Model  $authorized)
-    {
-        return $this->authorizations()
-            ->whereAuthorizable($authorizable)
-            ->whereAuthorized($authorized)
-            ->exists();
+    public function isAuthorizedFor(
+        ?Model $authorizable = null,
+        ?Model  $authorization = null,
+        ?string $name = null,
+        ?array $names = null,
+    ) {
+        $query = $this->authorized();
+
+        if ($authorizable) $query->whereAuthorizable($authorizable);
+        if ($authorization) $query->whereAuthorization($authorization);
+        if ($name) $query->whereAuthorizationName($name);
+        if ($names) $query->whereAuthorizationNames($names);
+        
+        return $query->exists();
     }
 
-    public function hasAuthorizationForPermissionWithName(string $name)
+    public function isNotAuthorizedFor(
+        ?Model $authorizable = null,
+        ?Model  $authorization = null,
+        ?string $name = null,
+    ) {
+        return !$this->isAuthorizedFor($authorizable, $authorization, $name);
+    }
+
+    public function hasAuthorizationWithName(string $name)
     {
         return $this->authorizations()
-            ->whereAuthorizedHasPermissionName($name)
+            ->whereAuthorizedName($name)
             ->exists();
     }
     // end of relationships
@@ -332,7 +353,7 @@ class User extends Authenticatable implements Request
 
     public function isPermittedTo(string $permit) : bool
     {
-        return $this->hasAuthorizationForPermissionWithName($permit);
+        return $this->hasAuthorizationWithName($permit);
     }
     // end of methods
 

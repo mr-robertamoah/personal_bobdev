@@ -2,13 +2,16 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\AuthorizationController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\JobController;
 use App\Http\Controllers\LevelCollectionController;
 use App\Http\Controllers\LevelController;
+use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\RequestController;
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SkillController;
 use App\Http\Controllers\SkillTypeController;
 use App\Http\Controllers\UserController;
@@ -112,6 +115,21 @@ Route::group(['middleware' => 'auth:sanctum'], function() {
     Route::post('/project/{project_id}/leave', [ProjectController::class, 'leave']);
     Route::get('/projects/{project_id}', [ProjectController::class, 'getProject']);
     Route::get('/projects', [ProjectController::class, 'getProjects']);
+
+    Route::get('/authorizations', [AuthorizationController::class, 'getAuthorizations']);
+    Route::post('/authorizations', [AuthorizationController::class, 'createAuthorization']);
+    Route::delete('/authorizations/{authorization_id}', [AuthorizationController::class, 'deleteAuthorization']);
+
+    Route::get('/permissions', [PermissionController::class, 'getPermissions']);
+    Route::post('/permissions/{permission_id}', [PermissionController::class, 'updatePermission']);
+    Route::post('/permissions', [PermissionController::class, 'createPermission']);
+    Route::delete('/permissions/{permission_id}', [PermissionController::class, 'deletePermission']);
+
+    Route::get('/roles', [RoleController::class, 'getRoles']);
+    Route::post('/roles/{role_id}/sync', [RoleController::class, 'syncPermissionsAndRole']);
+    Route::post('/roles/{role_id}', [RoleController::class, 'updateRole']);
+    Route::post('/roles', [RoleController::class, 'createRole']);
+    Route::delete('/roles/{role_id}', [RoleController::class, 'deleteRole']);
 });
 
 Route::post('/login', [AuthController::class, 'login']);

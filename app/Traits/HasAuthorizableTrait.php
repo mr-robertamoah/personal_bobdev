@@ -7,7 +7,7 @@ trait HasAuthorizableTrait
 {
     public function authorizations()
     {
-        return $this->morphMany(Authorization::class);
+        return $this->morphMany(Authorization::class, "authorizable");
     }
 
     public function users()

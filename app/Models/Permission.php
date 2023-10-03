@@ -2,19 +2,21 @@
 
 namespace App\Models;
 
+use App\Traits\HasAuthorizationTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Permission extends Model
 {
     use HasFactory;
+    use HasAuthorizationTrait;
 
     const AUTHORIZEDCLASSES = [
         Company::class, Project::class
     ];
 
     protected $fillable = [
-        'name', 'class', 'description'
+        'name', 'class', 'description', 'public'
     ];
 
     public function admin()
@@ -31,4 +33,7 @@ class Permission extends Model
     {
         return $this->morphToMany(User::class, "authorized", "authorizations");
     }
+
+    // scopes
+    
 }

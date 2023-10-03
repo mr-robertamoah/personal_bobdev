@@ -111,6 +111,11 @@ class Company extends Requestable
         return !$this->isMember($user);
     }
 
+    public function isNotParticipant(User $user): bool
+    {
+        return !$this->isMember($user);
+    }
+
     public function getRelationship(User $user): Relation
     {
         return $this

@@ -12,7 +12,8 @@ class CreatePermissionAction extends Action
         return $permissionDTO->user->addedPermissions()->create([
             'name' => $permissionDTO->name,
             'description' => $permissionDTO->description,
-            'class' => $permissionDTO->class
+            'class' => $permissionDTO->class,
+            'public' => $permissionDTO->public ? 1 : 0
         ]);
     }
 }

@@ -4,5 +4,7 @@ return [
     
     "folderName" => "",
 
-    "attachDTO" => true
+    "attachDTO" => true,
+
+    "forcePropertyOnDTO" => false,
 ];

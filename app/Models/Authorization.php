@@ -9,6 +9,8 @@ class Authorization extends Model
 {
     use HasFactory;
 
+    protected $fillable = ["user_id"];
+
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -20,6 +22,11 @@ class Authorization extends Model
     }
 
     public function authorized()
+    {
+        return $this->morphTo();
+    }
+
+    public function authorization()
     {
         return $this->morphTo();
     }
@@ -40,9 +47,9 @@ class Authorization extends Model
         });
     }
 
-    public function scopeWhereAuthorizedHasPermissionName($query, string $name)
+    public function scopeWhereAuthorizationName($query, string $name)
     {
-        return $query->whereMorph("authorized", function ($query, $type) use ($name) {
+        return $query->whereHasMorph("authorization", "*", function ($query, $type) use ($name) {
             if ($type == "App\\Models\\Permission")
             {
                 $query->where("name", $name);
@@ -51,6 +58,21 @@ class Authorization extends Model
 
             $query->whereHas("permissions", function ($query) use ($name) {
                 $query->where("name", $name);
+            });
+        });
+    }
+
+    public function scopeWhereAuthorizationNames($query, array $names = [])
+    {
+        return $query->whereHasMorph("authorization", "*", function ($query, $type) use ($names) {
+            if ($type == "App\\Models\\Permission")
+            {
+                $query->whereIn("name", $names);
+                return;
+            }
+
+            $query->whereHas("permissions", function ($query) use ($names) {
+                $query->whereIn("name", $names);
             });
         });
     }
@@ -67,6 +89,14 @@ class Authorization extends Model
             $query->whereHas("permissions", function ($query) use ($id) {
                 $query->whereId($id);
             });
+        });
+    }
+
+    public function scopeWhereAuthorization($query, $authorizaton)
+    {
+        return $query->where(function($q) use ($authorizaton){
+            $q->where('authorization_type', $authorizaton::class)
+                ->where('authorization_id', $authorizaton->id);
         });
     }
 }

@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string("name")->unique();
             $table->string("class")->nullable();
             $table->text("description")->nullable();
+            $table->boolean("public")->default(1);
             $table->timestamps();
         });
     }

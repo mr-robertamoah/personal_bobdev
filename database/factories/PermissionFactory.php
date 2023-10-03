@@ -18,7 +18,9 @@ class PermissionFactory extends Factory
     {
         return [
             "name" => $this->faker->name,
+            "description" => $this->faker->sentence(),
             "class" => random_int(0, 1) ? "App\\Models\\Project" : "App\\Models\\Company",
+            "public" => random_int(0, 3) ? 1 : 0,
             'user_id' => 1
         ];
     }

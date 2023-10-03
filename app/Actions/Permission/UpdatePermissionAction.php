@@ -12,6 +12,7 @@ class UpdatePermissionAction extends Action
         $data = [
             'name' => $permissionDTO->name,
             'description' => $permissionDTO->description,
+            'public' => $permissionDTO->public,
         ];
 
         $data = array_filter($data, fn($value) => !is_null($value));

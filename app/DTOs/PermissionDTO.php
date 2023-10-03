@@ -5,23 +5,13 @@ namespace App\DTOs;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
+use App\Traits\AuthorizationDTOTrait;
 use Illuminate\Http\Request;
 use MrRobertAmoah\DTO\BaseDTO;
 
 class PermissionDTO extends BaseDTO
 {
-    public ?Permission $permission = null;
-    public ?Role $role = null;
-    public ?User $user = null;
-    public ?string $name = null;
-    public ?string $description = null;
-    public ?string $class = null;
-    public string|int|null $userId = null;
-    public string|int|null $permissionId = null;
-    public array $permissionIds = [];
-    public string|int|null $roleId = null;
-
-    //set properties that correspond with request inputs
+    use AuthorizationDTOTrait;
     
     /**
      * assign data (filled or validated) to the dto properties as an 

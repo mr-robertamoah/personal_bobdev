@@ -8,7 +8,6 @@ use App\DTOs\SkillTypeDTO;
 use App\Enums\ProjectParticipantEnum;
 use App\Enums\RequestStateEnum;
 use App\Enums\RequestTypeEnum;
-use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Models\UserType;
 use App\Services\ProjectService;

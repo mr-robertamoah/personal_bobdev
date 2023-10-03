@@ -6,6 +6,7 @@ use App\DTOs\PermissionDTO;
 use App\Exceptions\PermissionException;
 use App\Exceptions\RoleException;
 use App\Exceptions\ServiceException;
+use App\Models\Authorization;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
@@ -536,20 +537,86 @@ class PermissionTest extends TestCase
             'user_id' => $user->id,
         ]);
     }
+    
+    public function testCanDeletePermissionAndRemoveAllAuthorizationsAndDetachFromRolesWhenSuperAdmin()
+    {
+        $user = User::factory()
+            ->hasAttached(UserType::factory([
+                'name' => UserType::SUPERADMIN
+            ]), [], 'userTypes')
+            ->create();
+        
+        $other = User::factory()
+            ->hasAttached(UserType::factory([
+                'name' => UserType::FACILITATOR
+            ]), [], 'userTypes')
+            ->create();
+        
+        $permission = Permission::factory()->create([
+            'class' => "App\\Models\\Company"
+        ]);
+        
+        $role = Role::factory()->create([
+            'class' => "App\\Models\\Company"
+        ]);
 
-    public function testCannotAttachPermissionsToRoleWithoutUser()
+        $authorization = Authorization::create([
+            "user_id" => $user->id
+        ]);
+        $authorization->authorizable()->associate($other);
+        $authorization->authorization()->associate($permission);
+        $authorization->save();
+
+
+        $role->permissions()->attach($permission);
+
+        $this->assertDatabaseHas('permissions', [
+            'name' => $permission->name,
+            'class' => $permission->class,
+            'id' => $permission->id,
+            'user_id' => $user->id,
+        ]);
+
+        $this->assertDatabaseHas('authorizations', [
+            'authorization_type' => $permission::class,
+            'authorization_id' => $permission->id,
+            'authorizable_type' => $other::class,
+            'authorizable_id' => $other->id,
+        ]);
+
+        $this->assertDatabaseHas('permission_role', [
+            'permission_id' => $permission->id,
+            'role_id' => $user->id,
+        ]);
+        
+        PermissionService::new()->deletePermission(
+            PermissionDTO::new()->fromArray([
+                'user' => $user,
+                'permissionId' => $permission->id
+            ])
+        );
+
+        $this->assertDatabaseMissing('permissions', [
+            'name' => $permission->name,
+            'class' => $permission->class,
+            'id' => $permission->id,
+            'user_id' => $user->id,
+        ]);
+    }
+
+    public function testCannotsyncPermissionsAndRoleWithoutUser()
     {
         $this->expectException(ServiceException::class);
         $this->expectExceptionMessage('Sorry! A valid user is required to perform this action.');
  
         $permission = Permission::factory()->create();
 
-        PermissionService::new()->attachPermissionsToRole(
+        PermissionService::new()->syncPermissionsAndRole(
             PermissionDTO::new()
         );
     }
     
-    public function testCannotAttachPermissionsToRoleWithoutRole()
+    public function testCannotsyncPermissionsAndRoleWithoutRole()
     {
         $this->expectException(RoleException::class);
 
@@ -561,14 +628,14 @@ class PermissionTest extends TestCase
         
         $this->expectExceptionMessage("Sorry! A valid role is required for this action.");
         
-        PermissionService::new()->attachPermissionsToRole(
+        PermissionService::new()->syncPermissionsAndRole(
             PermissionDTO::new()->fromArray([
                 'user' => $user,
             ])
         );
     }
     
-    public function testCannotAttachPermissionsToRoleWithoutPermissionIds()
+    public function testCannotsyncPermissionsAndRoleWithoutPermissionIds()
     {
         $this->expectException(PermissionException::class);
 
@@ -582,7 +649,7 @@ class PermissionTest extends TestCase
         
         $this->expectExceptionMessage("Sorry! You are required to provide ids of permissions.");
         
-        PermissionService::new()->attachPermissionsToRole(
+        PermissionService::new()->syncPermissionsAndRole(
             PermissionDTO::new()->fromArray([
                 'user' => $user,
                 'roleId' => $role->id
@@ -590,7 +657,7 @@ class PermissionTest extends TestCase
         );
     }
     
-    public function testCannotAttachPermissionsToRoleWhenNotAdminOrOwnerOfRole()
+    public function testCannotsyncPermissionsAndRoleWhenNotAdminOrOwnerOfRole()
     {
         $this->expectException(RoleException::class);
 
@@ -608,7 +675,7 @@ class PermissionTest extends TestCase
         
         $this->expectExceptionMessage("Sorry! You are not authorized to perform this action on {$role->name} role.");
         
-        PermissionService::new()->attachPermissionsToRole(
+        PermissionService::new()->syncPermissionsAndRole(
             PermissionDTO::new()->fromArray([
                 'user' => $user,
                 'roleId' => $role->id,
@@ -617,7 +684,7 @@ class PermissionTest extends TestCase
         );
     }
     
-    public function testCannotAttachPermissionsToRoleWithEmptyPermissionIds()
+    public function testCannotsyncPermissionsAndRoleWithEmptyPermissionIds()
     {
         $this->expectException(PermissionException::class);
 
@@ -631,7 +698,7 @@ class PermissionTest extends TestCase
         
         $this->expectExceptionMessage("Sorry! You are required to provide ids of permissions.");
         
-        PermissionService::new()->attachPermissionsToRole(
+        PermissionService::new()->syncPermissionsAndRole(
             PermissionDTO::new()->fromArray([
                 'user' => $user,
                 'roleId' => $role->id,
@@ -640,7 +707,7 @@ class PermissionTest extends TestCase
         );
     }
     
-    public function testCannotAttachPermissionsToRoleWithPermissionIdsThatDoNotExist()
+    public function testCannotsyncPermissionsAndRoleWithPermissionIdsThatDoNotExist()
     {
         $this->expectException(PermissionException::class);
 
@@ -654,7 +721,7 @@ class PermissionTest extends TestCase
         
         $this->expectExceptionMessage("Sorry! all permissions provided do not exist.");
         
-        PermissionService::new()->attachPermissionsToRole(
+        PermissionService::new()->syncPermissionsAndRole(
             PermissionDTO::new()->fromArray([
                 'user' => $user,
                 'roleId' => $role->id,
@@ -663,7 +730,7 @@ class PermissionTest extends TestCase
         );
     }
     
-    public function testCannotAttachPermissionsToRoleWithSomePermissionIdsBeingInvalid()
+    public function testCannotsyncPermissionsAndRoleWithSomePermissionIdsBeingInvalid()
     {
         $this->expectException(PermissionException::class);
 
@@ -681,7 +748,7 @@ class PermissionTest extends TestCase
 
         $this->expectExceptionMessage("Sorry! Permissions with [3, 4] ids are not valid.");
         
-        PermissionService::new()->attachPermissionsToRole(
+        PermissionService::new()->syncPermissionsAndRole(
             PermissionDTO::new()->fromArray([
                 'user' => $user,
                 'roleId' => $role->id,
@@ -690,7 +757,7 @@ class PermissionTest extends TestCase
         );
     }
     
-    public function testCannotAttachPermissionsToRoleWithSomePermissionIdsThatHaveDifferentNonNullClasses()
+    public function testCannotsyncPermissionsAndRoleWithSomePermissionIdsThatHaveDifferentNonNullClasses()
     {
         $this->expectException(PermissionException::class);
 
@@ -713,7 +780,7 @@ class PermissionTest extends TestCase
         
         $this->expectExceptionMessage("Sorry! Permissions with [2, 4] ids do not have valid class to be attached to the role.");
         
-        PermissionService::new()->attachPermissionsToRole(
+        PermissionService::new()->syncPermissionsAndRole(
             PermissionDTO::new()->fromArray([
                 'user' => $user,
                 'roleId' => $role->id,
@@ -722,7 +789,7 @@ class PermissionTest extends TestCase
         );
     }
     
-    public function testCanAttachPermissionsToRoleWithPermissionIdsHavingSameClassWhenAdmin()
+    public function testCansyncPermissionsAndRoleWithPermissionIdsHavingSameClassWhenAdmin()
     {
         $user = User::factory()
             ->hasAttached(UserType::factory([
@@ -736,7 +803,7 @@ class PermissionTest extends TestCase
             'class' => $role->class
         ])->toArray();
         
-        PermissionService::new()->attachPermissionsToRole(
+        PermissionService::new()->syncPermissionsAndRole(
             PermissionDTO::new()->fromArray([
                 'user' => $user,
                 'roleId' => $role->id,
@@ -755,7 +822,7 @@ class PermissionTest extends TestCase
         ]);
     }
     
-    public function testCanAttachPermissionsToRoleWithPermissionIdsHavingSameClassWhenOwner()
+    public function testCansyncPermissionsAndRoleWithPermissionIdsHavingSameClassWhenOwner()
     {
         $user = User::factory()
             ->hasAttached(UserType::factory([
@@ -769,7 +836,7 @@ class PermissionTest extends TestCase
             'class' => $role->class
         ])->toArray();
         
-        PermissionService::new()->attachPermissionsToRole(
+        PermissionService::new()->syncPermissionsAndRole(
             PermissionDTO::new()->fromArray([
                 'user' => $user,
                 'roleId' => $role->id,
@@ -788,7 +855,7 @@ class PermissionTest extends TestCase
         ]);
     }
     
-    public function testCanAttachPermissionsToRoleThatHasANullClassWithPermissionIdsHavingAnyClassWhenAdmin()
+    public function testCansyncPermissionsAndRoleThatHasANullClassWithPermissionIdsHavingAnyClassWhenAdmin()
     {
         $user = User::factory()
             ->hasAttached(UserType::factory([
@@ -808,7 +875,7 @@ class PermissionTest extends TestCase
             ))->create([
             'user_id' => $user->id])->toArray();
         
-        PermissionService::new()->attachPermissionsToRole(
+        PermissionService::new()->syncPermissionsAndRole(
             PermissionDTO::new()->fromArray([
                 'user' => $user,
                 'roleId' => $role->id,
@@ -832,7 +899,7 @@ class PermissionTest extends TestCase
         ]);
     }
     
-    public function testCanAttachPermissionsToRoleThatHasANullClassWithPermissionIdsHavingAnyClassWhenOwner()
+    public function testCansyncPermissionsAndRoleThatHasANullClassWithPermissionIdsHavingAnyClassWhenOwner()
     {
         $user = User::factory()
             ->hasAttached(UserType::factory([
@@ -852,7 +919,7 @@ class PermissionTest extends TestCase
             ))->create([
             'user_id' => $user->id])->toArray();
         
-        PermissionService::new()->attachPermissionsToRole(
+        PermissionService::new()->syncPermissionsAndRole(
             PermissionDTO::new()->fromArray([
                 'user' => $user,
                 'roleId' => $role->id,
@@ -876,7 +943,7 @@ class PermissionTest extends TestCase
         ]);
     }
     
-    public function testCanAttachPermissionsToRoleWithPermissionIdsHavingSameAndNullClassesWhenAdmin()
+    public function testCansyncPermissionsAndRoleWithPermissionIdsHavingSameAndNullClassesWhenAdmin()
     {
         $user = User::factory()
             ->hasAttached(UserType::factory([
@@ -895,7 +962,7 @@ class PermissionTest extends TestCase
             ))->create([
             'user_id' => $user->id])->toArray();
         
-        PermissionService::new()->attachPermissionsToRole(
+        PermissionService::new()->syncPermissionsAndRole(
             PermissionDTO::new()->fromArray([
                 'user' => $user,
                 'roleId' => $role->id,
@@ -919,7 +986,7 @@ class PermissionTest extends TestCase
         ]);
     }
     
-    public function testCanAttachPermissionsToRoleWithPermissionIdsHavingSameAndNullClassesWhenOwner()
+    public function testCansyncPermissionsAndRoleWithPermissionIdsHavingSameAndNullClassesWhenOwner()
     {
         $user = User::factory()
             ->hasAttached(UserType::factory([
@@ -938,7 +1005,7 @@ class PermissionTest extends TestCase
             ))->create([
             'user_id' => $user->id])->toArray();
         
-        PermissionService::new()->attachPermissionsToRole(
+        PermissionService::new()->syncPermissionsAndRole(
             PermissionDTO::new()->fromArray([
                 'user' => $user,
                 'roleId' => $role->id,

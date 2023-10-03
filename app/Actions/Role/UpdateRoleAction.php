@@ -13,6 +13,7 @@ class UpdateRoleAction extends Action
         $data = [
             'name' => $roleDTO->name,
             'description' => $roleDTO->description,
+            'public' => $roleDTO->public,
         ];
 
         $data = array_filter($data, fn($value) => !is_null($value));
@@ -22,7 +23,7 @@ class UpdateRoleAction extends Action
             $data['class'] = $roleDTO->class;
         }
 
-        $roleDTO->permission->update($data);
+        $roleDTO->role->update($data);
 
         return $roleDTO->role->refresh();
     }

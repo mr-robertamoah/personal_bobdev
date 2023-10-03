@@ -2,20 +2,17 @@
 
 namespace App\Models;
 
+use App\Traits\HasAuthorizationTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Role extends Model
 {
     use HasFactory;
-
-    // TODO to be created by owners of companies and projects
-    // assignable to members/participants
-    // create facilitator, learners, owner, members, administrator roles
-    // which are added by default
+    use HasAuthorizationTrait;
 
     protected $fillable = [
-        'name', 'class', 'description'
+        'name', 'class', 'description', 'public'
     ];
 
     public function user()
@@ -31,5 +28,24 @@ class Role extends Model
     public function users()
     {
         return $this->morphToMany(User::class, "authorized", "authorizations");
+    }
+
+    // scopes
+    public function scopeWherePermissionName($query, string $name)
+    {
+        return $query->where(function ($q) use ($name) {
+            $q->whereHas("permissions", function ($q) use ($name) {
+                $q->where("name", $name);
+            });
+        });
+    }
+    
+    public function scopeWherePermissionNames($query, string $names)
+    {
+        return $query->where(function ($q) use ($names) {
+            $q->whereHas("permissions", function ($q) use ($names) {
+                $q->whereIn("name", $names);
+            });
+        });
     }
 }

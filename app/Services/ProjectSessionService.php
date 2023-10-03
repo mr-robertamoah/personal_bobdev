@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Actions\EnsureUserExistsAction;
+use App\Actions\GetModelFromDTOAction;
 use App\Actions\MakeDatesCarbonAction;
 use App\Actions\Project\EnsureProjectExistsAction;
 use App\Actions\ProjectSession\CreateProjectSessionAction;
@@ -23,7 +24,7 @@ class ProjectSessionService
         EnsureUserExistsAction::make()->execute($projectSessionDTO);
 
         $projectSessionDTO = $projectSessionDTO->withProject(
-            Project::find($projectSessionDTO->projectId)
+            GetModelFromDTOAction::make()->execute($projectSessionDTO, "project")
         );
 
         EnsureProjectExistsAction::make()->execute($projectSessionDTO);
@@ -46,7 +47,7 @@ class ProjectSessionService
         EnsureUserExistsAction::make()->execute($projectSessionDTO);
 
         $projectSessionDTO = $projectSessionDTO->withProjectSession(
-            ProjectSession::find($projectSessionDTO->projectSessionId)
+            GetModelFromDTOAction::make()->execute($projectSessionDTO, "projectSession")
         );
 
         EnsureProjectSessionExistsAction::make()->execute($projectSessionDTO);
@@ -69,7 +70,7 @@ class ProjectSessionService
         EnsureUserExistsAction::make()->execute($projectSessionDTO);
 
         $projectSessionDTO = $projectSessionDTO->withProjectSession(
-            ProjectSession::find($projectSessionDTO->projectSessionId)
+            GetModelFromDTOAction::make()->execute($projectSessionDTO, "projectSession")
         );
 
         EnsureProjectSessionExistsAction::make()->execute($projectSessionDTO);
