@@ -9,7 +9,10 @@ class EnsureUserCreatedRoleAction extends Action
 {
     public function execute(BaseDTO $dto)
     {
-        if ($dto->user->isAdmin() || $dto->user->is($dto->role->user)) {
+        if (
+            $dto->user->isAdmin() || 
+            $dto->user->is($dto->role->user)
+        ) {
             return;
         }
 

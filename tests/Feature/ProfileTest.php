@@ -9,16 +9,17 @@ use Tests\TestCase;
 
 class ProfileTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase,
+    WithFaker;
 
     private function createUser()
     {
         return User::create([
-            'username' => "mr_robert",
-            'first_name' => "Robert",
-            'surname' => "Robert",
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
             'password' => bcrypt("password"),
-            'email' => "mr_robertamoah@yahoo.com",
+            'email' => $this->faker->email(),
         ]);
     }
     

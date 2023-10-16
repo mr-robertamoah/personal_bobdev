@@ -34,7 +34,7 @@ class PermissionController extends Controller
             // throw $th;
             return response()->json([
                 "message" => $th->getMessage(),
-            ], $th->getCode());
+            ], $th->getCode() ?: 500);
         }
     }
 
@@ -60,7 +60,7 @@ class PermissionController extends Controller
             // throw $th;
             return response()->json([
                 "message" => $th->getMessage(),
-            ], $th->getCode());
+            ], $th->getCode() ?: 500);
         }
     }
 
@@ -81,7 +81,7 @@ class PermissionController extends Controller
             // throw $th;
             return response()->json([
                 "message" => $th->getMessage(),
-            ], $th->getCode());
+            ], $th->getCode() ?: 500);
         }
     }
     
@@ -94,6 +94,7 @@ class PermissionController extends Controller
                     "name" => $request->name,
                     "like" => $request->like,
                     "class" => $request->class,
+                    "page" => $request->page ?: null,
                 ])
             );
             
@@ -102,7 +103,7 @@ class PermissionController extends Controller
             // throw $th;
             return response()->json([
                 "message" => $th->getMessage(),
-            ], $th->getCode());
+            ], $th->getCode() ?: 500);
         }
     }
 }

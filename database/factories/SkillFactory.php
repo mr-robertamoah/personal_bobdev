@@ -17,7 +17,10 @@ class SkillFactory extends Factory
     public function definition()
     {
         return [
-            //
+            'skill_type_id' => 1,
+            'user_id' => 1,
+            'name' => $this->faker->name(),
+            'description' => $this->faker->sentence(),
         ];
     }
 }

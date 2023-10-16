@@ -51,7 +51,9 @@ class RoleService extends Service
         EnsureUserExistsAction::make()->execute($roleDTO, "user");
 
         $roleDTO = $roleDTO->withRole(
-            GetModelFromDTOAction::make()->execute($roleDTO, "role")
+            GetModelFromDTOAction::make()->execute(
+                $roleDTO, "role", "role"
+            )
         );
 
         EnsureRoleExistsAction::make()->execute($roleDTO);
@@ -74,12 +76,14 @@ class RoleService extends Service
         EnsureUserExistsAction::make()->execute($roleDTO, "user");
 
         $roleDTO = $roleDTO->withRole(
-            GetModelFromDTOAction::make()->execute($roleDTO, "role")
+            GetModelFromDTOAction::make()->execute(
+                $roleDTO, "role", "role"
+            )
         );
 
         EnsureRoleExistsAction::make()->execute($roleDTO);
 
-        EnsureUserCanUpateRoleAction::make()->execute($roleDTO);
+        EnsureUserCanUpateRoleAction::make()->execute($roleDTO, "delete");
 
         return DeleteRoleAction::make()->execute($roleDTO);
     }
@@ -99,9 +103,9 @@ class RoleService extends Service
         return GetRolesAction::make()->execute($roleDTO);
     }
     
-    public function syncPermissionsAndRole(RoleDTO $roleDTO)
+    public function syncPermissionsAndRole(RoleDTO $roleDTO) : Role
     {
-        (new PermissionService)->syncPermissionsAndRole(
+        return (new PermissionService)->syncPermissionsAndRole(
             PermissionDTO::new()->fromArray([
                 "user" => $roleDTO->user,
                 "userId" => $roleDTO->userId,

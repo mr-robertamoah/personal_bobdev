@@ -659,7 +659,7 @@ class RoleTest extends TestCase
 
         $role = Role::factory()->create(["user_id" => $user->id]);
         
-        $this->expectExceptionMessage("Sorry! You are required to provide ids of permissions.");
+        $this->expectExceptionMessage("Sorry! You are required to provide id of permissions.");
         
         RoleService::new()->syncPermissionsAndRole(
             RoleDTO::new()->fromArray([
@@ -708,7 +708,7 @@ class RoleTest extends TestCase
 
         $role = Role::factory()->create(["user_id" => $user->id]);
         
-        $this->expectExceptionMessage("Sorry! You are required to provide ids of permissions.");
+        $this->expectExceptionMessage("Sorry! You are required to provide id of permissions.");
         
         RoleService::new()->syncPermissionsAndRole(
             RoleDTO::new()->fromArray([

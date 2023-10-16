@@ -9,7 +9,7 @@ use App\Traits\CanSendAndReceiveRequestsTrait;
 use App\Traits\HasAdministratorTrait;
 use App\Traits\HasProfileTrait;
 use App\Traits\HasProjectParticipantTrait;
-use App\Traits\ProjectAddedByTrait;
+use App\Traits\HasProjectAddedByTrait;
 use Carbon\Carbon;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -25,7 +25,7 @@ class User extends Authenticatable implements Request
         HasProfileTrait,
         HasAdministratorTrait,
         CanAddImagesTrait,
-        ProjectAddedByTrait,
+        HasProjectAddedByTrait,
         CanSendAndReceiveRequestsTrait,
         HasProjectParticipantTrait;
     
@@ -80,6 +80,15 @@ class User extends Authenticatable implements Request
                 }
                 
                 return null;
+            }
+        );
+    }
+
+    public function allUserTypes() : Attribute
+    {
+        return new Attribute(
+            get: function($value, $attributes){
+                return $this->getAllUserTypes();
             }
         );
     }

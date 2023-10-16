@@ -13,7 +13,8 @@ class CreateRoleAction extends Action
         return $roleDTO->user->addedRoles()->create([
             'name' => $roleDTO->name,
             'description' => $roleDTO->description,
-            'class' => $roleDTO->class
+            'class' => $roleDTO->class,
+            "public" => $roleDTO->public ? 1 : 0
         ]);
     }
 }

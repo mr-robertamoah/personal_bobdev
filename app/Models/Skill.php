@@ -79,4 +79,11 @@ class Skill extends Model
             $query->whereNotUser($user);
         });
     }
+    
+    public function scopeWhereLikeName($query, string $name)
+    {
+        return $query->where(function ($q) use ($name) {
+            $q->where("name", "LIKE", "%{$name}%");
+        });
+    }
 }

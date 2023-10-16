@@ -4,8 +4,12 @@ namespace App\Http\Controllers;
 
 use App\DTOs\CompanyDTO;
 use App\Http\Requests\CreateCompanyRequest;
+use App\Http\Requests\GetCompaniesRequest;
 use App\Http\Requests\UpdateCompanyRequest;
+use App\Http\Resources\CompanyMemberResource;
 use App\Http\Resources\CompanyResource;
+use App\Http\Resources\DetailedCompanyResource;
+use App\Http\Resources\ProjectResource;
 use App\Http\Resources\RequestResource;
 use App\Models\Company;
 use App\Services\CompanyService;
@@ -133,5 +137,100 @@ class CompanyController extends Controller
             'status' => true,
             'company' => new CompanyResource($company)
         ]);
+    }
+    
+    public function getCompany(Request $request)
+    {
+        try {
+            $company = CompanyService::new()->getCompany(
+                CompanyDTO::new()->fromArray([
+                    "user" => $request->user(),
+                    "companyId" => $request->company_id,
+                ])
+            );
+            
+            return response()->json([
+                "status" => true,
+                "company" => new DetailedCompanyResource($company)
+            ]);
+        } catch (\Throwable $th) {
+            // throw $th;
+            return response()->json([
+                "status" => false,
+                "message" => $th->getMessage(),
+            ], $th->getCode() ?: 500);
+        }
+    }
+    
+    public function getCompanies(Request $request)
+    {
+        try {
+            $companies = CompanyService::new()->getCompanies(
+                CompanyDTO::new()->fromArray([
+                    "name" => $request->name,
+                    "like" => $request->like,
+                    "ownerId" => $request->owner_id,
+                    "officialId" => $request->official_id,
+                    "memberId" => $request->member_id,
+                    "relationshipType" => $request->relationship_type,
+                    "page" => $request->page ?: null,
+                ])
+            );
+            
+            return CompanyResource::collection($companies);
+        } catch (\Throwable $th) {
+            // throw $th;
+            return response()->json([
+                "message" => $th->getMessage(),
+            ], $th->getCode() ?: 500);
+        }
+    }
+    
+    public function getMembers(Request $request)
+    {
+        try {
+            $members = CompanyService::new()->getMembers(
+                CompanyDTO::new()->fromArray([
+                    "user" => $request->user(),
+                    "companyId" => $request->company_id,
+                    "type" => $request->type,
+                ])
+            );
+            
+            return response()->json([
+                "status" => true,
+                "members" => CompanyMemberResource::collection($members)
+            ]);
+        } catch (\Throwable $th) {
+            // throw $th;
+            return response()->json([
+                "status" => false,
+                "message" => $th->getMessage(),
+            ], $th->getCode() ?: 500);
+        }
+    }
+    
+    public function getCompanyProjects(Request $request)
+    {
+        try {
+            $members = CompanyService::new()->getCompanyProjects(
+                CompanyDTO::new()->fromArray([
+                    "user" => $request->user(),
+                    "companyId" => $request->company_id,
+                    "type" => $request->type,
+                ])
+            );
+            
+            return response()->json([
+                "status" => true,
+                "projects" => ProjectResource::collection($members)
+            ]);
+        } catch (\Throwable $th) {
+            // throw $th;
+            return response()->json([
+                "status" => false,
+                "message" => $th->getMessage(),
+            ], $th->getCode() ?: 500);
+        }
     }
 }

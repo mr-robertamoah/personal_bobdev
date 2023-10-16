@@ -3,17 +3,23 @@
 namespace Tests\Feature;
 
 use App\DTOs\CompanyDTO;
+use App\Enums\PaginationEnum;
+use App\Enums\ProjectParticipantEnum;
 use App\Enums\RelationshipTypeEnum;
 use App\Exceptions\CompanyException;
+use App\Models\Company;
+use App\Models\Project;
 use App\Models\User;
 use App\Models\UserType;
 use App\Services\CompanyService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 
 class CompanyTest extends TestCase
 {
     use RefreshDatabase;
+    use WithFaker;
 
     public function testCannotCreateCompanyWithoutAnAlias()
     {
@@ -2465,5 +2471,1027 @@ class CompanyTest extends TestCase
             ]);
 
         $this->assertTrue($company->refresh()->isNotManager($member1));
+    }
+
+    public function testCanGetAllCompaniesWhenGuest()
+    {
+        $creator = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $companies = Company::factory()->count(20)
+            ->create([
+                "user_id" => $creator->id,
+            ]);
+
+        $query = "";
+        $response = $this->getJson("/api/companies?". $query);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            "data" => [],
+            "links" => [],
+            "meta" => [],
+        ]);
+
+        $data = json_decode($response->baseResponse->content());
+        $this->assertEquals(
+            $data->meta->total,
+            $companies->count()
+        );
+        $this->assertEquals(
+            count($data->data),
+            PaginationEnum::getUsers->value
+        );
+
+        if (is_null($data->links->next)) return;
+
+        $response = $this->getJson($data->links->next);
+        
+        $response->assertStatus(200);
+        $response->assertJson([
+            "data" => [],
+            "links" => [],
+            "meta" => [],
+        ]);
+
+        $data = json_decode($response->baseResponse->content());
+        $this->assertEquals(
+            count($data->data),
+            PaginationEnum::getUsers->value
+        );
+    }
+
+    public function testCanGetAllCompaniesWhenAdmin()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $creator = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $userType = $user->addedUserTypes()->create([
+            "name" => UserType::ADMIN
+        ]);
+
+        $user->userTypes()->attach($userType);
+
+        $companies = Company::factory()->count(20)
+            ->create([
+                "user_id" => $creator->id,
+            ]);
+
+        $this->actingAs($user);
+
+        $query = "";
+        $response = $this->getJson("/api/companies?". $query);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            "data" => [],
+            "links" => [],
+            "meta" => [],
+        ]);
+
+        $data = json_decode($response->baseResponse->content());
+        $this->assertEquals(
+            $data->meta->total,
+            $companies->count()
+        );
+        $this->assertEquals(
+            count($data->data),
+            PaginationEnum::getUsers->value
+        );
+
+        if (is_null($data->links->next)) return;
+
+        $response = $this->getJson($data->links->next);
+        
+        $response->assertStatus(200);
+        $response->assertJson([
+            "data" => [],
+            "links" => [],
+            "meta" => [],
+        ]);
+
+        $data = json_decode($response->baseResponse->content());
+        $this->assertEquals(
+            count($data->data),
+            PaginationEnum::getUsers->value
+        );
+    }
+
+    public function testCanGetAllCompaniesWhenUser()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $creator = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $userType = $user->addedUserTypes()->create([
+            "name" => UserType::FACILITATOR
+        ]);
+
+        $user->userTypes()->attach($userType);
+
+        $companies = Company::factory()->count(20)
+            ->create([
+                "user_id" => $creator->id,
+            ]);
+
+        $this->actingAs($user);
+
+        $query = "";
+        $response = $this->getJson("/api/companies?". $query);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            "data" => [],
+            "links" => [],
+            "meta" => [],
+        ]);
+
+        $data = json_decode($response->baseResponse->content());
+        $this->assertEquals(
+            $data->meta->total,
+            $companies->count()
+        );
+        $this->assertEquals(
+            count($data->data),
+            PaginationEnum::getUsers->value
+        );
+
+        if (is_null($data->links->next)) return;
+
+        $response = $this->getJson($data->links->next);
+        
+        $response->assertStatus(200);
+        $response->assertJson([
+            "data" => [],
+            "links" => [],
+            "meta" => [],
+        ]);
+
+        $data = json_decode($response->baseResponse->content());
+        $this->assertEquals(
+            count($data->data),
+            PaginationEnum::getUsers->value
+        );
+    }
+
+    public function testCanGetAllCompaniesWithNameQuery()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $creator = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $userType = $user->addedUserTypes()->create([
+            "name" => UserType::FACILITATOR
+        ]);
+
+        $user->userTypes()->attach($userType);
+
+        $companies = Company::factory()->count(20)
+            ->create([
+                "user_id" => $creator->id,
+            ]);
+
+        $this->actingAs($user);
+
+        $name = "ac";
+        $query = "name={$name}";
+        $response = $this->getJson("/api/companies?". $query);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            "data" => [],
+            "links" => [],
+            "meta" => [],
+        ]);
+
+        $data = json_decode($response->baseResponse->content());
+        
+        $this->assertEquals(
+            $data->meta->total,
+            count(array_filter($companies->toArray(), function ($value) use ($name) {
+                return str_contains($value["name"], $name);
+            }))
+        );
+    }
+
+    public function testCanGetAllCompaniesWithOwnerQuery()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $creator1 = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $creator2 = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $userType = $user->addedUserTypes()->create([
+            "name" => UserType::FACILITATOR
+        ]);
+
+        $user->userTypes()->attach($userType);
+
+        $creator2ProjectCount = 10;
+        $companies = array_merge(Company::factory()->count(10)
+            ->create([
+                "user_id" => $creator1->id,
+            ])->toArray(), Company::factory()->count($creator2ProjectCount)
+            ->create([
+                "user_id" => $creator2->id,
+            ])->toArray());
+
+        $this->actingAs($user);
+
+        $query = "owner_id={$creator1->id}&owner_type=user";
+        $response = $this->getJson("/api/companies?". $query);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            "data" => [],
+            "links" => [],
+            "meta" => [],
+        ]);
+
+        $data = json_decode($response->baseResponse->content());
+        
+        $this->assertEquals(
+            $data->meta->total,
+            $creator2ProjectCount
+        );
+    }
+
+    public function testCanGetAllCompaniesWithMemberQuery()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $creator = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $member = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $userType = $user->addedUserTypes()->create([
+            "name" => UserType::FACILITATOR
+        ]);
+
+        $user->userTypes()->attach($userType);
+
+        $membershipCount = 3;
+        $companies = Company::factory()->count(20)
+            ->create([
+                "user_id" => $creator->id,
+            ]);
+
+        for ($i=0; $i < $membershipCount; $i++) { 
+            $relationship = $companies[$i]->addedByRelations()->create([
+                "relationship_type" => RelationshipTypeEnum::companyMember->value
+            ]);
+            $relationship->to()->associate($member);
+            $relationship->save();
+        }
+
+        $this->actingAs($user);
+
+        $query = "member_id={$member->id}";
+        $response = $this->getJson("/api/companies?". $query);
+        
+        $response->assertStatus(200);
+        $response->assertJson([
+            "data" => [],
+            "links" => [],
+            "meta" => [],
+        ]);
+
+        $data = json_decode($response->baseResponse->content());
+        
+        $this->assertEquals(
+            $data->meta->total,
+            $membershipCount
+        );
+    }
+
+    public function testCanGetAllCompaniesWithOfficialQuery()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $creator = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $official = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $userType = $user->addedUserTypes()->create([
+            "name" => UserType::FACILITATOR
+        ]);
+
+        $user->userTypes()->attach($userType);
+
+        $officialRelationshipCount = 3;
+        $companies = Company::factory()->count(20)
+            ->create([
+                "user_id" => $creator->id,
+            ]);
+
+        for ($i=0; $i < $officialRelationshipCount; $i++) { 
+            $relationship = $companies[$i]->addedByRelations()->create([
+                "relationship_type" => RelationshipTypeEnum::companyAdministrator->value
+            ]);
+            $relationship->to()->associate($official);
+            $relationship->save();
+        }
+
+        $this->actingAs($user);
+
+        $query = "official_id={$official->id}";
+        $response = $this->getJson("/api/companies?". $query);
+        
+        $response->assertStatus(200);
+        $response->assertJson([
+            "data" => [],
+            "links" => [],
+            "meta" => [],
+        ]);
+
+        $data = json_decode($response->baseResponse->content());
+        
+        $this->assertEquals(
+            $data->meta->total,
+            $officialRelationshipCount
+        );
+    }
+
+    public function testCanGetAllCompaniesWithMembershipQuery()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $creator = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $member = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $userType = $user->addedUserTypes()->create([
+            "name" => UserType::FACILITATOR
+        ]);
+
+        $user->userTypes()->attach($userType);
+
+        $membershipCount = 4;
+        $companies = Company::factory()->count(20)
+            ->create([
+                "user_id" => $creator->id,
+            ]);
+
+        for ($i=0; $i < $membershipCount; $i++) { 
+            $relationship = $companies[$i]->addedByRelations()->create([
+                "relationship_type" => RelationshipTypeEnum::companyMember->value
+            ]);
+            $relationship->to()->associate($member);
+            $relationship->save();
+        }
+
+        $this->actingAs($user);
+
+        $query = "relationship_type=member";
+        $response = $this->getJson("/api/companies?". $query);
+        
+        $response->assertStatus(200);
+        $response->assertJson([
+            "data" => [],
+            "links" => [],
+            "meta" => [],
+        ]);
+
+        $data = json_decode($response->baseResponse->content());
+        
+        $this->assertEquals(
+            $data->meta->total,
+            $membershipCount
+        );
+    }
+
+    public function testCanGetAllCompaniesWithOfficialRelationshipQuery()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $creator = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $member = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $userType = $user->addedUserTypes()->create([
+            "name" => UserType::FACILITATOR
+        ]);
+
+        $user->userTypes()->attach($userType);
+
+        $membershipCount = 4;
+        $companies = Company::factory()->count(20)
+            ->create([
+                "user_id" => $creator->id,
+            ]);
+
+        for ($i=0; $i < $membershipCount; $i++) { 
+            $relationship = $companies[$i]->addedByRelations()->create([
+                "relationship_type" => RelationshipTypeEnum::companyAdministrator->value
+            ]);
+            $relationship->to()->associate($member);
+            $relationship->save();
+        }
+
+        $this->actingAs($user);
+
+        $query = "relationship_type=official";
+        $response = $this->getJson("/api/companies?". $query);
+        
+        $response->assertStatus(200);
+        $response->assertJson([
+            "data" => [],
+            "links" => [],
+            "meta" => [],
+        ]);
+
+        $data = json_decode($response->baseResponse->content());
+        
+        $this->assertEquals(
+            $data->meta->total,
+            $membershipCount
+        );
+    }
+
+    public function testCanGetDetailsOfCompany()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $member = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $creator = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $companies = Company::factory()->count(5)->create([
+            'name' => $this->faker->company(),
+            'user_id' => $creator->id,
+        ]);
+
+        $sponsoredProject = Project::factory()->create([
+            "addedby_id" => $user->id,
+            "addedby_type" => $user::class,
+        ]);
+
+        $addedProject = Project::factory()->create([
+            "addedby_id" => $companies[0]->id,
+            "addedby_type" => $companies[0]::class,
+        ]);
+
+        $relationship = $companies[0]->addedByRelations()->create([
+                "relationship_type" => RelationshipTypeEnum::companyMember->value
+            ]);
+        $relationship->to()->associate($member);
+        $relationship->save();
+
+        $participation = $sponsoredProject->participants()->create([
+            "participating_as" => ProjectParticipantEnum::sponsor->value
+        ]);
+        $participation->participant()->associate($companies[0]);
+        $participation->save();
+
+        $response = $this->getJson("/api/companies/{$companies[0]->id}");
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            "status" => true,
+            "company" => [
+                "id" => $companies[0]->id,
+                "owner" => [
+                    "id" => $creator->id
+                ],
+                "members" => [
+                    [
+                        "id" => $relationship->id,
+                        "member" => [
+                            "id" => $member->id,
+                            "name" => $member->name
+                        ],
+                    ],
+                ],
+                "projects" => [
+                    [
+                        "id" => $addedProject->id,
+                        "name" => $addedProject->name
+                    ],
+                ],
+                "sponsorships" => [
+                    [
+                        "id" => $sponsoredProject->id,
+                        "name" => $sponsoredProject->name
+                    ],
+                ]
+            ]
+        ]);
+    }
+
+    public function testCannotGetMembersOfCompanyWithInvalidType()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $member = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $official = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $company = Company::create([
+            'alias' => $this->faker->userName(),
+            'name' => $this->faker->company(),
+            'user_id' => $user->id,
+        ]);
+        
+        $relationship = $company->addedByRelations()->create([
+                "relationship_type" => RelationshipTypeEnum::companyMember->value
+            ]);
+        $relationship->to()->associate($member);
+        $relationship->save();
+        
+        $relationship = $company->addedByRelations()->create([
+                "relationship_type" => RelationshipTypeEnum::companyAdministrator->value
+            ]);
+        $relationship->to()->associate($official);
+        $relationship->save();
+
+        $response = $this->getJson("/api/companies/{$company->id}/wrong_type");
+
+        $response->assertStatus(404);
+        $response->assertJson([
+            "status" => false,
+            "message" => "this is an unknown request."
+        ]);
+    }
+
+    public function testCanGetMembersOfCompany()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $member = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $official = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $company = Company::create([
+            'alias' => $this->faker->userName(),
+            'name' => $this->faker->company(),
+            'user_id' => $user->id,
+        ]);
+        
+        $relationship = $company->addedByRelations()->create([
+                "relationship_type" => RelationshipTypeEnum::companyMember->value
+            ]);
+        $relationship->to()->associate($member);
+        $relationship->save();
+        
+        $relationship = $company->addedByRelations()->create([
+                "relationship_type" => RelationshipTypeEnum::companyAdministrator->value
+            ]);
+        $relationship->to()->associate($official);
+        $relationship->save();
+
+        $response = $this->getJson("/api/companies/{$company->id}/members");
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            "status" => true,
+            "members" => [
+                [
+                    "relationshipType" => "member",
+                    "member" => [
+                        "name" => $member->name
+                    ]
+                ],
+                [
+                    "relationshipType" => "administrator",
+                    "member" => [
+                        "name" => $official->name
+                    ]
+                ],
+            ]
+        ]);
+    }
+
+    public function testCanGetOfficialsOfCompany()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $member = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $official = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $company = Company::create([
+            'alias' => $this->faker->userName(),
+            'name' => $this->faker->company(),
+            'user_id' => $user->id,
+        ]);
+        
+        $relationship = $company->addedByRelations()->create([
+                "relationship_type" => RelationshipTypeEnum::companyMember->value
+            ]);
+        $relationship->to()->associate($member);
+        $relationship->save();
+        
+        $relationship = $company->addedByRelations()->create([
+                "relationship_type" => RelationshipTypeEnum::companyAdministrator->value
+            ]);
+        $relationship->to()->associate($official);
+        $relationship->save();
+
+        $response = $this->getJson("/api/companies/{$company->id}/officials");
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            "status" => true,
+            "members" => [
+                [
+                    "relationshipType" => "administrator",
+                    "member" => [
+                        "name" => $official->name
+                    ]
+                ],
+            ]
+        ]);
+
+        $this->assertEquals(
+            count(json_decode($response->baseResponse->content())->members),
+            1
+        );
+    }
+
+    public function testCannotGetCompanyProjectsWithInvalidType()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $company = Company::create([
+            'alias' => $this->faker->userName(),
+            'name' => $this->faker->company(),
+            'user_id' => $user->id,
+        ]);
+
+        $project = Project::factory()->create([
+            'addedby_type' => $company::class,
+            'addedby_id' => $company->id,
+        ]);
+
+        $response = $this->getJson("/api/companies/{$company->id}/projects/wrong_type");
+
+        $response->assertStatus(404);
+        $response->assertJson([
+            "status" => false,
+            "message" => "this is an unknown request."
+        ]);
+    }
+
+    public function testCanGetAllProjectsOfCompany()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $company = Company::create([
+            'alias' => $this->faker->userName(),
+            'name' => $this->faker->company(),
+            'user_id' => $user->id,
+        ]);
+
+        $added = Project::factory()->create([
+            'addedby_type' => $company::class,
+            'addedby_id' => $company->id,
+        ]);
+
+        $sponsored = Project::factory()->create([
+            'addedby_type' => $user::class,
+            'addedby_id' => $user->id,
+        ]);
+
+        $participation = $sponsored->participants()->create([
+            "participating_as" => ProjectParticipantEnum::sponsor->value
+        ]);
+        $participation->participant()->associate($company);
+        $participation->save();
+
+        $response = $this->getJson("/api/companies/{$company->id}/projects/all");
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            "status" => true,
+            "projects" => [
+                [
+                    "id" => $added->id,
+                    "name" => $added->name
+                ],
+                [
+                    "id" => $sponsored->id,
+                    "name" => $sponsored->name
+                ],
+            ]
+        ]);
+    }
+
+    public function testCanGetSponsoredProjectsOfCompany()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $company = Company::create([
+            'alias' => $this->faker->userName(),
+            'name' => $this->faker->company(),
+            'user_id' => $user->id,
+        ]);
+
+        $added = Project::factory()->create([
+            'addedby_type' => $company::class,
+            'addedby_id' => $company->id,
+        ]);
+
+        $sponsored = Project::factory()->create([
+            'addedby_type' => $user::class,
+            'addedby_id' => $user->id,
+        ]);
+
+        $participation = $sponsored->participants()->create([
+            "participating_as" => ProjectParticipantEnum::sponsor->value
+        ]);
+        $participation->participant()->associate($company);
+        $participation->save();
+
+        $response = $this->getJson("/api/companies/{$company->id}/projects/sponsored");
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            "status" => true,
+            "projects" => [
+                [
+                    "id" => $sponsored->id,
+                    "name" => $sponsored->name
+                ],
+            ]
+        ]);
+
+        $this->assertEquals(
+            count(json_decode($response->baseResponse->content())->projects),
+            1
+        );
+    }
+
+    public function testCanGetAddedProjectsOfCompany()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $company = Company::create([
+            'alias' => $this->faker->userName(),
+            'name' => $this->faker->company(),
+            'user_id' => $user->id,
+        ]);
+
+        $added = Project::factory()->create([
+            'addedby_type' => $company::class,
+            'addedby_id' => $company->id,
+        ]);
+
+        $sponsored = Project::factory()->create([
+            'addedby_type' => $user::class,
+            'addedby_id' => $user->id,
+        ]);
+
+        $participation = $sponsored->participants()->create([
+            "participating_as" => ProjectParticipantEnum::sponsor->value
+        ]);
+        $participation->participant()->associate($company);
+        $participation->save();
+
+        $response = $this->getJson("/api/companies/{$company->id}/projects/added");
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            "status" => true,
+            "projects" => [
+                [
+                    "id" => $added->id,
+                    "name" => $added->name
+                ],
+            ]
+        ]);
+
+        $this->assertEquals(
+            count(json_decode($response->baseResponse->content())->projects),
+            1
+        );
     }
 }

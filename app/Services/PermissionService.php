@@ -111,7 +111,9 @@ class PermissionService extends Service
         EnsureUserExistsAction::make()->execute($permissionDTO, "user");
 
         $permissionDTO = $permissionDTO->withRole(
-            GetModelFromDTOAction::make()->execute($permissionDTO, "role")
+            GetModelFromDTOAction::make()->execute(
+                $permissionDTO, "role", "role"
+            )
         );
 
         EnsureRoleExistsAction::make()->execute($permissionDTO);

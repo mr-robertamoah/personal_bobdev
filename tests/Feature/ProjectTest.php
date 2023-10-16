@@ -5,9 +5,14 @@ namespace Tests\Feature;
 use App\DTOs\ProjectDTO;
 use App\DTOs\SkillDTO;
 use App\DTOs\SkillTypeDTO;
+use App\Enums\PaginationEnum;
 use App\Enums\ProjectParticipantEnum;
+use App\Enums\RelationshipTypeEnum;
 use App\Enums\RequestStateEnum;
 use App\Enums\RequestTypeEnum;
+use App\Models\Company;
+use App\Models\Project;
+use App\Models\Skill;
 use App\Models\User;
 use App\Models\UserType;
 use App\Services\ProjectService;
@@ -64,7 +69,7 @@ class ProjectTest extends TestCase
             'description' => $this->faker->sentence(),
         ];
 
-        $response = $this->postJson('/api/project/create', $data);
+        $response = $this->postJson('/api/project', $data);
 
         $response->assertStatus(422);
         $response->assertJson([
@@ -99,7 +104,7 @@ class ProjectTest extends TestCase
             'name' => $this->faker->name(),
         ];
 
-        $response = $this->postJson('/api/project/create', $data);
+        $response = $this->postJson('/api/project', $data);
 
         $response->assertStatus(422);
         $response->assertJson([
@@ -129,7 +134,7 @@ class ProjectTest extends TestCase
             'description' => $this->faker->sentence(),
         ];
 
-        $response = $this->postJson('/api/project/create', $data);
+        $response = $this->postJson('/api/project', $data);
 
         $response->assertStatus(403);
         $response->assertJson([
@@ -162,7 +167,7 @@ class ProjectTest extends TestCase
             'description' => $this->faker->sentence(),
         ];
 
-        $response = $this->postJson('/api/project/create', $data);
+        $response = $this->postJson('/api/project', $data);
 
         $response->assertStatus(200);
         $response->assertJson([
@@ -209,7 +214,7 @@ class ProjectTest extends TestCase
             'forId' => $user->id
         ];
 
-        $response = $this->postJson('/api/project/create', $data);
+        $response = $this->postJson('/api/project', $data);
 
         $response->assertStatus(500);
         $response->assertJson([
@@ -258,7 +263,7 @@ class ProjectTest extends TestCase
             'forId' => $user->id
         ];
 
-        $response = $this->postJson('/api/project/create', $data);
+        $response = $this->postJson('/api/project', $data);
 
         $response->assertStatus(200);
         $response->assertJson([
@@ -298,7 +303,7 @@ class ProjectTest extends TestCase
             'description' => $this->faker->sentence(),
         ];
 
-        $response = $this->postJson('/api/project/create', $data);
+        $response = $this->postJson('/api/project', $data);
 
         $response->assertStatus(200);
         $response->assertJson([
@@ -334,7 +339,7 @@ class ProjectTest extends TestCase
             'description' => $this->faker->sentence(),
         ];
 
-        $response = $this->postJson('/api/project/create', $data);
+        $response = $this->postJson('/api/project', $data);
 
         $response->assertStatus(200);
         $response->assertJson([
@@ -375,7 +380,7 @@ class ProjectTest extends TestCase
 
         $data = [];
 
-        $response = $this->postJson("/api/project/{$project->id}/update", $data);
+        $response = $this->postJson("/api/project/{$project->id}", $data);
 
         $response->assertStatus(422);
         $response->assertJson([
@@ -419,7 +424,7 @@ class ProjectTest extends TestCase
 
         $data = ['name' => $this->faker->sentence()];
 
-        $response = $this->postJson("/api/project/10/update", $data);
+        $response = $this->postJson("/api/project/10", $data);
 
         $response->assertStatus(500);
         $response->assertJson([
@@ -471,7 +476,7 @@ class ProjectTest extends TestCase
 
         $data = ['name' => $this->faker->sentence()];
 
-        $response = $this->postJson("/api/project/{$project->id}/update", $data);
+        $response = $this->postJson("/api/project/{$project->id}", $data);
 
         $response->assertStatus(500);
         $response->assertJson([
@@ -508,7 +513,7 @@ class ProjectTest extends TestCase
 
         $data = ['name' => $this->faker->name()];
 
-        $response = $this->postJson("/api/project/{$project->id}/update", $data);
+        $response = $this->postJson("/api/project/{$project->id}", $data);
 
         $response->assertStatus(200);
         $response->assertJson([
@@ -548,7 +553,7 @@ class ProjectTest extends TestCase
 
         $data = ['name' => $this->faker->name()];
 
-        $response = $this->postJson("/api/project/{$project->id}/update", $data);
+        $response = $this->postJson("/api/project/{$project->id}", $data);
 
         $response->assertStatus(200);
         $response->assertJson([
@@ -2478,4 +2483,1150 @@ class ProjectTest extends TestCase
             'participating_as' => ProjectParticipantEnum::learner->value
         ]);
     }
+
+    public function testCannotGetProjectsWithoutAppropriatePairOfQueryData()
+    {
+        $query = "participant_id=1&owner_id=1";
+        $response = $this->getJson("/api/projects?". $query);
+
+        $response->assertStatus(422);
+        $response->assertJson([
+            "message" => "The participant type field is required when participant id is present. (and 1 more error)",
+            "errors" => [
+                "participant_type" => [
+                    'The participant type field is required when participant id is present.'
+                ],
+                "owner_type" => [
+                    'The owner type field is required when owner id is present.'
+                ],
+            ]
+        ]);
+    }
+
+    public function testCanGetAllProjectsWhenGuest()
+    {
+        $creator = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $projects = Project::factory()->count(20)
+            ->create([
+                "addedby_type" => $creator::class,
+                "addedby_id" => $creator->id,
+            ]);
+
+        $query = "";
+        $response = $this->getJson("/api/projects?". $query);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            "data" => [],
+            "links" => [],
+            "meta" => [],
+        ]);
+
+        $data = json_decode($response->baseResponse->content());
+        $this->assertEquals(
+            $data->meta->total,
+            $projects->count()
+        );
+        $this->assertEquals(
+            count($data->data),
+            PaginationEnum::getUsers->value
+        );
+
+        if (is_null($data->links->next)) return;
+
+        $response = $this->getJson($data->links->next);
+        
+        $response->assertStatus(200);
+        $response->assertJson([
+            "data" => [],
+            "links" => [],
+            "meta" => [],
+        ]);
+
+        $data = json_decode($response->baseResponse->content());
+        $this->assertEquals(
+            count($data->data),
+            PaginationEnum::getUsers->value
+        );
+    }
+
+    public function testCanGetAllProjectsWhenAdmin()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $creator = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $userType = $user->addedUserTypes()->create([
+            "name" => UserType::ADMIN
+        ]);
+
+        $user->userTypes()->attach($userType);
+
+        $projects = Project::factory()->count(20)
+            ->create([
+                "addedby_type" => $creator::class,
+                "addedby_id" => $creator->id,
+            ]);
+
+        $this->actingAs($user);
+
+        $query = "";
+        $response = $this->getJson("/api/projects?". $query);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            "data" => [],
+            "links" => [],
+            "meta" => [],
+        ]);
+
+        $data = json_decode($response->baseResponse->content());
+        $this->assertEquals(
+            $data->meta->total,
+            $projects->count()
+        );
+        $this->assertEquals(
+            count($data->data),
+            PaginationEnum::getUsers->value
+        );
+
+        if (is_null($data->links->next)) return;
+
+        $response = $this->getJson($data->links->next);
+        
+        $response->assertStatus(200);
+        $response->assertJson([
+            "data" => [],
+            "links" => [],
+            "meta" => [],
+        ]);
+
+        $data = json_decode($response->baseResponse->content());
+        $this->assertEquals(
+            count($data->data),
+            PaginationEnum::getUsers->value
+        );
+    }
+
+    public function testCanGetAllProjectsWhenUser()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $creator = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $userType = $user->addedUserTypes()->create([
+            "name" => UserType::FACILITATOR
+        ]);
+
+        $user->userTypes()->attach($userType);
+
+        $projects = Project::factory()->count(20)
+            ->create([
+                "addedby_type" => $creator::class,
+                "addedby_id" => $creator->id,
+            ]);
+
+        $this->actingAs($user);
+
+        $query = "";
+        $response = $this->getJson("/api/projects?". $query);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            "data" => [],
+            "links" => [],
+            "meta" => [],
+        ]);
+
+        $data = json_decode($response->baseResponse->content());
+        $this->assertEquals(
+            $data->meta->total,
+            $projects->count()
+        );
+        $this->assertEquals(
+            count($data->data),
+            PaginationEnum::getUsers->value
+        );
+
+        if (is_null($data->links->next)) return;
+
+        $response = $this->getJson($data->links->next);
+        
+        $response->assertStatus(200);
+        $response->assertJson([
+            "data" => [],
+            "links" => [],
+            "meta" => [],
+        ]);
+
+        $data = json_decode($response->baseResponse->content());
+        $this->assertEquals(
+            count($data->data),
+            PaginationEnum::getUsers->value
+        );
+    }
+
+    public function testCanGetAllProjectsWithNameQuery()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $creator = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $userType = $user->addedUserTypes()->create([
+            "name" => UserType::FACILITATOR
+        ]);
+
+        $user->userTypes()->attach($userType);
+
+        $projects = Project::factory()->count(20)
+            ->create([
+                "addedby_type" => $creator::class,
+                "addedby_id" => $creator->id,
+            ]);
+
+        $this->actingAs($user);
+
+        $name = "ac";
+        $query = "name={$name}";
+        $response = $this->getJson("/api/projects?". $query);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            "data" => [],
+            "links" => [],
+            "meta" => [],
+        ]);
+
+        $data = json_decode($response->baseResponse->content());
+        
+        $this->assertEquals(
+            $data->meta->total,
+            count(array_filter($projects->toArray(), function ($value) use ($name) {
+                return str_contains($value["name"], $name);
+            }))
+        );
+    }
+
+    public function testCanGetAllProjectsWithOwnerQuery()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $creator1 = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $creator2 = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $userType = $user->addedUserTypes()->create([
+            "name" => UserType::FACILITATOR
+        ]);
+
+        $user->userTypes()->attach($userType);
+
+        $creator2ProjectCount = 10;
+        $projects = array_merge(Project::factory()->count(10)
+            ->create([
+                "addedby_type" => $creator1::class,
+                "addedby_id" => $creator1->id,
+            ])->toArray(), Project::factory()->count($creator2ProjectCount)
+            ->create([
+                "addedby_type" => $creator2::class,
+                "addedby_id" => $creator2->id,
+            ])->toArray());
+
+        $this->actingAs($user);
+
+        $query = "owner_id={$creator1->id}&owner_type=user";
+        $response = $this->getJson("/api/projects?". $query);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            "data" => [],
+            "links" => [],
+            "meta" => [],
+        ]);
+
+        $data = json_decode($response->baseResponse->content());
+        
+        $this->assertEquals(
+            $data->meta->total,
+            $creator2ProjectCount
+        );
+    }
+
+    public function testCanGetAllProjectsWithOfficialOfOwningCompany()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $creator = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $official = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $userType = $user->addedUserTypes()->create([
+            "name" => UserType::FACILITATOR
+        ]);
+
+        $user->userTypes()->attach($userType);
+        $creator->userTypes()->attach($userType);
+
+        $company = Company::factory()->create(["user_id" => $creator->id]);
+        $relation = $company->addedByRelations()->create([
+            "relationship_type" => RelationshipTypeEnum::companyAdministrator->value
+        ]);
+        $relation->to()->associate($official);
+        $relation->save();
+        
+        $companyOwnedProjectCount = 5;
+        $projects = array_merge(Project::factory()->count(10)
+            ->create([
+                "addedby_type" => $creator::class,
+                "addedby_id" => $creator->id,
+            ])->toArray(), Project::factory()->count($companyOwnedProjectCount)
+            ->create([
+                "addedby_type" => $company::class,
+                "addedby_id" => $company->id,
+            ])->toArray());
+
+        $this->actingAs($user);
+
+        $query = "official_id={$official->id}";
+        $response = $this->getJson("/api/projects?". $query);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            "data" => [],
+            "links" => [],
+            "meta" => [],
+        ]);
+
+        $data = json_decode($response->baseResponse->content());
+        ds($data);
+        $this->assertEquals(
+            $data->meta->total,
+            $companyOwnedProjectCount
+        );
+    }
+
+    public function testCanGetAllProjectsWithMemberOfOwningCompany()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $creator = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $member = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $userType = $user->addedUserTypes()->create([
+            "name" => UserType::FACILITATOR
+        ]);
+
+        $user->userTypes()->attach($userType);
+        $creator->userTypes()->attach($userType);
+
+        $company = Company::factory()->create(["user_id" => $creator->id]);
+        $relation = $company->addedByRelations()->create([
+            "relationship_type" => RelationshipTypeEnum::companyMember->value
+        ]);
+        $relation->to()->associate($member);
+        $relation->save();
+        
+        $companyOwnedProjectCount = 5;
+        $projects = array_merge(Project::factory()->count(10)
+            ->create([
+                "addedby_type" => $creator::class,
+                "addedby_id" => $creator->id,
+            ])->toArray(), Project::factory()->count($companyOwnedProjectCount)
+            ->create([
+                "addedby_type" => $company::class,
+                "addedby_id" => $company->id,
+            ])->toArray());
+
+        $this->actingAs($user);
+
+        $query = "member_id={$member->id}";
+        $response = $this->getJson("/api/projects?". $query);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            "data" => [],
+            "links" => [],
+            "meta" => [],
+        ]);
+
+        $data = json_decode($response->baseResponse->content());
+        
+        $this->assertEquals(
+            $data->meta->total,
+            $companyOwnedProjectCount
+        );
+    }
+
+    public function testCanGetAllProjectsWithParticipantOfProjectQuery()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $creator = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $participant = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $userType = $user->addedUserTypes()->create([
+            "name" => UserType::FACILITATOR
+        ]);
+
+        $user->userTypes()->attach($userType);
+        $creator->userTypes()->attach($userType);
+
+        $company = Company::factory()->create(["user_id" => $creator->id]);
+        
+        $companyOwnedProjectCount = 5;
+        $projects = Project::factory()->count(10)
+            ->create([
+                "addedby_type" => $creator::class,
+                "addedby_id" => $creator->id,
+            ])->merge(Project::factory()->count($companyOwnedProjectCount)
+            ->create([
+                "addedby_type" => $company::class,
+                "addedby_id" => $company->id,
+            ]));
+
+        $participation = $projects[0]->participants()->create([
+            "participating_as" => ProjectParticipantEnum::facilitator->value
+        ]);
+        $participation->participant()->associate($participant);
+        $participation->save();
+
+        $participation = $projects[1]->participants()->create([
+            "participating_as" => ProjectParticipantEnum::facilitator->value
+        ]);
+        $participation->participant()->associate($participant);
+        $participation->save();
+
+        $this->assertDatabaseHas("project_participant", [
+            "project_id" => $projects[0]->id,
+            "participant_type" => $participant::class,
+            "participant_id" => $participant->id,
+            "participating_as" => ProjectParticipantEnum::facilitator->value
+        ]);
+
+        $this->assertDatabaseHas("project_participant", [
+            "project_id" => $projects[1]->id,
+            "participant_type" => $participant::class,
+            "participant_id" => $participant->id,
+            "participating_as" => ProjectParticipantEnum::facilitator->value
+        ]);
+
+        $this->actingAs($user);
+
+        $query = "participant_id={$participant->id}&participant_type=user";
+        $response = $this->getJson("/api/projects?". $query);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            "data" => [],
+            "links" => [],
+            "meta" => [],
+        ]);
+
+        $data = json_decode($response->baseResponse->content());
+        
+        $this->assertEquals(
+            $data->meta->total,
+            2
+        );
+    }
+
+    public function testCanGetAllProjectsWithParticipationTypeQuery()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $creator = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $participant = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $userType = $user->addedUserTypes()->create([
+            "name" => UserType::FACILITATOR
+        ]);
+
+        $user->userTypes()->attach($userType);
+        $creator->userTypes()->attach($userType);
+
+        $company = Company::factory()->create(["user_id" => $creator->id]);
+        
+        $companyOwnedProjectCount = 5;
+        $projects = Project::factory()->count(10)
+            ->create([
+                "addedby_type" => $creator::class,
+                "addedby_id" => $creator->id,
+            ])->merge(Project::factory()->count($companyOwnedProjectCount)
+            ->create([
+                "addedby_type" => $company::class,
+                "addedby_id" => $company->id,
+            ]));
+
+        $participation = $projects[0]->participants()->create([
+            "participating_as" => ProjectParticipantEnum::facilitator->value
+        ]);
+        $participation->participant()->associate($participant);
+        $participation->save();
+
+        $participation = $projects[1]->participants()->create([
+            "participating_as" => ProjectParticipantEnum::facilitator->value
+        ]);
+        $participation->participant()->associate($participant);
+        $participation->save();
+
+        $this->assertDatabaseHas("project_participant", [
+            "project_id" => $projects[0]->id,
+            "participant_type" => $participant::class,
+            "participant_id" => $participant->id,
+            "participating_as" => ProjectParticipantEnum::facilitator->value
+        ]);
+
+        $this->assertDatabaseHas("project_participant", [
+            "project_id" => $projects[1]->id,
+            "participant_type" => $participant::class,
+            "participant_id" => $participant->id,
+            "participating_as" => ProjectParticipantEnum::facilitator->value
+        ]);
+
+        $this->actingAs($user);
+
+        $query = "participation_type=facilitator";
+        $response = $this->getJson("/api/projects?". $query);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            "data" => [],
+            "links" => [],
+            "meta" => [],
+        ]);
+
+        $data = json_decode($response->baseResponse->content());
+        
+        $this->assertEquals(
+            $data->meta->total,
+            2
+        );
+    }
+
+    public function testCanGetAllProjectsWithSkillsHavingNameQuery()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $creator = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $userType = $user->addedUserTypes()->create([
+            "name" => UserType::FACILITATOR
+        ]);
+
+        $user->userTypes()->attach($userType);
+        $creator->userTypes()->attach($userType);
+
+        $skill0 = Skill::factory()->create([
+            "user_id" => $creator->id,
+            "name" => "Web development"
+        ]);
+        
+        $skill1 = Skill::factory()->create([
+            "user_id" => $creator->id,
+            "name" => "Mobile app development"
+        ]);
+        
+        $projects = Project::factory()->count(20)
+            ->create([
+                "addedby_type" => $creator::class,
+                "addedby_id" => $creator->id,
+            ]);
+
+        $projects[0]->skills()->attach($skill0);
+        $projects[1]->skills()->attach($skill1);
+
+        $this->assertDatabaseHas("project_skill", [
+            "project_id" => $projects[0]->id,
+            "skill_id" => $skill0->id
+        ]);
+
+        $this->assertDatabaseHas("project_skill", [
+            "project_id" => $projects[1]->id,
+            "skill_id" => $skill1->id,
+        ]);
+
+        $this->actingAs($user);
+
+        $query = "skill_name=development";
+        $response = $this->getJson("/api/projects?". $query);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            "data" => [],
+            "links" => [],
+            "meta" => [],
+        ]);
+
+        $data = json_decode($response->baseResponse->content());
+        
+        $this->assertEquals(
+            $data->meta->total,
+            2
+        );
+    }
+
+    public function testCanGetAllProjectsWithParticipantAndParticipationTypeOfProjectQuery()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $creator = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $participant = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $learner = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $userType = $user->addedUserTypes()->create([
+            "name" => UserType::FACILITATOR
+        ]);
+
+        $user->userTypes()->attach($userType);
+        $creator->userTypes()->attach($userType);
+
+        $company = Company::factory()->create(["user_id" => $creator->id]);
+        
+        $companyOwnedProjectCount = 5;
+        $projects = Project::factory()->count(10)
+            ->create([
+                "addedby_type" => $creator::class,
+                "addedby_id" => $creator->id,
+            ])->merge(Project::factory()->count($companyOwnedProjectCount)
+            ->create([
+                "addedby_type" => $company::class,
+                "addedby_id" => $company->id,
+            ]));
+
+        $participation = $projects[0]->participants()->create([
+            "participating_as" => ProjectParticipantEnum::facilitator->value
+        ]);
+        $participation->participant()->associate($participant);
+        $participation->save();
+
+        $participation = $projects[1]->participants()->create([
+            "participating_as" => ProjectParticipantEnum::facilitator->value
+        ]);
+        $participation->participant()->associate($participant);
+        $participation->save();
+
+        $participation = $projects[2]->participants()->create([
+            "participating_as" => ProjectParticipantEnum::learner->value
+        ]);
+        $participation->participant()->associate($learner);
+        $participation->save();
+
+        $this->assertDatabaseHas("project_participant", [
+            "project_id" => $projects[0]->id,
+            "participant_type" => $participant::class,
+            "participant_id" => $participant->id,
+            "participating_as" => ProjectParticipantEnum::facilitator->value
+        ]);
+
+        $this->assertDatabaseHas("project_participant", [
+            "project_id" => $projects[1]->id,
+            "participant_type" => $participant::class,
+            "participant_id" => $participant->id,
+            "participating_as" => ProjectParticipantEnum::facilitator->value
+        ]);
+
+        $this->assertDatabaseHas("project_participant", [
+            "project_id" => $projects[2]->id,
+            "participant_type" => $learner::class,
+            "participant_id" => $learner->id,
+            "participating_as" => ProjectParticipantEnum::learner->value
+        ]);
+
+        $this->actingAs($user);
+
+        $query = "participation_type=facilitator&participant_id={$participant->id}&participant_type=user";
+        $response = $this->getJson("/api/projects?". $query);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            "data" => [],
+            "links" => [],
+            "meta" => [],
+        ]);
+
+        $data = json_decode($response->baseResponse->content());
+        $this->assertEquals(
+            $data->meta->total,
+            2
+        );
+    }
+
+    public function testCanGetDetailsOfProject()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $facilitator = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $sponsor = Company::create([
+            'alias' => $this->faker->userName(),
+            'name' => $this->faker->company(),
+            'user_id' => $user->id,
+        ]);
+
+        $project = Project::factory()->create([
+            "addedby_id" => $user->id,
+            "addedby_type" => $user::class,
+        ]);
+
+        $participation = $project->participants()->create([
+            "participating_as" => ProjectParticipantEnum::sponsor->value
+        ]);
+        $participation->participant()->associate($sponsor);
+        $participation->save();
+
+        $participation = $project->participants()->create([
+            "participating_as" => ProjectParticipantEnum::facilitator->value
+        ]);
+        $participation->participant()->associate($facilitator);
+        $participation->save();
+
+        $response = $this->getJson("/api/projects/{$project->id}");
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            "status" => true,
+            "project" => [
+                "id" => $project->id,
+                "participants" => [
+                    [
+                        "participatingAs" => "sponsor",
+                        "participant" => [
+                            "name" => $sponsor->name
+                        ]
+                    ],
+                    [
+                        "participatingAs" => "facilitator",
+                        "participant" => [
+                            "name" => $facilitator->name
+                        ]
+                    ],
+                ]
+            ]
+        ]);
+    }
+
+    public function testCannotGetParticipantsOfProjectWithInvalidType()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $facilitator = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $sponsor = Company::create([
+            'alias' => $this->faker->userName(),
+            'name' => $this->faker->company(),
+            'user_id' => $user->id,
+        ]);
+
+        $project = Project::factory()->create([
+            "addedby_id" => $user->id,
+            "addedby_type" => $user::class,
+        ]);
+
+        $participation = $project->participants()->create([
+            "participating_as" => ProjectParticipantEnum::sponsor->value
+        ]);
+        $participation->participant()->associate($sponsor);
+        $participation->save();
+
+        $participation = $project->participants()->create([
+            "participating_as" => ProjectParticipantEnum::facilitator->value
+        ]);
+        $participation->participant()->associate($facilitator);
+        $participation->save();
+
+        $response = $this->getJson("/api/projects/{$project->id}/wrong_type");
+
+        $response->assertStatus(404);
+        $response->assertJson([
+            "status" => false,
+            "message" => "this is an unknown request."
+        ]);
+    }
+
+    public function testCanGetParticipantsOfProject()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $facilitator = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $sponsor = Company::create([
+            'alias' => $this->faker->userName(),
+            'name' => $this->faker->company(),
+            'user_id' => $user->id,
+        ]);
+
+        $project = Project::factory()->create([
+            "addedby_id" => $user->id,
+            "addedby_type" => $user::class,
+        ]);
+
+        $participation = $project->participants()->create([
+            "participating_as" => ProjectParticipantEnum::sponsor->value
+        ]);
+        $participation->participant()->associate($sponsor);
+        $participation->save();
+
+        $participation = $project->participants()->create([
+            "participating_as" => ProjectParticipantEnum::facilitator->value
+        ]);
+        $participation->participant()->associate($facilitator);
+        $participation->save();
+
+        $response = $this->getJson("/api/projects/{$project->id}/participants");
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            "status" => true,
+            "participants" => [
+                [
+                    "participatingAs" => "sponsor",
+                    "participant" => [
+                        "name" => $sponsor->name
+                    ]
+                ],
+                [
+                    "participatingAs" => "facilitator",
+                    "participant" => [
+                        "name" => $facilitator->name
+                    ]
+                ],
+            ]
+        ]);
+    }
+
+    public function testCanGetOfficialsOfProject()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $facilitator = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $sponsor = Company::create([
+            'alias' => $this->faker->userName(),
+            'name' => $this->faker->company(),
+            'user_id' => $user->id,
+        ]);
+
+        $project = Project::factory()->create([
+            "addedby_id" => $user->id,
+            "addedby_type" => $user::class,
+        ]);
+
+        $participation = $project->participants()->create([
+            "participating_as" => ProjectParticipantEnum::sponsor->value
+        ]);
+        $participation->participant()->associate($sponsor);
+        $participation->save();
+
+        $participation = $project->participants()->create([
+            "participating_as" => ProjectParticipantEnum::facilitator->value
+        ]);
+        $participation->participant()->associate($facilitator);
+        $participation->save();
+
+        $response = $this->getJson("/api/projects/{$project->id}/officials");
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            "status" => true,
+            "participants" => [
+                [
+                    "participatingAs" => "facilitator",
+                    "participant" => [
+                        "name" => $facilitator->name
+                    ]
+                ],
+            ]
+        ]);
+
+        $this->assertEquals(
+            count(json_decode($response->baseResponse->content())->participants),
+            1
+        );
+    }
+
+    public function testCanGetSponsorsOfProject()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $facilitator = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $sponsor = Company::create([
+            'alias' => $this->faker->userName(),
+            'name' => $this->faker->company(),
+            'user_id' => $user->id,
+        ]);
+
+        $project = Project::factory()->create([
+            "addedby_id" => $user->id,
+            "addedby_type" => $user::class,
+        ]);
+
+        $participation = $project->participants()->create([
+            "participating_as" => ProjectParticipantEnum::sponsor->value
+        ]);
+        $participation->participant()->associate($sponsor);
+        $participation->save();
+
+        $participation = $project->participants()->create([
+            "participating_as" => ProjectParticipantEnum::facilitator->value
+        ]);
+        $participation->participant()->associate($facilitator);
+        $participation->save();
+
+        $response = $this->getJson("/api/projects/{$project->id}/sponsors");
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            "status" => true,
+            "participants" => [
+                [
+                    "participatingAs" => "sponsor",
+                    "participant" => [
+                        "name" => $sponsor->name
+                    ]
+                ],
+            ]
+        ]);
+
+        $this->assertEquals(
+            count(json_decode($response->baseResponse->content())->participants),
+            1
+        );
+    }
+
+    // todo get projectsessions
 }

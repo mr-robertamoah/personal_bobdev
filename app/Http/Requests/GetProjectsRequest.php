@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class SyncPermissionsAndRoleRequest extends FormRequest
+class GetProjectsRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,7 +24,10 @@ class SyncPermissionsAndRoleRequest extends FormRequest
     public function rules()
     {
         return [
-            "permission_ids" => "required|array"
+            "participant_id" => "required_with:participant_type|integer",
+            "participant_type" => "required_with:participant_id|string|in:company,user",
+            "owner_id" => "required_with:owner_type|integer",
+            "owner_type" => "required_with:owner_id|string|in:company,user",
         ];
     }
 }

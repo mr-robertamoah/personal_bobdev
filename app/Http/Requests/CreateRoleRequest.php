@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\PermissionEnum;
 use Illuminate\Foundation\Http\FormRequest;
 
 class CreateRoleRequest extends FormRequest
@@ -13,7 +14,12 @@ class CreateRoleRequest extends FormRequest
      */
     public function authorize()
     {
-        return true;
+        $user = $this->user();
+
+        return $user->isAdmin() ||
+            $user->ownsCompany() ||
+            $user->ownsProject() ||
+            $user->isAuthorizedFor(name: PermissionEnum::CREATEROLES->value);
     }
 
     /**

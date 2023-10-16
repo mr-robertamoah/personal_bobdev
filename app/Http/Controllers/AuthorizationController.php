@@ -32,7 +32,7 @@ class AuthorizationController extends Controller
             //throw $th;
             return response()->json([
                 "message" => $th->getMessage(),
-            ], $th->getCode());
+            ], $th->getCode() ?: 500);
         }
     }
     public function deleteAuthorization(Request $request)
@@ -52,7 +52,7 @@ class AuthorizationController extends Controller
             //throw $th;
             return response()->json([
                 "message" => $th->getMessage(),
-            ], $th->getCode());
+            ], $th->getCode() ?: 500);
         }
     }
     
@@ -77,7 +77,7 @@ class AuthorizationController extends Controller
             // throw $th;
             return response()->json([
                 "message" => $th->getMessage(),
-            ], $th->getCode());
+            ], $th->getCode() ?: 500);
         }
     }
 }

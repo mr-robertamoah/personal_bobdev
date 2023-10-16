@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Actions\Activity\AddActivityAction;
 use App\Actions\EnsureUserExistsAction;
 use App\Actions\GetModelAction;
+use App\Actions\GetModelFromDTOAction;
 use App\Actions\Project\EnsureParticipationIsValidArrayAction;
 use App\Actions\GetUserDataForUserId;
 use App\Actions\Project\EnsureAddedbyIsAuthorizedAction;
@@ -15,7 +16,11 @@ use App\Actions\Project\EnsureParticipantIsOfValidParticipantClassAction;
 use App\Actions\Project\EnsureProjectExistsAction;
 use App\Actions\Project\EnsurePotentialParticipantIsNotAlreadyAParticipantAction;
 use App\Actions\Project\EnsurePotentialParticipantExistsAction;
+use App\Actions\Project\EnsureTypeIsValidAction;
 use App\Actions\Project\EnsureUserIsParticipatingAsTypeAction;
+use App\Actions\Project\GetParticipantsAction;
+use App\Actions\Project\GetProjectAction;
+use App\Actions\Project\GetProjectsAction;
 use App\Actions\Project\LeaveProjectAction;
 use App\Actions\Project\RemoveParticipantAction;
 use App\Actions\Requests\CreateRequestAction;
@@ -28,6 +33,8 @@ use App\DTOs\RequestDTO;
 use App\Models\Project;
 use App\Models\User;
 use App\Models\UserType;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class ProjectService extends Service
 {
@@ -289,6 +296,55 @@ class ProjectService extends Service
         );
 
         return $requests;
+    }
+
+    public function getProjects(ProjectDTO $projectDTO) : LengthAwarePaginator
+    {
+        $projectDTO = $projectDTO->withParticipant(
+            GetModelFromDTOAction::make()->execute(
+                $projectDTO, "participant", $projectDTO->participantType
+            )
+        );
+
+        $projectDTO = $projectDTO->withOwner(
+            GetModelFromDTOAction::make()->execute(
+                $projectDTO, "owner", $projectDTO->ownerType
+            )
+        );
+        
+        $projectDTO = $projectDTO->withOfficial(
+            GetModelFromDTOAction::make()->execute(
+                $projectDTO, "official"
+            )
+        );
+        
+        $projectDTO = $projectDTO->withMember(
+            GetModelFromDTOAction::make()->execute(
+                $projectDTO, "member"
+            )
+        );
+
+        return GetProjectsAction::make()->execute($projectDTO);
+    }
+
+    public function getProject(ProjectDTO $projectDTO) : Project
+    {
+        $projectDTO = $this->setProjectOnDTO($projectDTO);
+        
+        EnsureProjectExistsAction::make()->execute($projectDTO);
+
+        return GetProjectAction::make()->execute($projectDTO);
+    }
+
+    public function getParticipants(ProjectDTO $projectDTO) : Collection
+    {
+        EnsureTypeIsValidAction::make()->execute($projectDTO);
+
+        $projectDTO = $this->setProjectOnDTO($projectDTO);
+        
+        EnsureProjectExistsAction::make()->execute($projectDTO);
+
+        return GetParticipantsAction::make()->execute($projectDTO);
     }
 
     private function getData(ProjectDTO $projectDTO) : array

@@ -2,11 +2,20 @@
 
 namespace App\Traits;
 
-use App\Models\User;
-
 trait HasAuthorizationTrait
 {
     use CreatedByUserTrait;
+    use HasIsLikeTrait;
+
+    public function isPublic()
+    {
+        return $this->public;
+    }
+
+    public function isPrivate()
+    {
+        return !$this->public;
+    }
     
     public function scopeWhereName($query, string $name)
     {
@@ -39,15 +48,6 @@ trait HasAuthorizationTrait
     {
         return $query->where(function ($q) use ($class) {
             $q->where("class", $class);
-        });
-    }
-
-    public function scopeWhereIsLike($query, string $like)
-    {
-        return $query->where(function ($q) use ($like) {
-            $q->where("name", "LIKE", $like);
-        })->orWhere(function ($q) use ($like) {
-            $q->where("description", "LIKE", $like);
         });
     }
 }

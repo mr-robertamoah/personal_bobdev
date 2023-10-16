@@ -11,7 +11,7 @@ class EnsureParticipantIsOfValidParticipantClassAction extends Action
 {
     public function execute(ProjectDTO $projectDTO)
     {
-        if (in_array($projectDTO->participant::class,ProjectParticipant::$validParticipantClasses))
+        if (in_array($projectDTO->participant::class, ProjectParticipant::$validParticipantClasses))
         {
             return;
         }

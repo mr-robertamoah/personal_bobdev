@@ -10,7 +10,7 @@ class BecomeSponsorOfProjectAction extends Action
 {
     public function execute(ProjectDTO $projectDTO)
     {
-        $projectDTO->participant->projects()->create([
+        $projectDTO->participant->participations()->create([
             'participating_as' => ProjectParticipantEnum::sponsor->value,
             'project_id' => $projectDTO->project->id
         ]);

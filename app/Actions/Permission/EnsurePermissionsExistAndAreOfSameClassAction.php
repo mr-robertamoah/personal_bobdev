@@ -11,7 +11,7 @@ class EnsurePermissionsExistAndAreOfSameClassAction extends Action
     public function execute(PermissionDTO $permissionDTO)
     {
         if (!count($permissionDTO->permissionIds)) {
-            throw new PermissionException("Sorry! You are required to provide ids of permissions.", 422);
+            throw new PermissionException("Sorry! You are required to provide id of permissions.", 422);
         }
 
         $validPermissions = Permission::whereIn('id', $permissionDTO->permissionIds)

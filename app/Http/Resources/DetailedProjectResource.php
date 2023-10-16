@@ -2,10 +2,9 @@
 
 namespace App\Http\Resources;
 
-use App\Models\Company;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class ProjectResource extends JsonResource
+class DetailedProjectResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -17,8 +16,6 @@ class ProjectResource extends JsonResource
     {
         $ownerType = class_basename($this->addedby);
 
-        $company = Company::find($request->company_id);
-
         return [
             'id' => $this->id,
             'name' => $this->name,
@@ -27,13 +24,17 @@ class ProjectResource extends JsonResource
                 new CompanyResource($this->addedby) :
                 new UserResource($this->addedby),
             'ownerType' => $ownerType,
-            'skills' => SkillResource::collection($this->skills),
+            'skills' => $this->skills,
             'noOfParticipants' => $this->participants()->count(),
-            "isSponsor" => $this->when(
-                $company,
-                $this->isSponsor($company)
+            'participants' => ProjectParticipantResource::collection(
+                $this->participants->take(5)
             ),
-            // todo skills, sessions, facilitators, learners
+            // todo add projectsessions as well as the ones held
+            // 'resouces' => $this->when(
+            //     $this->canAccessResources($request->user()),
+            //     FileResource::collection($this->files),
+            //     FileResource::collection($this->publicFiles),
+            // )
         ];
     }
 }

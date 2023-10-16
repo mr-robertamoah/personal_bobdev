@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\RelationshipTypeEnum;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -26,36 +27,56 @@ class Relation extends Model
     public function scopeWhereUserIsInARelationshipType($query, $user, $type)
     {
         return $query
-            ->where('relationship_type', $type)
-            ->where(function($query) use ($user) {
-                $query
-                    ->where('to_type', $user::class)
-                    ->where('to_id', $user->id);
-            })
+            ->whereRelationshipType($type)
+            ->whereIsTo($user)
             ->orWhere(function($query) use ($user) {
-                $query
-                    ->where('by_type', $user::class)
-                    ->where('by_id', $user->id);
+                $query->whereIsBy($user);
             });
     }
 
-    public function scopeWhereBy($query, $model)
+    public function scopeWhereIsRelated($query, $model)
     {
         return $query
-            ->where('by_type', $model::class)
-            ->where('by_id', $model->id);
+            ->whereIsTo($model)
+            ->orWhere(function($query) use ($model) {
+                $query->whereIsBy($model);
+            });
     }
 
-    public function scopeWhereTo($query, $model)
+    public function scopeWhereIsBy($query, $model)
     {
         return $query
-            ->where('to_type', $model::class)
-            ->where('to_id', $model->id);
+        ->where(function ($q) use ($model) {
+            $q->where('by_type', $model::class)
+                ->where('by_id', $model->id);
+        });
     }
 
-    public function scopeWhereType($query, $type)
+    public function scopeWhereIsTo($query, $model)
     {
         return $query
-            ->where('relationship_type', $type);
+        ->where(function ($q) use ($model) {
+            $q->where('to_type', $model::class)
+                ->where('to_id', $model->id);
+        });
+    }
+
+    public function scopeWhereIsRelationshipType($query, $type)
+    {
+        $type = strtoupper($type);
+
+        if ($type == "OFFICIAL")
+            $type = RelationshipTypeEnum::companyAdministrator->value;
+
+        return $query
+            ->where(function ($q) use ($type) {
+                $q->where('relationship_type', $type);
+            });
+    }
+
+    public function scopeWhereOfficial($query)
+    {
+        return $query
+            ->whereIsRelationshipType(RelationshipTypeEnum::companyAdministrator->value);
     }
 }

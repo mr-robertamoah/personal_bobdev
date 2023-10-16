@@ -2,6 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Enums\PermissionEnum;
+use App\Models\Company;
+use App\Models\Permission;
+use App\Models\Project;
+use App\Models\Role;
 use App\Models\User;
 use App\Models\UserType;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -32,7 +37,7 @@ class RoleTest extends TestCase
         }
     }
 
-    public function testCannotCreatePermissionWhenNotAuthorized()
+    public function testCannotCreateRoleWhenNotAdminNotAuthorizedOrNotOwningAuthorizable()
     {
         $user = User::create([
             'username' => $this->faker->userName(),
@@ -50,7 +55,7 @@ class RoleTest extends TestCase
 
         $this->actingAs($user);
 
-        $response = $this->postJson("/api/permissions", []);
+        $response = $this->postJson("/api/roles", []);
 
         $response->assertStatus(403);
         $response->assertJson([
@@ -58,7 +63,7 @@ class RoleTest extends TestCase
         ]);
     }
 
-    public function testCannotCreatePermissionWithoutAppropriateData()
+    public function testCannotCreateRoleWithoutAppropriateData()
     {
         $user = User::create([
             'username' => $this->faker->userName(),
@@ -76,7 +81,7 @@ class RoleTest extends TestCase
 
         $this->actingAs($user);
 
-        $response = $this->postJson("/api/permissions", []);
+        $response = $this->postJson("/api/roles", []);
 
         $response->assertStatus(422);
         $response->assertJson([
@@ -88,7 +93,7 @@ class RoleTest extends TestCase
         ]);
     }
 
-    public function testCanCreatePermissionWithAppropriateDataWhenSuperAdmin()
+    public function testCanCreateRoleWithAppropriateDataWhenSuperAdmin()
     {
         $user = User::create([
             'username' => $this->faker->userName(),
@@ -113,19 +118,57 @@ class RoleTest extends TestCase
             "class" => null,
         ];
 
-        $response = $this->postJson("/api/permissions", $data);
+        $response = $this->postJson("/api/roles", $data);
 
         $response->assertStatus(201);
         $response->assertJson([
             "status" => true,
-            "permission" => [
+            "role" => [
                 "id" => 1,
                 ...$data
             ]
         ]);
     }
 
-    public function testCanCreatePermissionWithAppropriateDataWhenAuthorizedButNotSuperAdmin()
+    public function testCanCreateRoleWithAppropriateDataWhenOwnerOfAuthorizable()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $userType = $user->addedUserTypes()->create([
+            'name' => UserType::FACILITATOR
+        ]);
+
+        $user->userTypes()->attach($userType);
+
+        Company::factory()->create([
+            "user_id" => $user->id
+        ]);
+        
+        $this->actingAs($user);
+
+        $data = [
+            "name" => $this->faker->name(),
+            "public" => $this->faker->boolean(),
+            "description" => $this->faker->sentence(),
+            "class" => null,
+        ];
+
+        $response = $this->postJson("/api/roles", $data);
+
+        $response->assertStatus(201);
+        $response->assertJson([
+            "status" => true,
+            "role" => $data
+        ]);
+    }
+
+    public function testCanCreateRoleWithAppropriateDataWhenAuthorized()
     {
         $user = User::create([
             'username' => $this->faker->userName(),
@@ -151,7 +194,7 @@ class RoleTest extends TestCase
 
         $permission = Permission::factory()->create([
             "user_id" => $user->id,
-            "name" => PermissionEnum::CREATEPERMISSIONS->value
+            "name" => PermissionEnum::CREATEROLES->value
         ]);
 
         $authorization = $user->authorizations()->create();
@@ -168,12 +211,12 @@ class RoleTest extends TestCase
             "class" => null,
         ];
 
-        $response = $this->postJson("/api/permissions", $data);
+        $response = $this->postJson("/api/roles", $data);
 
         $response->assertStatus(201);
         $response->assertJson([
             "status" => true,
-            "permission" => $data
+            "role" => $data
         ]);
     }
 
@@ -207,22 +250,21 @@ class RoleTest extends TestCase
         
         $admin->userTypes()->attach($userType->id);
 
-        $permission = Permission::factory()->create([
+        $role = Role::factory()->create([
             "user_id" => $user->id,
-            "name" => PermissionEnum::CREATEPERMISSIONS->value
         ]);
 
         $this->actingAs($user);
 
-        $response = $this->postJson("/api/permissions/{$permission->id}", []);
+        $response = $this->postJson("/api/roles/{$role->id}", []);
 
-        $response->assertStatus(403);
+        $response->assertStatus(422);
         $response->assertJson([
             "message" => true
         ]);
     }
 
-    public function testCannotUpdatePermissionWithoutAnyData()
+    public function testCannotUpdateRoleWithoutAnyData()
     {
         $admin = User::create([
             'username' => $this->faker->userName(),
@@ -252,19 +294,18 @@ class RoleTest extends TestCase
         
         $admin->userTypes()->attach($userType->id);
 
-        $permission = Permission::factory()->create([
+        $role = Role::factory()->create([
             "user_id" => $user->id,
-            "name" => PermissionEnum::CREATEPERMISSIONS->value
         ]);
 
         $authorization = $admin->authorizations()->create();
         $authorization->authorized()->associate($user);
-        $authorization->authorization()->associate($permission);
+        $authorization->authorization()->associate($role);
         $authorization->save();
 
         $this->actingAs($user);
 
-        $response = $this->postJson("/api/permissions/{$permission->id}", []);
+        $response = $this->postJson("/api/roles/{$role->id}", []);
 
         $response->assertStatus(422);
         $response->assertJson([
@@ -272,7 +313,7 @@ class RoleTest extends TestCase
         ]);
     }
 
-    public function testCanUpdatePermissionWhenAdmin()
+    public function testCanUpdateRoleWhenAdmin()
     {
         $admin = User::create([
             'username' => $this->faker->userName(),
@@ -302,7 +343,7 @@ class RoleTest extends TestCase
         
         $admin->userTypes()->attach($userType->id);
 
-        $permission = Permission::factory()->create([
+        $role = Role::factory()->create([
             "user_id" => $superAdmin->id,
             "public" => true
         ]);
@@ -313,18 +354,18 @@ class RoleTest extends TestCase
             "name" => "new name",
             "public" => false
         ];
-        $response = $this->postJson("/api/permissions/{$permission->id}", $data);
+        $response = $this->postJson("/api/roles/{$role->id}", $data);
 
         $response->assertStatus(201);
         $response->assertJson([
             "status" => true,
-            "permission" => $data
+            "role" => $data
         ]);
 
-        $this->assertDatabaseHas("permissions", $data);
+        $this->assertDatabaseHas("roles", $data);
     }
 
-    public function testCanUpdatePermissionWhenSuperAdmin()
+    public function testCanUpdateRoleWhenSuperAdmin()
     {
         $other = User::create([
             'username' => $this->faker->userName(),
@@ -350,7 +391,7 @@ class RoleTest extends TestCase
         
         $other->userTypes()->attach($userType->id);
 
-        $permission = Permission::factory()->create([
+        $role = Role::factory()->create([
             "user_id" => $superAdmin->id,
             "public" => true
         ]);
@@ -361,18 +402,18 @@ class RoleTest extends TestCase
             "name" => "new name",
             "public" => false
         ];
-        $response = $this->postJson("/api/permissions/{$permission->id}", $data);
+        $response = $this->postJson("/api/roles/{$role->id}", $data);
 
         $response->assertStatus(201);
         $response->assertJson([
             "status" => true,
-            "permission" => $data
+            "role" => $data
         ]);
 
-        $this->assertDatabaseHas("permissions", $data);
+        $this->assertDatabaseHas("roles", $data);
     }
 
-    public function testCanUpdatePermissionWhenAuthorized()
+    public function testCanUpdateRoleWhenOwner()
     {
         $other = User::create([
             'username' => $this->faker->userName(),
@@ -382,35 +423,15 @@ class RoleTest extends TestCase
             'email' => $this->faker->email(),
         ]);
 
-        $superAdmin = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
-
-        $userType = $other->addedUserTypes()->create([
-            'name' => UserType::SUPERADMIN
-        ]);
-        
-        $superAdmin->userTypes()->attach($userType->id);
-
         $userType = $other->addedUserTypes()->create([
             'name' => UserType::FACILITATOR
         ]);
         
         $other->userTypes()->attach($userType->id);
 
-        $permission = Permission::factory()->create([
-            "user_id" => $superAdmin->id,
-            "name" => PermissionEnum::CREATEPERMISSIONS->value
+        $role = Role::factory()->create([
+            "user_id" => $other->id,
         ]);
-
-        $authorization = $superAdmin->authorizations()->create();
-        $authorization->authorized()->associate($other);
-        $authorization->authorization()->associate($permission);
-        $authorization->save();
 
         $this->actingAs($other);
 
@@ -418,18 +439,18 @@ class RoleTest extends TestCase
             "name" => "new name",
             "public" => false
         ];
-        $response = $this->postJson("/api/permissions/{$permission->id}", $data);
+        $response = $this->postJson("/api/roles/{$role->id}", $data);
 
         $response->assertStatus(201);
         $response->assertJson([
             "status" => true,
-            "permission" => $data
+            "role" => $data
         ]);
 
-        $this->assertDatabaseHas("permissions", $data);
+        $this->assertDatabaseHas("roles", $data);
     }
 
-    public function testCannotDeletePermissionWhenNotAuthorized()
+    public function testCannotDeleteRoleWhenNotAuthorized()
     {
         $admin = User::create([
             'username' => $this->faker->userName(),
@@ -459,57 +480,15 @@ class RoleTest extends TestCase
         
         $admin->userTypes()->attach($userType->id);
 
-        $permission = Permission::factory()->create([
+        $role = Role::factory()->create([
             "user_id" => $admin->id,
-            "name" => PermissionEnum::CREATEPERMISSIONS->value
         ]);
 
         $this->actingAs($user);
 
-        $response = $this->deleteJson("/api/permissions/{$permission->id}", []);
+        $response = $this->deleteJson("/api/roles/{$role->id}", []);
 
-        $response->assertStatus(403);
-        $response->assertJson([
-            "message" => true
-        ]);
-    }
-
-    public function testCannotDeletePermissionWhenNotAdmin()
-    {
-        $admin = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
-
-        $user = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
-
-        $userType = $admin->addedUserTypes()->create([
-            'name' => UserType::ADMIN
-        ]);
-        
-        $user->userTypes()->attach($userType->id);
-        
-        $admin->userTypes()->attach($userType->id);
-
-        $permission = Permission::factory()->create([
-            "user_id" => $admin->id,
-            "name" => PermissionEnum::CREATEPERMISSIONS->value
-        ]);
-
-        $this->actingAs($user);
-
-        $response = $this->deleteJson("/api/permissions/{$permission->id}", []);
-
-        $response->assertStatus(403);
+        $response->assertStatus(422);
         $response->assertJson([
             "message" => true
         ]);
@@ -545,26 +524,124 @@ class RoleTest extends TestCase
         
         $admin->userTypes()->attach($userType->id);
 
-        $permission = Permission::factory()->create([
+        $role = Role::factory()->create([
             "user_id" => $superAdmin->id,
             "public" => true
         ]);
 
         $this->actingAs($superAdmin);  
         
-        $response = $this->deleteJson("/api/permissions/{$permission->id}");
+        $response = $this->deleteJson("/api/roles/{$role->id}");
 
         $response->assertStatus(200);
         $response->assertJson([
             "status" => true,
         ]);
 
-        $this->assertDatabaseMissing("permissions", [
-            "id" => $permission->id
+        $this->assertDatabaseMissing("roles", [
+            "id" => $role->id
         ]);
     }
 
-    public function testCanDeletePermissionWhenAuthorized()
+    public function testCanDeletePermissionWhenAdmin()
+    {
+        $admin = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $userType = $admin->addedUserTypes()->create([
+            'name' => UserType::FACILITATOR
+        ]);
+        
+        $user->userTypes()->attach($userType->id);
+
+        $userType = $admin->addedUserTypes()->create([
+            'name' => UserType::ADMIN
+        ]);
+        
+        $admin->userTypes()->attach($userType->id);
+
+        $role = Role::factory()->create([
+            "user_id" => $user->id,
+            "public" => true
+        ]);
+
+        $this->actingAs($admin);  
+        
+        $response = $this->deleteJson("/api/roles/{$role->id}");
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            "status" => true,
+        ]);
+
+        $this->assertDatabaseMissing("roles", [
+            "id" => $role->id
+        ]);
+    }
+
+    public function testCanDeletePrivateRoleWhenOwner()
+    {
+        $admin = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $userType = $admin->addedUserTypes()->create([
+            'name' => UserType::SUPERADMIN
+        ]);
+        
+        $admin->userTypes()->attach($userType->id);
+
+        $userType = $admin->addedUserTypes()->create([
+            'name' => UserType::FACILITATOR
+        ]);
+        
+        $user->userTypes()->attach($userType->id);
+
+        $this->actingAs($user);
+
+        $role = Role::factory()->create([
+            "user_id" => $user->id,
+            "public" => false
+        ]);
+
+        $response = $this->deleteJson("/api/roles/{$role->id}");
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            "status" => true,
+        ]);
+
+        $this->assertDatabaseMissing("roles", [
+            "id" => $role->id
+        ]);
+    }
+
+    public function testCannotDeletePublicRoleWhenOwner()
     {
         $admin = User::create([
             'username' => $this->faker->userName(),
@@ -596,38 +673,28 @@ class RoleTest extends TestCase
 
         $permission = Permission::factory()->create([
             "user_id" => $admin->id,
-            "public" => true
+            "public" => false
         ]);
 
         $this->actingAs($user);
 
-        $permission = Permission::factory()->create([
+        $role = Role::factory()->create([
             "user_id" => $user->id,
-            "name" => PermissionEnum::CREATEPERMISSIONS->value
         ]);
 
-        $authorization = $user->authorizations()->create();
-        $authorization->authorized()->associate($user);
-        $authorization->authorization()->associate($permission);
-        $authorization->save();
-        
-        $permission = Permission::factory()->create([
-            "user_id" => $user->id
-        ]);
+        $response = $this->deleteJson("/api/roles/{$role->id}");
 
-        $response = $this->deleteJson("/api/permissions/{$permission->id}");
-
-        $response->assertStatus(200);
+        $response->assertStatus(422);
         $response->assertJson([
-            "status" => true,
+            "message" => "Sorry! You are not authorized to update/delete role with name: {$role->name}.",
         ]);
 
-        $this->assertDatabaseMissing("permissions", [
-            "id" => $permission->id
+        $this->assertDatabaseHas("roles", [
+            "id" => $role->id
         ]);
     }
 
-    public function testCannotGetPermissionsWithoutValidQueryWhenNotAdmin()
+    public function testCannotGetRolesWithoutValidQueryWhenNotAdmin()
     {
         $user = User::create([
             'username' => $this->faker->userName(),
@@ -651,14 +718,14 @@ class RoleTest extends TestCase
 
         $user->userTypes()->attach($userType->id);
 
-        $permissions = Permission::factory()->count(13)
+        $roles = Role::factory()->count(13)
             ->create([
                 "user_id" => $creator->id
             ]);
 
         $this->actingAs($user);
 
-        $response = $this->getJson("/api/permissions");
+        $response = $this->getJson("/api/roles");
 
         $response->assertStatus(422);
         $response->assertJson([
@@ -666,7 +733,7 @@ class RoleTest extends TestCase
         ]);
     }
 
-    public function testCanGetPermissionsWithoutValidQueryWhenAdmin()
+    public function testCanGetRolesWithoutValidQueryWhenAdmin()
     {
         $user = User::create([
             'username' => $this->faker->userName(),
@@ -690,16 +757,15 @@ class RoleTest extends TestCase
 
         $user->userTypes()->attach($userType->id);
 
-        $permissions = Permission::factory()->count(13)
+        $roles = Role::factory()->count(13)
             ->create([
                 "user_id" => $creator->id
             ]);
 
         $this->actingAs($user);
 
-        $response = $this->getJson("/api/permissions");
+        $response = $this->getJson("/api/roles");
 
-        ds($response->baseResponse->content(), $permissions);
         $response->assertStatus(200);
         $response->assertJson([
             "data" => [],
@@ -708,11 +774,11 @@ class RoleTest extends TestCase
         ]);
         $this->assertEquals(
             json_decode($response->baseResponse->content())->meta->total,
-            count($permissions)
+            count($roles)
         );
     }
 
-    public function testCanGetPublicPermissionsWithValidQueryWhenNotAuthorized()
+    public function testCanGetPublicRolesWithValidQueryWhenNotAuthorized()
     {
         $user = User::create([
             'username' => $this->faker->userName(),
@@ -736,16 +802,15 @@ class RoleTest extends TestCase
 
         $user->userTypes()->attach($userType->id);
 
-        $permissions = Permission::factory()->count(13)
+        $roles = Role::factory()->count(13)
             ->create([
                 "user_id" => $creator->id
             ]);
 
         $this->actingAs($user);
 
-        $response = $this->getJson("/api/permissions?class=company");
+        $response = $this->getJson("/api/roles?class=company");
 
-        ds($response->baseResponse->content(), $permissions);
         $response->assertStatus(200);
         $response->assertJson([
             "data" => [],
@@ -754,13 +819,13 @@ class RoleTest extends TestCase
         ]);
         $this->assertEquals(
             json_decode($response->baseResponse->content())->meta->total,
-            count(array_filter($permissions->toArray(), function($value) {
+            count(array_filter($roles->toArray(), function($value) {
                 return $value["class"] == "App\\Models\\Company" && $value["public"];
             }))
         );
     }
 
-    public function testCanGetPublicAndCreatedPrivatePermissionsWithValidQueryWhenNotAuthorized()
+    public function testCanGetPublicAndCreatedPrivateRolesWithValidQueryWhenNotAuthorized()
     {
         $user = User::create([
             'username' => $this->faker->userName(),
@@ -784,12 +849,12 @@ class RoleTest extends TestCase
 
         $user->userTypes()->attach($userType->id);
 
-        $permissions = Permission::factory()->count(13)
+        $roles = Role::factory()->count(13)
             ->create([
                 "user_id" => $creator->id
             ]);
 
-        $createdPermissions = Permission::factory()->count(3)
+        $createdRoles = Role::factory()->count(3)
             ->create([
                 "user_id" => $user->id,
                 "public" => 0,
@@ -798,7 +863,7 @@ class RoleTest extends TestCase
 
         $this->actingAs($user);
 
-        $response = $this->getJson("/api/permissions?class=company");
+        $response = $this->getJson("/api/roles?class=company");
 
         $response->assertStatus(200);
         $response->assertJson([
@@ -808,11 +873,523 @@ class RoleTest extends TestCase
         ]);
         $this->assertEquals(
             json_decode($response->baseResponse->content())->meta->total,
-            count(array_unique(array_merge(array_filter($permissions->toArray(), function($value) {
+            count(array_unique(array_merge(array_filter($roles->toArray(), function($value) {
                 return $value["class"] == "App\\Models\\Company" && $value["public"];
-            }), $createdPermissions->toArray()), SORT_REGULAR))
+            }), $createdRoles->toArray()), SORT_REGULAR))
         );
     }
 
-    // get test where permissionname and like queries and sync
+    public function testCanGetRolesWithPermissionNameQueryWhenNotAuthorized()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $creator = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $userType = $user->addedUserTypes()->create([
+            'name' => UserType::FACILITATOR
+        ]);
+
+        $user->userTypes()->attach($userType->id);
+
+        $roles = Role::factory()->count(13)
+            ->create([
+                "user_id" => $creator->id,
+                "public" => 1,
+                "class" => Company::class
+            ]);
+
+        $permission = Permission::factory()
+            ->create([
+                "user_id" => $creator->id
+            ]);
+
+        $createdRoles = Role::factory()->count(3)
+            ->create([
+                "user_id" => $user->id,
+                "public" => 0,
+                "class" => Company::class
+            ]);
+
+        $roles[0]->permissions()->attach($permission);
+        $createdRoles[0]->permissions()->attach($permission);
+
+        $this->actingAs($user);
+
+        $response = $this->getJson("/api/roles?class=company&permission_name={$permission->name}");
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            "data" => [],
+            "links" => [],
+            "meta" => []
+        ]);
+        $this->assertEquals(
+            json_decode($response->baseResponse->content())->meta->total,
+            2
+        );
+    }
+
+    public function testCanGetRolesWithLikeQueryWhenNotAuthorized()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $creator = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $userType = $user->addedUserTypes()->create([
+            'name' => UserType::FACILITATOR
+        ]);
+
+        $user->userTypes()->attach($userType->id);
+
+        $roles = Role::factory()->count(13)
+            ->create([
+                "user_id" => $creator->id,
+                "public" => 1
+            ]);
+
+        $description = "a good one";
+        $permission = Permission::factory()
+            ->create([
+                "user_id" => $creator->id,
+                "description" => "this is quite " . $description
+            ]);
+
+        $createdRoles = Role::factory()->count(3)
+            ->create([
+                "user_id" => $user->id,
+                "public" => 0,
+                "class" => Company::class
+            ]);
+
+        $roles[0]->permissions()->attach($permission);
+        $createdRoles[0]->permissions()->attach($permission);
+
+        $this->actingAs($user);
+
+        $response = $this->getJson("/api/roles?like={$description}");
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            "data" => [],
+            "links" => [],
+            "meta" => []
+        ]);
+        $this->assertEquals(
+            json_decode($response->baseResponse->content())->meta->total,
+            2
+        );
+    }
+
+    public function testCannotAttachPermissionsToRoleWithoutPermissions()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $creator = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $userType = $user->addedUserTypes()->create([
+            'name' => UserType::FACILITATOR
+        ]);
+
+        $user->userTypes()->attach($userType->id);
+
+        $role = Role::factory()
+            ->create([
+                "user_id" => $creator->id,
+                "public" => 1
+            ]);
+
+        $permission = Permission::factory()
+            ->create([
+                "user_id" => $creator->id,
+                "description" => "this is quite good"
+            ]);
+
+        $this->actingAs($user);
+
+        $response = $this->postJson("/api/roles/{$role->id}/sync");
+
+        $response->assertStatus(422);
+        $response->assertJson([
+            "message" => true,
+        ]);
+    }
+
+    public function testCannotAttachPermissionsToRoleWithEmptyPermissions()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $creator = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $userType = $user->addedUserTypes()->create([
+            'name' => UserType::FACILITATOR
+        ]);
+
+        $user->userTypes()->attach($userType->id);
+
+        $role = Role::factory()
+            ->create([
+                "user_id" => $creator->id,
+                "public" => 1
+            ]);
+
+        $permission = Permission::factory()
+            ->create([
+                "user_id" => $creator->id,
+                "description" => "this is quite good"
+            ]);
+
+        $this->actingAs($user);
+
+        $data = [
+            "permission_ids" => []
+        ];
+        $response = $this->postJson("/api/roles/{$role->id}/sync", $data);
+
+        $response->assertStatus(422);
+        $response->assertJson([
+            "message" => 'The permission ids field is required.',
+        ]);
+    }
+
+    public function testCannotAttachPermissionsToRoleWithOnlyInvalidPermissions()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $creator = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $userType = $user->addedUserTypes()->create([
+            'name' => UserType::FACILITATOR
+        ]);
+
+        $user->userTypes()->attach($userType->id);
+
+        $role = Role::factory()
+            ->create([
+                "user_id" => $creator->id,
+                "public" => 1
+            ]);
+
+        $this->actingAs($creator);
+
+        $data = [
+            "permission_ids" => [1, 2]
+        ];
+        $response = $this->postJson("/api/roles/{$role->id}/sync", $data);
+
+        $response->assertStatus(422);
+        $response->assertJson([
+            "message" => "Sorry! all permissions provided do not exist.",
+        ]);
+    }
+
+    public function testCannotAttachPermissionsToRoleWithSomeInvalidPermissions()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $creator = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $userType = $user->addedUserTypes()->create([
+            'name' => UserType::FACILITATOR
+        ]);
+
+        $user->userTypes()->attach($userType->id);
+
+        $role = Role::factory()
+            ->create([
+                "user_id" => $creator->id,
+                "public" => 1
+            ]);
+
+        $permission = Permission::factory()
+            ->create([
+                "user_id" => $creator->id,
+                "public" => 1
+            ]);
+
+        $this->actingAs($creator);
+
+        $data = [
+            "permission_ids" => [$permission->id, 20]
+        ];
+        $response = $this->postJson("/api/roles/{$role->id}/sync", $data);
+
+        $response->assertStatus(422);
+        $response->assertJson([
+            "message" => "Sorry! Permissions with [20] ids are not valid.",
+        ]);
+    }
+
+    public function testCannotAttachPermissionsToRoleWhenPermissionsHaveIncompatibleClasses()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $creator = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $userType = $user->addedUserTypes()->create([
+            'name' => UserType::FACILITATOR
+        ]);
+
+        $user->userTypes()->attach($userType->id);
+
+        $role = Role::factory()
+            ->create([
+                "user_id" => $creator->id,
+                "public" => 1,
+                "class" => Company::class
+            ]);
+
+        $permission = Permission::factory()
+            ->create([
+                "user_id" => $creator->id,
+                "public" => 1,
+                "class" => Project::class
+            ]);
+
+        $this->actingAs($creator);
+
+        $data = [
+            "permission_ids" => [$permission->id]
+        ];
+        $response = $this->postJson("/api/roles/{$role->id}/sync", $data);
+
+        $response->assertStatus(422);
+        $response->assertJson([
+            "message" => "Sorry! Permissions with [{$permission->id}] ids do not have valid class to be attached to the role.",
+        ]);
+    }
+
+    public function testCannotAttachPermissionsToInvalidRoleWithoutPermissions()
+    {
+        $user = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $creator = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $userType = $user->addedUserTypes()->create([
+            'name' => UserType::FACILITATOR
+        ]);
+
+        $user->userTypes()->attach($userType->id);
+
+        $role = Role::factory()
+            ->create([
+                "user_id" => $creator->id,
+                "public" => 1
+            ]);
+
+        $permission = Permission::factory()
+            ->create([
+                "user_id" => $creator->id,
+                "description" => "this is quite good"
+            ]);
+
+        $this->actingAs($user);
+
+        $data = [$permission->id];
+
+        $response = $this->postJson("/api/roles/{$role->id}/sync", $data);
+
+        $response->assertStatus(422);
+        $response->assertJson([
+            "message" => true,
+        ]);
+    }
+
+    public function testCanAttachPermissionsToRoleWhenAdmin()
+    {
+        $admin = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $creator = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $userType = $admin->addedUserTypes()->create([
+            'name' => UserType::ADMIN
+        ]);
+
+        $admin->userTypes()->attach($userType->id);
+
+        $role = Role::factory()
+            ->create([
+                "user_id" => $creator->id,
+                "public" => 1,
+                "class" => Company::class
+            ]);
+
+        $permission = Permission::factory()
+            ->create([
+                "user_id" => $creator->id,
+                "description" => "this is quite good",
+                "class" => Company::class
+            ]);
+
+        $this->actingAs($admin);
+        
+        $data = ["permission_ids" => [$permission->id]];
+
+        $response = $this->postJson("/api/roles/{$role->id}/sync", $data);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            "status" => true,
+            "role" => [
+                "id" => $role->id,
+                "permissions" => [
+                    ["id" => $permission->id]
+                ]
+            ]
+        ]);
+    }
+
+    public function testCanAttachPermissionsToRoleWhenOwner()
+    {
+        $creator = User::create([
+            'username' => $this->faker->userName(),
+            'first_name' => $this->faker->firstName(),
+            'surname' => $this->faker->lastName(),
+            'password' => bcrypt("password"),
+            'email' => $this->faker->email(),
+        ]);
+
+        $role = Role::factory()
+            ->create([
+                "user_id" => $creator->id,
+                "public" => 1,
+                "class" => Company::class
+            ]);
+
+        $permission = Permission::factory()
+            ->create([
+                "user_id" => $creator->id,
+                "description" => "this is quite good",
+                "class" => Company::class
+            ]);
+
+        $this->actingAs($creator);
+        
+        $data = ["permission_ids" => [$permission->id]];
+
+        $response = $this->postJson("/api/roles/{$role->id}/sync", $data);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            "status" => true,
+            "role" => [
+                "id" => $role->id,
+                "permissions" => [
+                    ["id" => $permission->id]
+                ]
+            ]
+        ]);
+
+        $this->assertDatabaseHas("permission_role", [
+            "permission_id" => $permission->id,
+            "role_id" => $role->id,
+        ]);
+    }
 }

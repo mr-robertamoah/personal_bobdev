@@ -15,7 +15,8 @@ class EnsureUserCanCreateRoleAction extends Action
 
         if (
             ($roleDTO->user->ownsCompany() && $this->containsClass($roleDTO, "company")) ||
-            ($roleDTO->user->ownsProject() && $this->containsClass($roleDTO, "project"))
+            ($roleDTO->user->ownsProject() && $this->containsClass($roleDTO, "project")) ||
+            $roleDTO->user->isAuthorizedFor(name: PermissionEnum::CREATEROLES->value)
         ) return;
 
         if ($roleDTO->user->isPermittedTo(PermissionEnum::CREATEROLES->value)) return;

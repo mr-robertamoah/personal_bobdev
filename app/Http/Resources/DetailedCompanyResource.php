@@ -4,7 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class CompanyResource extends JsonResource
+class DetailedCompanyResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -20,11 +20,10 @@ class CompanyResource extends JsonResource
             'alias' => $this->alias,
             'about' => $this->about,
             "owner" => new UserResource($this->owner),
-            "noOfMembers" => $this->membersQuery()->count(),
-            "noOfOfficials" => $this->officialsQuery()->count(),
-            "noOfProjects" => $this->addedProjects()->count(),
-            "noOfSponsorships" => $this->sponsoredProjectsQuery()->count(),
-            // todo mini resource, normal and detailed also for project
+            "members" => CompanyMemberResource::collection($this->members()->take(5)),
+            "officials" => CompanyMemberResource::collection($this->officials()->take(5)),
+            "projects" => MiniProjectResource::collection($this->addedProjects->take(5)),
+            "sponsorships" => ProjectResource::collection($this->sponsoredProjects()->take(5)),
         ];
     }
 }

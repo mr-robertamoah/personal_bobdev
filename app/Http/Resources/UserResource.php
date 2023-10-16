@@ -23,7 +23,7 @@ class UserResource extends JsonResource
             'username' => $this->username,
             'email' => $this->email,
             'gender' => strtolower($this->gender),
-            'userTypes' => $this->getAllUserTypes(),
+            'userTypes' => $this->allUserTypes,
             'age' => $this->when(
                 $request->user()?->id == $this->id || $request->user()?->isAdmin(),
                 $this->age

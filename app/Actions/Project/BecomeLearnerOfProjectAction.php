@@ -10,7 +10,7 @@ class BecomeLearnerOfProjectAction extends Action
 {
     public function execute(ProjectDTO $projectDTO)
     {
-        $projectDTO->participant->projects()->create([
+        $projectDTO->participant->participations()->create([
             'participating_as' => ProjectParticipantEnum::learner->value,
             'project_id' => $projectDTO->project->id
         ]);

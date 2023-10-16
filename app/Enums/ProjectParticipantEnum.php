@@ -15,4 +15,9 @@ enum ProjectParticipantEnum : string
     const LEARNERALIASES = [
         'LEARNER', 'STUDENT'
     ];
+
+    public static function types() : array
+    {
+        return ["participants", "officials", "sponsors"];
+    }
 }

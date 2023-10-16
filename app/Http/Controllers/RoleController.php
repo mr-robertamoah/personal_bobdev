@@ -35,7 +35,7 @@ class RoleController extends Controller
             // throw $th;
             return response()->json([
                 "message" => $th->getMessage(),
-            ], $th->getCode());
+            ], $th->getCode() ?: 500);
         }
     }
 
@@ -58,10 +58,10 @@ class RoleController extends Controller
                 "role" => new RoleResource($role)
             ], 201);
         } catch (\Throwable $th) {
-            // throw $th;
+            throw $th;
             return response()->json([
                 "message" => $th->getMessage(),
-            ], $th->getCode());
+            ], $th->getCode() ?: 500);
         }
     }
 
@@ -82,7 +82,7 @@ class RoleController extends Controller
             // throw $th;
             return response()->json([
                 "message" => $th->getMessage(),
-            ], $th->getCode());
+            ], $th->getCode() ?: 500);
         }
     }
     
@@ -95,6 +95,7 @@ class RoleController extends Controller
                     "name" => $request->name,
                     "like" => $request->like,
                     "class" => $request->class,
+                    "page" => $request->page ?: null,
                     "permissionName" => $request->permission_name,
                 ])
             );
@@ -104,28 +105,30 @@ class RoleController extends Controller
             // throw $th;
             return response()->json([
                 "message" => $th->getMessage(),
-            ], $th->getCode());
+            ], $th->getCode() ?: 500);
         }
     }
     
     public function syncPermissionsAndRole(SyncPermissionsAndRoleRequest $request)
     {
         try {
-            $roles = RoleService::make()->getPermissions(
+            $role = RoleService::make()->syncPermissionsAndRole(
                 RoleDTO::new()->fromArray([
                     "user" => $request->user(),
-                    "name" => $request->name,
-                    "like" => $request->like,
-                    "class" => $request->class,
+                    "roleId" => $request->role_id,
+                    "permissionIds" => $request->permission_ids,
                 ])
             );
             
-            return RoleResource::collection($roles);
+            return response()->json([
+                "status" => true,
+                "role" => new RoleResource($role)
+            ]);
         } catch (\Throwable $th) {
             // throw $th;
             return response()->json([
                 "message" => $th->getMessage(),
-            ], $th->getCode());
+            ], $th->getCode() ?: 500);
         }
     }
 }

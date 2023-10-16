@@ -5,6 +5,7 @@ namespace App\DTOs;
 use App\Models\Company;
 use App\Models\Project;
 use App\Models\User;
+use App\Traits\AuthorizableDTOTrait;
 use Carbon\Carbon;
 use DateTime;
 use Illuminate\Http\Request;
@@ -12,17 +13,20 @@ use MrRobertAmoah\DTO\BaseDTO;
 
 class ProjectDTO extends BaseDTO
 {
+    use AuthorizableDTOTrait;
+
     public ?Project $project = null;
+    public User|Company|null $owner = null;
+    public ?string $type = null;
     public ?string $projectId = null;
     public ?array $participations = [];
     public ?string $participationType = null;
-    public ?string $name = null;
+    public ?string $participantType = null;
     public ?string $description = null;
+    public ?string $skillName = null;
     public string|DateTime|Carbon|null $startDate = null;
     public  string|DateTime|Carbon|null $endDate = null;
     public ?User $addedby = null;
-    public ?string $participantId = null;
-    public User|Company|null $participant = null;
     
     /**
      * assign data (filled or validated) to the dto properties as an 

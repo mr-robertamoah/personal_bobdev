@@ -4,23 +4,25 @@ namespace App\DTOs;
 
 use App\Models\Company;
 use App\Models\User;
+use App\Traits\AuthorizableDTOTrait;
 use Illuminate\Http\Request;
 use MrRobertAmoah\DTO\BaseDTO;
 
 class CompanyDTO extends BaseDTO
 {
+    use AuthorizableDTOTrait;
+    
     public ?User $user = null;
     public ?User $owner = null;
     public ?Company $company = null;
     public User|Company|null $by = null;
     public User|Company|null $to = null;
     public ?string $relationshipType = null;
-    public ?string $name = null;
+    public ?string $type = null;
     public ?string $purpose = null;
     public ?string $alias = null;
     public ?string $about = null;
     public ?string $userId = null;
-    public ?string $ownerId = null;
     public ?array $memberships = [];
     public ?string $companyId = null;
     

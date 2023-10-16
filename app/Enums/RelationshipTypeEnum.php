@@ -19,6 +19,11 @@ enum RelationshipTypeEnum: string
         ...self::COMPANYMEMBERALIASES, ...self::COMPANYADMINISTRATORALIASES
     ];
 
+    public static function types() : array
+    {
+        return ["members", "officials"];
+    }
+
     public static function companyRelationships(): array
     {
         return [

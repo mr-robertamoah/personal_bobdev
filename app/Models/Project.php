@@ -47,7 +47,7 @@ class Project extends Requestable
     {
         return Attribute::make(
             get: function($value, $attributes) {
-                return $this->users()
+                return $this->participants()
                     ->wherePivot('participating_as', ProjectParticipantEnum::facilitator->value)
                     ->get();
             }
@@ -57,7 +57,7 @@ class Project extends Requestable
     public function learners(): Attribute
     {
         return Attribute::make(
-            get: fn($attributes)=> $this->users()
+            get: fn($attributes)=> $this->participants()
                 ->wherePivot('participating_as', ProjectParticipantEnum::learner->value)
                 ->get()
         );
@@ -66,7 +66,7 @@ class Project extends Requestable
     public function sponsors(): Attribute
     {
         return Attribute::make(
-            get: fn($attributes)=> $this->users()
+            get: fn($attributes)=> $this->participants()
                 ->wherePivot('participating_as', ProjectParticipantEnum::sponsor->value)
                 ->get()
         );
@@ -126,7 +126,7 @@ class Project extends Requestable
     public function isParticipantType(Model $model, string $type)
     {
         return $this->participants()
-            ->whereParticipant($model)
+            ->whereIsParticipant($model)
             ->whereParticipationType($type)
             ->exists();
     }
@@ -143,7 +143,7 @@ class Project extends Requestable
         }
         
         return $this->participants()
-            ->whereParticipant($model)
+            ->whereIsParticipant($model)
             ->exists();
     }
 
@@ -163,8 +163,7 @@ class Project extends Requestable
         }
 
         return $this
-            ->where('addedby_type', $model::class)
-            ->where('addedby_id', $model->id)
+            ->whereAddedby($model)
             ->exists();
     }
 
@@ -176,8 +175,84 @@ class Project extends Requestable
     public function getProjectParticipant(Model $model, string $type): ?ProjectParticipant
     {
         return $this->participants()
-            ->whereParticipant($model)
+            ->whereIsParticipant($model)
             ->whereParticipationType($type)
             ->first();
+    }
+
+    public function scopeWhereAddedby($query, Model $model)
+    {
+        return $query->where(function ($q) use ($model) {
+            $q->where("addedby_id", $model->id)
+                ->where("addedby_type", $model::class);
+        });
+    }
+
+    public function scopeWhereIsParticipant($query, Model $model)
+    {
+        return $query->where(function($query) use ($model) {
+            $query->whereHas("participants", function ($query) use ($model) {
+                $query->whereIsParticipant($model);
+            });
+        });
+    }
+
+    public function scopeWhereParticipationType($query, string $type)
+    {
+        return $query->where(function($query) use ($type) {
+            $query->whereHas("participants", function ($query) use ($type) {
+                $query->whereParticipationType($type);
+            });
+        });
+    }
+    
+    public function scopeWhereIsOwnedBy($query, Model $model)
+    {
+        return $query->where(function ($q) use ($model) {
+            $q->whereAddedby($model)
+                ->orWhereHasMorph("addedby", "App\\Models\\Company", function ($q) use ($model) {
+                    $q->whereIsOwnedBy($model);
+                });
+        });
+    }
+    
+    public function scopeWhereIsOfficial($query, Model $model)
+    {
+        return $query->where(function ($q) use ($model) {
+            $q->whereAddedby($model)
+                ->orWhereHasMorph("addedby", [Company::class], function ($q) use ($model) {
+                    $q->whereIsOfficial($model);
+                });
+        });
+    }
+    
+    public function scopeWhereIsMember($query, Model $model)
+    {
+        return $query->where(function ($q) use ($model) {
+            $q->orWhereHasMorph("addedby", [Company::class], function ($q) use ($model) {
+                    $q->whereIsMember($model);
+                });
+        });
+    }
+    
+    public function scopeWhereHasSkillWithNameLike($query, string $name)
+    {
+        return $query->where(function ($q) use ($name) {
+            $q->whereHas("skills", function ($q) use ($name) {
+                $q->whereLikeName($name);
+            });
+        });
+    }
+    
+    public function scopeWhereSponsor($query)
+    {
+        return $query->whereParticipationType(ProjectParticipantEnum::sponsor->value);
+    }
+    
+    public function scopeWhereIsSponsor($query, $sponsor)
+    {
+        return $query
+            ->whereIsParticipant($sponsor)
+            ->whereParticipationType(ProjectParticipantEnum::sponsor->value);
     }
 }

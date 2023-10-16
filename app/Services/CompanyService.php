@@ -12,12 +12,18 @@ use App\Actions\Company\EnsureMembershipIsValidArrayAction;
 use App\Actions\Company\EnsureRequestIsNotFromACompanyOfficialToAnotherAction;
 use App\Actions\Company\EnsureUserIsOfficialOfCompanyAction;
 use App\Actions\Company\EnsureThereIsAnAppriopriateUserAction;
+use App\Actions\Company\EnsureTypeIsValidAction;
 use App\Actions\Company\EnsureUserCanRemoveMemberAction;
 use App\Actions\Company\EnsureUserIsAlreadyAMemberOfCompanyAction;
 use App\Actions\Company\EnsureUserIsAnAdultIfAdministratorRelationshipTypeAction;
 use App\Actions\Company\EnsureUserIsNotAlreadyAMemberOfCompanyAction;
 use App\Actions\Company\EnsureUserIsOwnerOfCompanyAction;
+use App\Actions\Company\GetCompaniesAction;
+use App\Actions\Company\GetCompanyAction;
+use App\Actions\Company\GetMembersAction;
+use App\Actions\Company\GetProjectsAction;
 use App\Actions\Company\RemoveMemberAction;
+use App\Actions\GetModelFromDTOAction;
 use App\Actions\GetUserDataForUserId;
 use App\Actions\Requests\CreateRequestAction;
 use App\Actions\Users\EnsureThereIsUserOnDTOAction;
@@ -28,8 +34,10 @@ use App\DTOs\CompanyDTO;
 use App\DTOs\RequestDTO;
 use App\Models\Company;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 
-class CompanyService
+class CompanyService extends Service
 {
 
     public function createCompany(CompanyDTO $companyDTO): Company
@@ -266,6 +274,72 @@ class CompanyService
         );
 
         return $companyDTO->company->refresh();
+    }
+
+    public function getCompanies(CompanyDTO $companyDTO) : LengthAwarePaginator
+    {
+        $companyDTO = $companyDTO->withOwner(
+            GetModelFromDTOAction::make()->execute(
+                $companyDTO, "owner"
+            )
+        );
+        
+        $companyDTO = $companyDTO->withOfficial(
+            GetModelFromDTOAction::make()->execute(
+                $companyDTO, "official"
+            )
+        );
+        
+        $companyDTO = $companyDTO->withMember(
+            GetModelFromDTOAction::make()->execute(
+                $companyDTO, "member"
+            )
+        );
+
+        return GetCompaniesAction::make()->execute($companyDTO);
+    }
+
+    public function getCompany(CompanyDTO $companyDTO) : Company
+    {
+        $companyDTO = $companyDTO->withCompany(
+            GetModelFromDTOAction::make()->execute(
+                $companyDTO, "company", "company"
+            )
+        );
+        
+        EnsureCompanyExistsAction::make()->execute($companyDTO);
+
+        return GetCompanyAction::make()->execute($companyDTO);
+    }
+
+    public function getMembers(CompanyDTO $companyDTO) : Collection
+    {
+        EnsureTypeIsValidAction::make()->execute($companyDTO);
+
+        $companyDTO = $companyDTO->withCompany(
+            GetModelFromDTOAction::make()->execute(
+                $companyDTO, "company", "company"
+            )
+        );
+        
+        EnsureCompanyExistsAction::make()->execute($companyDTO);
+
+        return GetMembersAction::make()->execute($companyDTO);
+    }
+
+    public function getCompanyProjects(CompanyDTO $companyDTO) : Collection
+    {
+        EnsureTypeIsValidAction::make()->execute($companyDTO, "projects");
+
+        $companyDTO = $companyDTO->withCompany(
+            GetModelFromDTOAction::make()->execute(
+                $companyDTO, "company", "company"
+            )
+        );
+        
+        EnsureCompanyExistsAction::make()->execute($companyDTO);
+
+        return GetProjectsAction::make()->execute($companyDTO);
     }
 
     private function setData(CompanyDTO $companyDTO, string $action): array
