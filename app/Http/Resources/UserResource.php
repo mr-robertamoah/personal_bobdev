@@ -23,11 +23,18 @@ class UserResource extends JsonResource
             'username' => $this->username,
             'email' => $this->email,
             'gender' => strtolower($this->gender),
-            'userTypes' => $this->allUserTypes,
+            'userTypes' => UserTypeResource::collection($this->allUserTypes),
+            "isAdult" => $this->isAdult(),
+            "isAdmin" => $this->when(
+                $this->isAdmin() || $this->is($request->user()),
+                $this->isAdmin()
+            ),
             'age' => $this->when(
                 $request->user()?->id == $this->id || $request->user()?->isAdmin(),
                 $this->age
-            )
+            ),
+            // TODO show authorizations when admin or owner
+            // TODO show settings
         ];
     }
 }

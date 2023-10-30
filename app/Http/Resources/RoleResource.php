@@ -22,7 +22,7 @@ class RoleResource extends JsonResource
             "class" => is_null($this->class) ? null: class_basename($this->class),
             "permissions" => PermissionResource::collection($this->permissions),
             "updatedAt" => $this->updated_at,
-            "createdAt" => $this->created_at,
+            "createdAt" => $this->created_at->diffForHumans(),,
         ];
     }
 }

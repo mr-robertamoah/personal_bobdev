@@ -12,6 +12,7 @@ use App\Traits\HasProjectParticipantTrait;
 use App\Traits\HasProjectAddedByTrait;
 use Carbon\Carbon;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -69,6 +70,56 @@ class User extends Authenticatable implements Request
             }
         );
     }
+    
+    public function wards() : Attribute
+    {
+        return new Attribute(
+            get: function () {
+                return User::query()
+                    ->whereHas(
+                        'addedToRelations',
+                        function($query) {
+                            $query
+                                ->where('relationship_type', RelationshipTypeEnum::parent->value)
+                                ->whereIsBy($this);
+                        }
+                    )
+                    ->orWhereHas(
+                        'addedByRelations',
+                        function($query) {
+                            $query
+                                ->where('relationship_type', RelationshipTypeEnum::ward->value)
+                                ->whereIsTo($this);
+                        }
+                    )->get();
+            }
+        );
+    }
+    
+    public function parents() : Attribute
+    {
+        return new Attribute(
+            get: function () {
+                return User::query()
+                    ->whereHas(
+                        'addedToRelations', 
+                        function($query) {
+                            $query
+                                ->where('relationship_type', RelationshipTypeEnum::ward->value)
+                                ->whereIsBy($this);
+                        }
+                    )
+                    ->orWhereHas(
+                        'addedByRelations',
+                        function($query) {
+                            $query
+                                ->where('relationship_type', RelationshipTypeEnum::parent->value)
+                                ->whereIsTo($this);
+                        }
+                    )->get();
+            }
+        );
+    }
 
     public function age(): Attribute
     {
@@ -101,6 +152,11 @@ class User extends Authenticatable implements Request
             related: UserType::class, 
             foreignKey: 'user_id'
         );
+    }
+
+    public function addedProjectSessions() 
+    {
+        return $this->hasMany(ProjectSession::class);
     }
 
     public function userTypes()
@@ -243,6 +299,7 @@ class User extends Authenticatable implements Request
     {
         return $this->age >= self::ADULTAGE;
     }
+
     public function isAdmin() : bool
     {
         return $this->userTypes()
@@ -283,20 +340,15 @@ class User extends Authenticatable implements Request
 
     public function isParent() : bool
     {
-        return Relation::query()
-            ->where('relationship_type', RelationshipTypeEnum::parent->value)
-            ->where(function ($query)
-            {
-                $query
-                    ->where('by_type', $this::class)
-                    ->where('by_id', $this->id);
-            })
-            ->orWhere(function ($query)
-            {
-                $query
-                    ->where('by_type', $this::class)
-                    ->where('by_id', $this->id);
-            })
+        return $this
+            ->whereParent()
+            ->exists();
+    }
+
+    public function isWard() : bool
+    {
+        return $this
+            ->whereWard()
             ->exists();
     }
 
@@ -364,6 +416,31 @@ class User extends Authenticatable implements Request
     {
         return $this->hasAuthorizationWithName($permit);
     }
+
+    public function memberingCompanies()
+    {
+        return Company::query()
+            ->whereIsMember($this)
+            ->get();
+    }
+
+    public function administeringCompanies()
+    {
+        return Company::query()
+            ->whereIsOfficial($this)
+            ->get();
+    }
+
+    public function companyProjectsQuery()
+    {
+        return Project::query()
+            ->whereMemberOrAdministratorOfAddedby($this);
+    }
+
+    public function companyProjects()
+    {
+        return $this->companyProjectsQuery()->get();
+    }
     // end of methods
 
     // start of scopes
@@ -379,6 +456,40 @@ class User extends Authenticatable implements Request
         return $query->whereHas('userTypes', function($query) use ($names) {
             $query->whereIn('name', $names);
         });
+    }
+    
+    public function scopeWhereParent($query)
+    {
+        return $query
+            ->whereHas(
+                'addedByRelations', 
+                function($query) {
+                    $query->where('relationship_type', RelationshipTypeEnum::parent->value);
+                }
+            )
+            ->orWhereHas(
+                'addedToRelations',
+                function($query) {
+                    $query->where('relationship_type', RelationshipTypeEnum::ward->value);
+                }
+            );
+    }
+    
+    public function scopeWhereWard($query)
+    {
+        return $query
+            ->whereHas(
+                'addedToRelations',
+                function($query) {
+                    $query->where('relationship_type', RelationshipTypeEnum::parent->value);
+                }
+            )
+            ->orWhereHas(
+                'addedByRelations',
+                function($query) {
+                    $query->where('relationship_type', RelationshipTypeEnum::ward->value);
+                }
+            );
     }
     // end of scopes
 

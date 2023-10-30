@@ -29,7 +29,7 @@ class DetailedProjectResource extends JsonResource
             'participants' => ProjectParticipantResource::collection(
                 $this->participants->take(5)
             ),
-            // todo add projectsessions as well as the ones held
+            // TODO add projectsessions as well as the ones held
             // 'resouces' => $this->when(
             //     $this->canAccessResources($request->user()),
             //     FileResource::collection($this->files),

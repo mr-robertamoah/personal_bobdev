@@ -12,4 +12,5 @@ enum ProjectSessionPeriodEnum: string
     case daily = 'DAILY';
     case weekly = 'WEEKLY';
     case monthly = 'MONTHLY';
+    case yearly = 'YEARLY';
 }

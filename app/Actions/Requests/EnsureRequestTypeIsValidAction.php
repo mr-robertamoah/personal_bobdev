@@ -3,11 +3,13 @@
 namespace App\Actions\Requests;
 
 use App\Actions\Action;
+use App\Actions\Users\IsUserTypeAction;
 use App\DTOs\RequestDTO;
 use App\Enums\RelationshipTypeEnum;
 use App\Exceptions\RequestException;
 use App\Models\Company;
 use App\Models\Project;
+use App\Models\User;
 
 class EnsureRequestTypeIsValidAction extends Action
 {
@@ -19,24 +21,26 @@ class EnsureRequestTypeIsValidAction extends Action
         
         if (
             IsProjectType::make()->execute($requestDTO->type) ||
-            $this->isCompanyType($requestDTO->type)
-        ) {
-            return; 
-        }
+            $this->isCompanyType($requestDTO->type) ||
+            IsUserTypeAction::make()->execute($requestDTO->type)
+        ) return; 
 
-        $for = $this->transformRequestForToString($requestDTO->for::class);
+        $for = $this->transformRequestForToString(
+            $requestDTO->for ? $requestDTO->for::class : null
+        );
 
         throw new RequestException(
             "Sorry, {$requestDTO->type} is not a valid type for {$for}."
         );
     }
 
-    private function transformRequestForToString(string $forClass)
+    private function transformRequestForToString(?string $forClass)
     {
         return match($forClass) {
             Project::class => "projects",
             Company::class => "companies",
-            'default' => null
+            User::class => "user relationships",
+            default => "relationships"
         };
     }
 

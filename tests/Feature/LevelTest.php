@@ -29,7 +29,7 @@ class LevelTest extends TestCase
 
         $this->actingAs($user);
         
-        $response = $this->post('/api/level/create', [
+        $response = $this->post('/api/level', [
             'name' => 'Programming Language',
             'description' => 'this is to help create web and native apps'
         ]);
@@ -56,7 +56,7 @@ class LevelTest extends TestCase
 
         $this->actingAs($user);
         
-        $response = $this->postJson('/api/level/create', [
+        $response = $this->postJson('/api/level', [
             'description' => 'this is to help create web and native apps',
             'value' => 10
         ]);
@@ -91,7 +91,7 @@ class LevelTest extends TestCase
             ])
         );
         
-        $response = $this->postJson('/api/level/create', [
+        $response = $this->postJson('/api/level', [
             'name' => 'Best Levels',
             'levelCollectionId' => $levelCollection->id
         ]);
@@ -126,7 +126,7 @@ class LevelTest extends TestCase
             ])
         );
         
-        $response = $this->postJson('/api/level/create', [
+        $response = $this->postJson('/api/level', [
             'name' => 'Best Levels',
             'value' => 10
         ]);
@@ -161,7 +161,7 @@ class LevelTest extends TestCase
             ])
         );
 
-        $response = $this->postJson('/api/level/create', [
+        $response = $this->postJson('/api/level', [
             'name' => 'Best Levels',
             'value' => 10,
             'level_collection_id' => $levelCollection->id
@@ -231,7 +231,7 @@ class LevelTest extends TestCase
             ])
         );
 
-        $response = $this->postJson('/api/level/create', [
+        $response = $this->postJson('/api/level', [
             'name' => 'Best Levels',
             'value' => 10,
             'level_collection_id' => $levelCollection->id,
@@ -301,7 +301,7 @@ class LevelTest extends TestCase
             'value' => 10
         ]);
         
-        $response = $this->post("/api/level/{$level->id}/update", [
+        $response = $this->post("/api/level/{$level->id}", [
             'name' => 'Last Level',
         ]);
 
@@ -368,7 +368,7 @@ class LevelTest extends TestCase
             'name' => 'Best',
         ]);
         
-        $response = $this->post("/api/level/{$level->id}/update", [
+        $response = $this->post("/api/level/{$level->id}", [
             'name' => 'Best Level',
         ]);
 
@@ -451,7 +451,7 @@ class LevelTest extends TestCase
             'name' => 'Best Level',
         ]);
         
-        $response = $this->post("/api/level/{$level->id}/update", [
+        $response = $this->post("/api/level/{$level->id}", [
             'name' => 'Only Level',
         ]);
 

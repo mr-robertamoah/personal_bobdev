@@ -48,7 +48,7 @@ class JobTest extends TestCase
         
         $this->actingAs($user);
 
-        $response = $this->post("/api/job/create", [
+        $response = $this->post("/api/job", [
             'name' => 'Web Developer',
         ]);
         
@@ -103,7 +103,7 @@ class JobTest extends TestCase
         
         $this->actingAs($user);
 
-        $response = $this->post("/api/job/create", [
+        $response = $this->post("/api/job", [
             'name' => 'Web Developer',
             'user_id' => $attachedto->id,
             'attach' => true
@@ -160,7 +160,7 @@ class JobTest extends TestCase
         
         $this->actingAs($facilitator);
 
-        $response = $this->post("/api/job/create", [
+        $response = $this->post("/api/job", [
             'name' => 'Web Developer',
             'user_id' => $facilitator->id,
             'attach' => true

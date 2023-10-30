@@ -18,7 +18,7 @@ class UrlResource extends JsonResource
             'id' => $this->id,
             'url' => $this->url,
             'about' => $this->about,
-            'createdAt' => $this->created_at,
+            'createdAt' => $this->created_at->diffForHumans(),,
         ];
     }
 }

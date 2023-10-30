@@ -14,13 +14,18 @@ use MrRobertAmoah\DTO\BaseDTO;
 class ProjectSessionDTO extends BaseDTO
 {
     public ProjectSession|null $projectSession = null;
+    public string|int|null $projectSessionId = null;
     public int|string|null $projectId = null;
     public Project|null $project = null;
     public string|null $period = null;
+    public string|null $description = null;
     public string|null $name = null;
     public string|null $type = null;
+    public int|null $dayOfWeek = null;
     public Carbon|DateTime|string|null $startDate = null;
     public Carbon|DateTime|string|null $endDate = null;
+    public Carbon|DateTime|string|null $startTime = null;
+    public Carbon|DateTime|string|null $endTime = null;
     public User|Company|null $addedby = null;
     
     /**

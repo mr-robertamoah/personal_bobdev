@@ -35,4 +35,5 @@ enum PermissionEnum: string
     case ASSIGNAUTHORIZATIONS = "assign authorizations";
     case REMOVEAUTHORIZATIONS = "remove authorizations";
     case ASSIGNPERMISSIONS = "assign permissions";
+    case MANAGEPROJECTSESSIONS = "manage project sessions";
 }

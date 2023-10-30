@@ -14,6 +14,6 @@ class EnsureProjectSessionExistsAction extends Action
             return;
         }
         
-        throw new ProjectSessionException('Sorry! A valid project session is required to perform this action.');
+        throw new ProjectSessionException('Sorry! A valid project session is required to perform this action.', 422);
     }
 }

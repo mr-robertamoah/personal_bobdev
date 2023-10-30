@@ -29,7 +29,7 @@ class SkillTest extends TestCase
 
         $this->actingAs($user);
         
-        $response = $this->post('/api/skill/create', [
+        $response = $this->post('/api/skill', [
             'name' => 'Programming Language',
             'description' => 'this is to help create web and native apps'
         ]);
@@ -56,7 +56,7 @@ class SkillTest extends TestCase
 
         $this->actingAs($user);
         
-        $response = $this->postJson('/api/skill/create', [
+        $response = $this->postJson('/api/skill', [
             'description' => 'this is to help create web and native apps'
         ]);
 
@@ -82,7 +82,7 @@ class SkillTest extends TestCase
 
         $this->actingAs($user);
         
-        $response = $this->postJson('/api/skill/create', [
+        $response = $this->postJson('/api/skill', [
             'name' => 'Web Developer'
         ]);
 
@@ -108,7 +108,7 @@ class SkillTest extends TestCase
 
         $this->actingAs($user);
         
-        $response = $this->postJson('/api/skill/create', [
+        $response = $this->postJson('/api/skill', [
             'name' => 'PHP',
             'description' => 'for creating backend solutions for websites',
         ]);
@@ -142,7 +142,7 @@ class SkillTest extends TestCase
             ])
         );
 
-        $response = $this->postJson('/api/skill/create', [
+        $response = $this->postJson('/api/skill', [
             'name' => 'PHP',
             'description' => 'for creating backend solutions for websites',
             'skill_type_id' => $skillType->id
@@ -211,7 +211,7 @@ class SkillTest extends TestCase
             ])
         );
 
-        $response = $this->postJson('/api/skill/create', [
+        $response = $this->postJson('/api/skill', [
             'name' => 'PHP',
             'description' => 'for creating backend solutions for websites',
             'skill_type_id' => $skillType->id
@@ -283,7 +283,7 @@ class SkillTest extends TestCase
             ])
         );
         
-        $response = $this->postJson("/api/skill/{$skill->id}/update", [
+        $response = $this->postJson("/api/skill/{$skill->id}", [
             'name' => 'Programming Language',
             'description' => 'this is to help create web and native apps'
         ]);
@@ -350,7 +350,7 @@ class SkillTest extends TestCase
             'description' => 'for creating backend solutions for websites',
         ]);
 
-        $response = $this->postJson("/api/skill/{$skill->id}/update", []);
+        $response = $this->postJson("/api/skill/{$skill->id}", []);
 
         $response
             ->assertStatus(500);
@@ -414,7 +414,7 @@ class SkillTest extends TestCase
             'description' => 'for creating backend solutions for websites',
         ]);
 
-        $response = $this->postJson("/api/skill/{$skill->id}/update", [
+        $response = $this->postJson("/api/skill/{$skill->id}", [
             'name' => 'PHP8',
         ]);
 
@@ -495,7 +495,7 @@ class SkillTest extends TestCase
             'description' => 'for creating backend solutions for websites',
         ]);
 
-        $response = $this->postJson("/api/skill/{$skill->id}/update", [
+        $response = $this->postJson("/api/skill/{$skill->id}", [
             'name' => 'PHP8',
         ]);
 

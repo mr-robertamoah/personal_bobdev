@@ -31,7 +31,16 @@ class Profile extends Model
     public function user() : Attribute
     {
         return new Attribute(
-            get: fn() => $this->profileable
+            get: fn() => $this->profileable::class == User::class ?
+                $this->profileable : null
+        );
+    }
+
+    public function company() : Attribute
+    {
+        return new Attribute(
+            get: fn() => $this->profileable::class == Company::class ?
+                $this->profileable : null
         );
     }
 
@@ -115,6 +124,11 @@ class Profile extends Model
         return $this->isForUser() && $this->profileable->userTypes()
             ->where('name', '<>', UserType::SUPERADMIN)
             ->exists();
+    }
+
+    public function ownedProjects()
+    {
+        return $this->profileable->addedProjects;
     }
 
     public function loadFacilitatorProjects(): void

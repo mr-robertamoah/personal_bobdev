@@ -24,7 +24,7 @@ class CompanyResource extends JsonResource
             "noOfOfficials" => $this->officialsQuery()->count(),
             "noOfProjects" => $this->addedProjects()->count(),
             "noOfSponsorships" => $this->sponsoredProjectsQuery()->count(),
-            // todo mini resource, normal and detailed also for project
+            // TODO mini resource, normal and detailed also for project
         ];
     }
 }

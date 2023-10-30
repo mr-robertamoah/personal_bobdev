@@ -16,9 +16,7 @@ class EnsureUserCanRespondToRequestAction extends Action
         if (
             $respondDTO->user->isAdmin() ||
             $this->canUserRespondToRequest($respondDTO)
-        ) {
-            return;
-        }
+        ) return;
 
         throw new ResponseException("Sorry, you are not authorized to respond to this request.");
     }
@@ -28,16 +26,12 @@ class EnsureUserCanRespondToRequestAction extends Action
         if (
             $respondDTO->user->is($respondDTO->request->to) ||
             IsUserAnOfficialOfModelAction::make()->execute($respondDTO->user, $respondDTO->request->to)
-        ) {
-            return true;
-        }
+        ) return true;
 
         if (
             $this->isRequestToAnOfficial($respondDTO) &&
             IsUserAnOwnerOfModelAction::make()->execute($respondDTO->user, $respondDTO->request->for)
-        ) {
-            return true;
-        }
+        ) return true;
 
         return false;
     }

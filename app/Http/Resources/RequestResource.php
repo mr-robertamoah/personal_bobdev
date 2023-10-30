@@ -18,23 +18,24 @@ class RequestResource extends JsonResource
             'id' => $this->id,
             'to' => $this->when(
                 $this->isToCompany(),
-                new CompanyResource($this->to),
-                new UserResource($this->to)
+                new MiniCompanyResource($this->to),
+                new MiniUserResource($this->to)
             ),
             'from' => $this->when(
                 $this->isFromCompany(),
-                new CompanyResource($this->from),
-                new UserResource($this->from)
+                new MiniCompanyResource($this->from),
+                new MiniUserResource($this->from)
             ),
             'for' => $this->when(
                 $this->isForCompany(),
-                new CompanyResource($this->for),
-                new ProjectResource($this->for)
+                new MiniCompanyResource($this->for),
+                $this->isForProject() ? 
+                    new MiniProjectResource($this->for) : null
             ),
             'purpose' => $this->purpose,
-            'type' => $this->type,
-            'state' => $this->state,
-            'createAt' => $this->created_at
+            'type' => strtolower($this->type),
+            'state' => strtolower($this->state),
+            'createAt' => $this->created_at->diffForHumans(),
         ];
     }
 }

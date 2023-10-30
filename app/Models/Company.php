@@ -71,13 +71,18 @@ class Company extends Requestable
         return $this->allMembersQuery()->get();
     }
 
-    public function membersQuery()
+    public function memberRelationsQuery()
     {
         return Relation::query()
             ->whereIsRelated($this)
             ->whereIsRelationshipType(RelationshipTypeEnum::companyMember->value)
             ->with('to')
             ->with('by');
+    }
+
+    public function memberRelations()
+    {
+        return $this->memberRelationsQuery()->get();
     }
 
     public function members()
@@ -87,11 +92,46 @@ class Company extends Requestable
 
     public function officialsQuery()
     {
+        return User::query()
+            ->whereHas("addedByRelations", function ($q) {
+                $q
+                ->whereIsRelationshipType(RelationshipTypeEnum::companyAdministrator->value)
+                ->withAll();
+            })
+            ->orWhereHas("addedToRelations", function ($q) {
+                $q
+                ->whereIsRelationshipType(RelationshipTypeEnum::companyAdministrator->value)
+                ->withAll();
+            });
+    }
+
+    public function membersQuery()
+    {
+        return User::query()
+            ->whereHas("addedByRelations", function ($q) {
+                $q
+                ->whereIsRelationshipType(RelationshipTypeEnum::companyMember->value)
+                ->withAll();
+            })
+            ->orWhereHas("addedToRelations", function ($q) {
+                $q
+                ->whereIsRelationshipType(RelationshipTypeEnum::companyMember->value)
+                ->withAll();
+            });
+    }
+
+    public function officialRelationsQuery()
+    {
         return Relation::query()
             ->whereIsRelated($this)
             ->whereIsRelationshipType(RelationshipTypeEnum::companyAdministrator->value)
             ->with('to')
             ->with('by');
+    }
+
+    public function officialRelations()
+    {
+        return $this->officialRelationsQuery()->get();
     }
 
     public function officials()

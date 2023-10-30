@@ -79,4 +79,9 @@ class Relation extends Model
         return $query
             ->whereIsRelationshipType(RelationshipTypeEnum::companyAdministrator->value);
     }
+
+    public function scopeWithAll($query)
+    {
+        return $query->with(["to", "by"]);
+    }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\ApiErrorHandlingAction;
 use App\Actions\GetModelAction;
 use App\DTOs\ProjectDTO;
 use App\Http\Requests\CreateProjectRequest;
@@ -185,10 +186,8 @@ class ProjectController extends Controller
             ]);
         } catch (\Throwable $th) {
             // throw $th;
-            return response()->json([
-                "status" => false,
-                "message" => $th->getMessage(),
-            ], $th->getCode() ?: 500);
+            return ApiErrorHandlingAction::make()
+                ->execute($th);
         }
     }
     
@@ -237,10 +236,8 @@ class ProjectController extends Controller
             ]);
         } catch (\Throwable $th) {
             // throw $th;
-            return response()->json([
-                "status" => false,
-                "message" => $th->getMessage(),
-            ], $th->getCode() ?: 500);
+            return ApiErrorHandlingAction::make()
+                ->execute($th);
         }
     }
 }

@@ -19,7 +19,7 @@ class GetProjectsAction extends Action
         $type = strtolower($companyDTO->type);
 
         if ($type == "added") 
-            $query->whereAddedby($companyDTO->company);
+            $query->whereAddedBy($companyDTO->company);
 
         if ($type == "sponsored") 
             $query->whereIsSponsor($companyDTO->company);
@@ -27,7 +27,7 @@ class GetProjectsAction extends Action
         if ($type == "all") 
             $query->whereIsSponsor($companyDTO->company)
                 ->orWhere(function($query) use ($companyDTO) {
-                    $query->whereAddedby($companyDTO->company);
+                    $query->whereAddedBy($companyDTO->company);
                 });
 
         return $query->get();

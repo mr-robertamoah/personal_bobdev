@@ -16,6 +16,10 @@ class UpdateProjectSessionAction extends Action
             'end_date' => $projectSessionDTO->endDate?->toDateTimeString(),
             'type' => $projectSessionDTO->type,
             'period' => $projectSessionDTO->period,
+            'description' => $projectSessionDTO->description,
+            'day_of_week' => $projectSessionDTO->dayOfWeek,
+            'start_time' => $projectSessionDTO->startTime?->toTimeString(),
+            'end_time' => $projectSessionDTO->endTime?->toTimeString(),
         ];
 
         $data = array_filter($data, fn($value) => !is_null($value));

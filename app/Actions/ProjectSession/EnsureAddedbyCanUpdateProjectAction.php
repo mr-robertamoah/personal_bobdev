@@ -10,14 +10,14 @@ use App\Exceptions\ProjectSessionException;
 
 class EnsureAddedbyCanUpdateProjectAction extends Action
 {
-    public function execute(ProjectSessionDTO $projectSessionDTO)
+    public function execute(ProjectSessionDTO $projectSessionDTO, ?string $what = null)
     {
         EnsureAddedbyIsAuthorizedAction::make()->execute(
             ProjectDTO::new()->fromArray([
                 'addedby' => $projectSessionDTO->addedby,
-                'project' => $projectSessionDTO->project
+                'project' => $projectSessionDTO->project,
             ]),
-            'update'
+            'update', what: $what
         );
     }
 }

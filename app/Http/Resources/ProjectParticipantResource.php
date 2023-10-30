@@ -14,16 +14,16 @@ class ProjectParticipantResource extends JsonResource
      */
     public function toArray($request)
     {
-        $ownerType = class_basename($this->participant);
+        $participantClass = class_basename($this->participant);
         
         return [
             "id" => $this->id,
             "participatingAs" => strtolower($this->participating_as),
             "participant" =>
-            $ownerType == "Company" ? 
+            $participantClass == "Company" ? 
                 new CompanyResource($this->participant) :
                 new UserResource($this->participant)
-            // todo add authorizations if owner or admin
+            // TODO add authorizations if owner or admin
         ];
     }
 

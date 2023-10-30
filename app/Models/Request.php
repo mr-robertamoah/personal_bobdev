@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\RequestStateEnum;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -47,7 +48,7 @@ class Request extends Model
         return $this->to_type == $class;
     }
 
-    public function isForClass(string $class): bool
+    public function isForClass(?string $class): bool
     {
         return $this->for_type == $class;
     }
@@ -67,6 +68,17 @@ class Request extends Model
         return $this->isForClass(Company::class);
     }
 
+    public function isForUser(): bool
+    {
+        return $this->isForClass(User::class) ||
+            $this->isForClass(null);
+    }
+
+    public function isNotForUser(): bool
+    {
+        return !$this->isForUser();
+    }
+
     public function isForProject(): bool
     {
         return $this->isForClass(Project::class);
@@ -76,6 +88,12 @@ class Request extends Model
     {
         return $query
             ->where('state', strtoupper($state));
+    }
+
+    public function scopeWherePending($query)
+    {
+        return $query
+            ->whereState(RequestStateEnum::pending->value);
     }
 
     public function scopeWhereType($query, $type)

@@ -1,0 +1,13 @@
+// TODO
+
+add campaigns
+facilitators registering learners and sending project requests
+add a limit to the number of facilitators a project can have
+allow owner of project to set the limit on number of learners
+apply limit on facilitators and learners of project to sending requests
+move emails and phone numbers from user table to contacts
+add nationality during registration
+add identification depending on nationality
+add payment api
+add 
+add transactions for tracking all transactions made by or to model

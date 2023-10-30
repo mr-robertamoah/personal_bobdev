@@ -163,7 +163,7 @@ class Project extends Requestable
         }
 
         return $this
-            ->whereAddedby($model)
+            ->whereAddedBy($model)
             ->exists();
     }
 
@@ -180,11 +180,18 @@ class Project extends Requestable
             ->first();
     }
 
-    public function scopeWhereAddedby($query, Model $model)
+    public function scopeWhereAddedBy($query, Model $model)
     {
         return $query->where(function ($q) use ($model) {
             $q->where("addedby_id", $model->id)
                 ->where("addedby_type", $model::class);
+        });
+    }
+
+    public function scopeWhereAddedByCompany($query)
+    {
+        return $query->where(function ($q) {
+            $q->where("addedby_type", Company::class);
         });
     }
 
@@ -193,6 +200,16 @@ class Project extends Requestable
         return $query->where(function($query) use ($model) {
             $query->whereHas("participants", function ($query) use ($model) {
                 $query->whereIsParticipant($model);
+            });
+        });
+    }
+
+    public function scopeWhereParticipantIds($query, array $ids)
+    {
+        return $query->where(function($query) use ($ids) {
+            $query->whereHas("participants", function ($query) use ($ids) {
+                $query->where("participant_type", User::class)
+                    ->whereIn("participant_id", $ids);
             });
         });
     }
@@ -209,17 +226,36 @@ class Project extends Requestable
     public function scopeWhereIsOwnedBy($query, Model $model)
     {
         return $query->where(function ($q) use ($model) {
-            $q->whereAddedby($model)
-                ->orWhereHasMorph("addedby", "App\\Models\\Company", function ($q) use ($model) {
+            $q
+            ->whereAddedBy($model)
+            ->orWhere(function ($q) use ($model) {
+                $q->whereHasMorph("addedby", Company::class, function ($q) use ($model) {
                     $q->whereIsOwnedBy($model);
                 });
+            });
+        });
+    }
+    
+    public function scopeWhereMemberOrAdministratorOfAddedby($query, Model $model)
+    {
+        return $query->where(function ($q) use ($model) {
+            $q
+            ->whereHasMorph("addedby", Company::class, function ($q) use ($model) {
+                $q->whereIsMember($model)
+                ->orWhere(function ($q) use ($model) {
+                    $q->whereIsOfficial($model);
+                })
+                ->orWhere(function ($q) use ($model) {
+                    $q->whereIsOwnedBy($model);
+                });
+            });
         });
     }
     
     public function scopeWhereIsOfficial($query, Model $model)
     {
         return $query->where(function ($q) use ($model) {
-            $q->whereAddedby($model)
+            $q->whereAddedBy($model)
                 ->orWhereHasMorph("addedby", [Company::class], function ($q) use ($model) {
                     $q->whereIsOfficial($model);
                 });
@@ -247,6 +283,16 @@ class Project extends Requestable
     public function scopeWhereSponsor($query)
     {
         return $query->whereParticipationType(ProjectParticipantEnum::sponsor->value);
+    }
+    
+    public function scopeWhereFacilitator($query)
+    {
+        return $query->whereParticipationType(ProjectParticipantEnum::facilitator->value);
+    }
+    
+    public function scopeWhereLearner($query)
+    {
+        return $query->whereParticipationType(ProjectParticipantEnum::learner->value);
     }
     
     public function scopeWhereIsSponsor($query, $sponsor)

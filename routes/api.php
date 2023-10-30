@@ -12,6 +12,7 @@ use App\Http\Controllers\LevelController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\ProjectSessionController;
 use App\Http\Controllers\RequestController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SkillController;
@@ -33,11 +34,14 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-// todo add rate limiting
+// TODO add rate limiting
 Route::get('/projects/{project_id}/{type}', [ProjectController::class, 'getParticipants'])
     ->whereIn("type", ProjectParticipantEnum::types());
 Route::get('/projects/{project_id}', [ProjectController::class, 'getProject']);
 Route::get('/projects', [ProjectController::class, 'getProjects']);
+
+Route::get('/project_sessions', [ProjectSessionController::class, 'getProjectSessions']);
+Route::get('/project_session/{project_session_id}', [ProjectSessionController::class, 'getProjectSession']);
 
 Route::get('/companies/{company_id}/{type}', [CompanyController::class, 'getMembers'])
     ->whereIn("type", RelationshipTypeEnum::types());
@@ -50,6 +54,24 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
 Route::get('/user/{username}', [UserController::class, 'getAUser']);
 
+Route::get('/skill_type', [SkillTypeController::class, 'getSkillType']);
+Route::get('/skill_types', [SkillTypeController::class, 'getSkillTypes']);
+
+Route::get('/job', [JobController::class, 'getJob']);
+Route::get('/jobs', [JobController::class, 'getJobs']);
+
+Route::get('/skill', [SkillController::class, 'getSkill']);
+Route::get('/skills', [SkillController::class, 'getSkills']);
+
+Route::get('/level', [LevelController::class, 'getLevel']);
+Route::get('/levels', [LevelController::class, 'getLevels']);
+
+Route::get('/level_collection', [LevelCollectionController::class, 'getLevelCollection']);
+Route::get('/level_collections', [LevelCollectionController::class, 'getLevelCollections']);
+
+Route::get('profile/{type}/{id}', [ProfileController::class, 'getUserProfile'])
+    ->whereIn('type', ['user', 'company']);
+
 Route::middleware('auth:sanctum')->group( function() {
 
     Route::get('/user', [UserController::class, 'getUser']);
@@ -61,48 +83,37 @@ Route::middleware('auth:sanctum')->group( function() {
     Route::post('/user/{id}/edit-info', [UserController::class, 'editInfo']);
     Route::post('/user/{id}/reset-password', [UserController::class, 'resetPassword']);
 
-    Route::post('/job/create', [JobController::class, 'create']);
-    Route::post('/job/{job_id}/update', [JobController::class, 'update']);
+    Route::post('/job', [JobController::class, 'create']);
+    Route::post('/job/{job_id}', [JobController::class, 'update']);
     Route::post('/job/{job_id}/attach', [JobController::class, 'attach']);
     Route::post('/job/{job_id}/detach', [JobController::class, 'detach']);
     Route::delete('/job/{job_id}', [JobController::class, 'delete']);
-    Route::get('/job', [JobController::class, 'getJob']);
-    Route::get('/jobs', [JobController::class, 'getJobs']);
 
-    Route::post('/skill_type/create', [SkillTypeController::class, 'create']);
-    Route::post('/skill_type/{skill_type_id}/update', [SkillTypeController::class, 'update']);
+    Route::post('/skill_type', [SkillTypeController::class, 'create']);
+    Route::post('/skill_type/{skill_type_id}', [SkillTypeController::class, 'update']);
     Route::delete('/skill_type/{skill_type_id}', [SkillTypeController::class, 'delete']);
-    Route::get('/skill_type', [SkillTypeController::class, 'getSkillType']);
-    Route::get('/skill_types', [SkillTypeController::class, 'getSkillTypes']);
 
-    Route::post('/skill/create', [SkillController::class, 'create']);
+    Route::post('/skill', [SkillController::class, 'create']);
     Route::post('/skill/{skill_id}/update', [SkillController::class, 'update']);
     Route::delete('/skill/{skill_id}', [SkillController::class, 'delete']);
-    Route::get('/skill', [SkillController::class, 'getSkill']);
-    Route::get('/skills', [SkillController::class, 'getSkills']);
 
-    Route::post('/level/create', [LevelController::class, 'create']);
-    Route::post('/level/{level_id}/update', [LevelController::class, 'update']);
+    Route::post('/level', [LevelController::class, 'create']);
+    Route::post('/level/{level_id}', [LevelController::class, 'update']);
     Route::delete('/level/{level_id}', [LevelController::class, 'delete']);
-    Route::get('/level', [LevelController::class, 'getLevel']);
-    Route::get('/levels', [LevelController::class, 'getLevels']);
 
-    Route::post('/level_collection/create', [LevelCollectionController::class, 'create']);
-    Route::post('/level_collection/{level_collection_id}/update', [LevelCollectionController::class, 'update']);
+    Route::post('/level_collection', [LevelCollectionController::class, 'create']);
+    Route::post('/level_collection/{level_collection_id}', [LevelCollectionController::class, 'update']);
     Route::delete('/level_collection/{level_collection_id}', [LevelCollectionController::class, 'delete']);
-    Route::get('/level_collection', [LevelCollectionController::class, 'getLevelCollection']);
-    Route::get('/level_collections', [LevelCollectionController::class, 'getLevelCollections']);
 
-    Route::post('/company/create', [CompanyController::class, 'create']);
-    Route::post('/company/{company_id}/update', [CompanyController::class, 'update']);
+    Route::post('/company', [CompanyController::class, 'create']);
+    Route::post('/company/{company_id}', [CompanyController::class, 'update']);
     Route::delete('/company/{company_id}', [CompanyController::class, 'delete']);
     Route::post('/company/{company_id}/add_members', [CompanyController::class, 'addMembers']);
     Route::post('/company/{company_id}/remove_members', [CompanyController::class, 'removeMembers']);
     Route::post('/company/{company_id}/leave', [CompanyController::class, 'leave']);
     
-
-    Route::post('/request/create', [RequestController::class, 'create']);
-    Route::post('/request/{request_id}/update', [RequestController::class, 'update']);
+    Route::post('/request', [RequestController::class, 'create']);
+    Route::post('/request/{request_id}', [RequestController::class, 'update']);
 
     Route::group([
         'prefix' => 'admin',
@@ -114,8 +125,9 @@ Route::middleware('auth:sanctum')->group( function() {
         Route::get('/verify', [AdminController::class, 'verify']);
     });
 
-    Route::get('profile/{type}/{id}', [ProfileController::class, 'getUserProfile'])
-        ->whereIn('type', ['user', 'company']);
+    Route::post('/project_session', [ProjectSessionController::class, 'create']);
+    Route::post('/project_session/{project_session_id}', [ProjectSessionController::class, 'update']);
+    Route::delete('/project_session/{project_session_id}', [ProjectSessionController::class, 'delete']);
 
     Route::post('/project', [ProjectController::class, 'create']);
     Route::post('/project/{project_id}', [ProjectController::class, 'update']);
@@ -127,7 +139,6 @@ Route::middleware('auth:sanctum')->group( function() {
     Route::post('/project/{project_id}/remove_skills', [ProjectController::class, 'removeSkills']);
     Route::post('/project/{project_id}/leave', [ProjectController::class, 'leave']);
     
-
     Route::get('/authorizations', [AuthorizationController::class, 'getAuthorizations']);
     Route::post('/authorizations', [AuthorizationController::class, 'createAuthorization']);
     Route::delete('/authorizations/{authorization_id}', [AuthorizationController::class, 'deleteAuthorization']);

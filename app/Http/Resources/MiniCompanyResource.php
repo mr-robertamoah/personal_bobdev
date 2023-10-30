@@ -14,6 +14,12 @@ class MiniCompanyResource extends JsonResource
      */
     public function toArray($request)
     {
-        return parent::toArray($request);
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'alias' => $this->alias,
+            'about' => $this->about,
+            "owner" => new MiniUserResource($this->owner),
+        ];
     }
 }

@@ -10,11 +10,14 @@ use App\Enums\RelationshipTypeEnum;
 use App\Enums\RequestStateEnum;
 use App\Exceptions\RequestException;
 use App\Exceptions\ResponseException;
+use App\Models\Company;
+use App\Models\Project;
 use App\Models\User;
 use App\Models\UserType;
 use App\Services\CompanyService;
 use App\Services\ProjectService;
 use App\Services\RequestService;
+use App\Traits\TestTrait;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
@@ -22,6 +25,8 @@ use Tests\TestCase;
 class RequestTest extends TestCase
 {
     use RefreshDatabase;
+    use TestTrait;
+    use WithFaker;
 
     public function testCannotCreateAnyRequestWithoutForDetails()
     {
@@ -49,7 +54,7 @@ class RequestTest extends TestCase
 
         $this->actingAs($user);
 
-        $response = $this->postJson("api/request/create", [
+        $response = $this->postJson("api/request", [
             'toId' => $to->id,
             'toType' => 'user',
             'type' => 'member',
@@ -98,7 +103,7 @@ class RequestTest extends TestCase
 
         $this->actingAs($user);
 
-        $response = $this->postJson("api/request/create", [
+        $response = $this->postJson("api/request", [
             'toId' => $to->id,
             'toType' => 'user',
             'forId' => $for->id + 1,
@@ -150,7 +155,7 @@ class RequestTest extends TestCase
 
         $this->actingAs($user);
 
-        $response = $this->postJson("api/request/create", [
+        $response = $this->postJson("api/request", [
             'toId' => $to->id,
             'toType' => 'user',
             'forId' => $for->id,
@@ -205,7 +210,7 @@ class RequestTest extends TestCase
 
         $this->actingAs($user);
 
-        $response = $this->postJson("api/request/create", [
+        $response = $this->postJson("api/request", [
             'toId' => $to->id,
             'toType' => 'user',
             'forId' => $for->id,
@@ -257,7 +262,7 @@ class RequestTest extends TestCase
 
         $this->actingAs($user);
 
-        $response = $this->postJson("api/request/create", [
+        $response = $this->postJson("api/request", [
             'toId' => $to->id,
             'toType' => 'user',
             'forId' => $for->id,
@@ -315,7 +320,7 @@ class RequestTest extends TestCase
 
         $this->actingAs($user);
 
-        $response = $this->postJson("api/request/create", [
+        $response = $this->postJson("api/request", [
             'toId' => $to->id,
             'toType' => 'user',
             'forId' => $for->id,
@@ -388,7 +393,7 @@ class RequestTest extends TestCase
 
         $this->actingAs($from);
 
-        $response = $this->postJson("api/request/create", [
+        $response = $this->postJson("api/request", [
             'toId' => $official->id,
             'toType' => 'user',
             'forId' => $for->id,
@@ -461,7 +466,7 @@ class RequestTest extends TestCase
 
         $this->actingAs($user);
 
-        $response = $this->postJson("api/request/create", [
+        $response = $this->postJson("api/request", [
             'toId' => $to->id,
             'toType' => 'user',
             'forId' => $for->id,
@@ -542,7 +547,7 @@ class RequestTest extends TestCase
 
         $this->actingAs($from);
 
-        $response = $this->postJson("api/request/create", [
+        $response = $this->postJson("api/request", [
             'fromId' => $company->id,
             'fromType' => 'company',
             'forId' => $for->id,
@@ -633,7 +638,7 @@ class RequestTest extends TestCase
         
         $this->actingAs($from);
 
-        $response = $this->postJson("api/request/create", [
+        $response = $this->postJson("api/request", [
             'toId' => $official->id,
             'toType' => 'user',
             'forId' => $company->id,
@@ -724,7 +729,7 @@ class RequestTest extends TestCase
 
         $this->actingAs($official);
 
-        $response = $this->postJson("api/request/create", [
+        $response = $this->postJson("api/request", [
             'toId' => $potentialMember->id,
             'toType' => 'user',
             'forId' => $company->id,
@@ -798,7 +803,7 @@ class RequestTest extends TestCase
 
         $this->actingAs($user);
 
-        $response = $this->postJson("api/request/create", [
+        $response = $this->postJson("api/request", [
             'toId' => $potentialAdministrator->id,
             'toType' => 'user',
             'forId' => $company->id,
@@ -872,7 +877,7 @@ class RequestTest extends TestCase
 
         $this->actingAs($user);
 
-        $response = $this->postJson("api/request/create", [
+        $response = $this->postJson("api/request", [
             'toId' => $potentialAdministrator->id,
             'toType' => 'user',
             'forId' => $company->id,
@@ -965,7 +970,7 @@ class RequestTest extends TestCase
 
         $this->actingAs($user);
 
-        $response = $this->postJson("api/request/{$request->id}/update", [
+        $response = $this->postJson("api/request/{$request->id}", [
             
         ]);
 
@@ -1043,7 +1048,7 @@ class RequestTest extends TestCase
 
         $this->actingAs($user);
 
-        $response = $this->postJson("api/request/{$request->id}/update", [
+        $response = $this->postJson("api/request/{$request->id}", [
             'response' => $requestResponse = "solved"
         ]);
 
@@ -1117,7 +1122,7 @@ class RequestTest extends TestCase
 
         $this->actingAs($user);
 
-        $response = $this->postJson("api/request/10/update", [
+        $response = $this->postJson("api/request/10", [
             'response' => $requestResponse = "solved"
         ]);
 
@@ -1191,7 +1196,7 @@ class RequestTest extends TestCase
 
         $this->actingAs($potentialAdministrator);
 
-        $response = $this->postJson("api/request/{$request->id}/update", [
+        $response = $this->postJson("api/request/{$request->id}", [
             'response' => "accepted"
         ]);
 
@@ -1286,7 +1291,7 @@ class RequestTest extends TestCase
 
         $this->actingAs($user);
 
-        $response = $this->postJson("api/request/{$request->id}/update", [
+        $response = $this->postJson("api/request/{$request->id}", [
             'response' => "accepted"
         ]);
 
@@ -1379,7 +1384,7 @@ class RequestTest extends TestCase
 
         $this->actingAs($admin);
 
-        $response = $this->postJson("api/request/{$request->id}/update", [
+        $response = $this->postJson("api/request/{$request->id}", [
             'response' => "accepted"
         ]);
 
@@ -1393,5 +1398,488 @@ class RequestTest extends TestCase
                     'type' => RelationshipTypeEnum::companyMember->value,
                 ]
             ]);
+    }
+
+    public function testCannotSendRequestToPotentialParentAsWardWithInvalidType()
+    {
+        $ward = $this->createUser();
+        $parent = $this->createUser();
+
+        $wrong ="wrong_type";
+        $data = [
+            "type" => $wrong,
+            "to_type" => "user",
+            "to_id" => $parent->id
+        ];
+
+        $this->actingAs($ward);
+
+        $response = $this->postJson("/api/request", $data);
+
+        $response->assertStatus(500)
+            ->assertJson([
+                "status" => false,
+                "message" => "Sorry, {$wrong} is not a valid type for user relationships."
+            ]);
+
+        $this->assertFalse($parent->hasPendingRequests());
+    }
+
+    public function testCannotSendRequestToPotentialParentAsWardWithoutTo()
+    {
+        $ward = $this->createUser();
+        $parent = $this->createUser();
+
+        $type ="ward";
+        $data = [
+            "type" => $type,
+        ];
+
+        $this->actingAs($ward);
+
+        $response = $this->postJson("/api/request", $data);
+
+        $response->assertStatus(500)
+            ->assertJson([
+                "status" => false,
+                "message" => "Sorry, to make a request you need the request from someone to another person, and regarding something."
+            ]);
+            
+        $this->assertFalse($parent->hasPendingRequests());
+    }
+
+    public function testCanmotSendUserRelationshipRequestToNonUserAsWard()
+    {
+        $ward = $this->createUser();
+        $parent = Company::factory()->create(["user_id" => $ward->id]);
+
+        $this->actingAs($ward);
+
+        $type = strtolower(RelationshipTypeEnum::ward->value);
+        $data = [
+            "type" => $type,
+            "to_id" => $parent->id,
+            "to_type" => strtolower(class_basename($parent)),
+        ];
+
+        $response = $this->postJson("/api/request", $data);
+
+        $response->assertStatus(500)
+            ->assertJson([
+                "status" => false,
+                "message" => "Sorry, a parent-ward relationship should be between two users."
+            ]);
+    }
+
+    public function testCanmotSendRequestToNonAdultParentAsWard()
+    {
+        $ward = $this->createUser();
+        $parent = $this->createUser();
+
+        $this->actingAs($ward);
+
+        $type = strtolower(RelationshipTypeEnum::ward->value);
+        $data = [
+            "type" => $type,
+            "to_id" => $parent->id,
+            "to_type" => strtolower(class_basename($parent)),
+        ];
+
+        $response = $this->postJson("/api/request", $data);
+
+        $response->assertStatus(500)
+            ->assertJson([
+                "status" => false,
+                "message" => "Sorry, you cannot send a request from/to a parent who is not an adult."
+            ]);
+            
+        $this->assertFalse($parent->hasPendingRequests());
+    }
+
+    public function testCanSendRequestToPotentialParentAsWard()
+    {
+        $ward = $this->createUser();
+        $parent = $this->createAdultUser();
+
+        $this->actingAs($ward);
+
+        $type = strtolower(RelationshipTypeEnum::ward->value);
+        $data = [
+            "type" => $type,
+            "to_id" => $parent->id,
+            "to_type" => strtolower(class_basename($parent)),
+        ];
+
+        $response = $this->postJson("/api/request", $data);
+        
+        $response->assertStatus(200)
+            ->assertJson([
+                "status" => true,
+                "request" => [
+                    "to" => [
+                        "id" => $parent->id,
+                        "username" => $parent->username
+                    ],
+                    "from" => [
+                        "id" => $ward->id,
+                        "username" => $ward->username
+                    ],
+                    "type" => strtolower($type)
+                ]
+            ]);
+            
+        $this->assertTrue($parent->hasPendingRequests());
+    }
+
+    public function testCanmotSendRequestToWardAsNonAdultParent()
+    {
+        $ward = $this->createUser();
+        $parent = $this->createUser();
+
+        $this->actingAs($parent);
+
+        $type = strtolower(RelationshipTypeEnum::parent->value);
+        $data = [
+            "type" => $type,
+            "to_id" => $ward->id,
+            "to_type" => strtolower(class_basename($ward)),
+        ];
+
+        $response = $this->postJson("/api/request", $data);
+
+        $response->assertStatus(500)
+            ->assertJson([
+                "status" => false,
+                "message" => "Sorry, you cannot send a request from/to a parent who is not an adult."
+            ]);
+            
+        $this->assertFalse($ward->hasPendingRequests());
+    }
+
+    public function testCanmotSendRequestFromAndToTheSameUser()
+    {
+        $parent = $this->createUser();
+
+        $this->actingAs($parent);
+
+        $type = strtolower(RelationshipTypeEnum::parent->value);
+        $data = [
+            "type" => $type,
+            "to_id" => $parent->id,
+            "to_type" => strtolower(class_basename($parent)),
+        ];
+
+        $response = $this->postJson("/api/request", $data);
+
+        $response->assertStatus(500)
+            ->assertJson([
+                "status" => false,
+                "message" => "Sorry, requests cannot be sent from and to the same user."
+            ]);
+            
+        $this->assertFalse($parent->hasPendingRequests());
+    }
+
+    public function testCanSendRequestToPotentialWardAsParent()
+    {
+        $ward = $this->createUser();
+        $parent = $this->createAdultUser();
+
+        $this->actingAs($parent);
+
+        $type = strtolower(RelationshipTypeEnum::parent->value);
+        $data = [
+            "type" => $type,
+            "to_id" => $ward->id,
+            "to_type" => strtolower(class_basename($ward)),
+        ];
+
+        $response = $this->postJson("/api/request", $data);
+        
+        $response->assertStatus(200)
+            ->assertJson([
+                "status" => true,
+                "request" => [
+                    "to" => [
+                        "id" => $ward->id,
+                        "username" => $ward->username
+                    ],
+                    "from" => [
+                        "id" => $parent->id,
+                        "username" => $parent->username
+                    ],
+                    "type" => strtolower($type)
+                ]
+            ]);
+            
+        $this->assertTrue($ward->hasPendingRequests());
+    }
+
+    public function testCanAcceptParentingRequestAsWard()
+    {
+        $ward = $this->createUser();
+        $parent = $this->createAdultUser();
+
+        $this->actingAs($parent);
+
+        $type = strtolower(RelationshipTypeEnum::parent->value);
+        $data = [
+            "type" => $type,
+            "to_id" => $ward->id,
+            "to_type" => strtolower(class_basename($ward)),
+        ];
+
+        $response = $this->postJson("/api/request", $data);
+        
+        $response->assertStatus(200)
+            ->assertJson([
+                "status" => true,
+                "request" => [
+                    "to" => [
+                        "id" => $ward->id,
+                        "username" => $ward->username
+                    ],
+                    "from" => [
+                        "id" => $parent->id,
+                        "username" => $parent->username
+                    ],
+                    "type" => strtolower($type),
+                    "state" => strtolower(RequestStateEnum::pending->value),
+                ]
+            ]);
+            
+        $this->assertTrue($ward->hasPendingRequests());
+
+        $state = strtolower(RequestStateEnum::accepted->value);
+        $data = [
+            "response" => $state,
+        ];
+
+        $this->actingAs($ward);
+        $requestId = json_decode($response->baseResponse->content())->request->id;
+
+        $response = $this->postJson("/api/request/{$requestId}", $data);
+        
+        $response->assertStatus(200)
+            ->assertJson([
+                "status" => true,
+                "request" => [
+                    "to" => [
+                        "id" => $ward->id,
+                        "username" => $ward->username
+                    ],
+                    "from" => [
+                        "id" => $parent->id,
+                        "username" => $parent->username
+                    ],
+                    "type" => strtolower($type),
+                    "state" => $state,
+                ]
+            ]);
+            
+        $this->assertFalse($ward->hasPendingRequests());
+        $this->assertTrue($ward->isWard());
+        $this->assertTrue($parent->isParent());
+    }
+
+    public function testCanAcceptWardingRequestAsParent()
+    {
+        $ward = $this->createUser();
+        $parent = $this->createAdultUser();
+
+        $this->actingAs($ward);
+
+        $type = strtolower(RelationshipTypeEnum::ward->value);
+        $data = [
+            "type" => $type,
+            "to_id" => $parent->id,
+            "to_type" => strtolower(class_basename($parent)),
+        ];
+
+        $response = $this->postJson("/api/request", $data);
+        
+        $response->assertStatus(200)
+            ->assertJson([
+                "status" => true,
+                "request" => [
+                    "to" => [
+                        "id" => $parent->id,
+                        "username" => $parent->username
+                    ],
+                    "from" => [
+                        "id" => $ward->id,
+                        "username" => $ward->username
+                    ],
+                    "type" => strtolower($type),
+                    "state" => strtolower(RequestStateEnum::pending->value),
+                ]
+            ]);
+            
+        $this->assertTrue($parent->hasPendingRequests());
+
+        $state = strtolower(RequestStateEnum::accepted->value);
+        $data = [
+            "response" => $state,
+        ];
+
+        $this->actingAs($parent);
+        $requestId = json_decode($response->baseResponse->content())->request->id;
+
+        $response = $this->postJson("/api/request/{$requestId}", $data);
+        
+        $response->assertStatus(200)
+            ->assertJson([
+                "status" => true,
+                "request" => [
+                    "to" => [
+                        "id" => $parent->id,
+                        "username" => $parent->username
+                    ],
+                    "from" => [
+                        "id" => $ward->id,
+                        "username" => $ward->username
+                    ],
+                    "type" => strtolower($type),
+                    "state" => $state,
+                ]
+            ]);
+            
+        $this->assertFalse($parent->hasPendingRequests());
+        $this->assertTrue($ward->isWard());
+        $this->assertTrue($parent->isParent());
+    }
+
+    public function testCanDeclineParentingRequestAsWard()
+    {
+        $ward = $this->createUser();
+        $parent = $this->createAdultUser();
+
+        $this->actingAs($parent);
+
+        $type = strtolower(RelationshipTypeEnum::parent->value);
+        $data = [
+            "type" => $type,
+            "to_id" => $ward->id,
+            "to_type" => strtolower(class_basename($ward)),
+        ];
+
+        $response = $this->postJson("/api/request", $data);
+        
+        $response->assertStatus(200)
+            ->assertJson([
+                "status" => true,
+                "request" => [
+                    "to" => [
+                        "id" => $ward->id,
+                        "username" => $ward->username
+                    ],
+                    "from" => [
+                        "id" => $parent->id,
+                        "username" => $parent->username
+                    ],
+                    "type" => strtolower($type),
+                    "state" => strtolower(RequestStateEnum::pending->value),
+                ]
+            ]);
+            
+        $this->assertTrue($ward->hasPendingRequests());
+
+        $state = strtolower(RequestStateEnum::declined->value);
+        $data = [
+            "response" => $state,
+        ];
+
+        $this->actingAs($ward);
+        $requestId = json_decode($response->baseResponse->content())->request->id;
+
+        $response = $this->postJson("/api/request/{$requestId}", $data);
+        
+        $response->assertStatus(200)
+            ->assertJson([
+                "status" => true,
+                "request" => [
+                    "to" => [
+                        "id" => $ward->id,
+                        "username" => $ward->username
+                    ],
+                    "from" => [
+                        "id" => $parent->id,
+                        "username" => $parent->username
+                    ],
+                    "type" => strtolower($type),
+                    "state" => $state,
+                ]
+            ]);
+            
+        $this->assertFalse($ward->hasPendingRequests());
+        $this->assertFalse($ward->isWard());
+        $this->assertFalse($parent->isParent());
+    }
+
+    public function testCanDeclineWardingRequestAsParent()
+    {
+        $ward = $this->createUser();
+        $parent = $this->createAdultUser();
+
+        $this->actingAs($ward);
+
+        $type = strtolower(RelationshipTypeEnum::ward->value);
+        $data = [
+            "type" => $type,
+            "to_id" => $parent->id,
+            "to_type" => strtolower(class_basename($parent)),
+        ];
+
+        $response = $this->postJson("/api/request", $data);
+        
+        $response->assertStatus(200)
+            ->assertJson([
+                "status" => true,
+                "request" => [
+                    "to" => [
+                        "id" => $parent->id,
+                        "username" => $parent->username
+                    ],
+                    "from" => [
+                        "id" => $ward->id,
+                        "username" => $ward->username
+                    ],
+                    "type" => strtolower($type),
+                    "state" => strtolower(RequestStateEnum::pending->value),
+                ]
+            ]);
+            
+        $this->assertTrue($parent->hasPendingRequests());
+
+        $state = strtolower(RequestStateEnum::declined->value);
+        $data = [
+            "response" => $state,
+        ];
+
+        $this->actingAs($parent);
+        $requestId = json_decode($response->baseResponse->content())->request->id;
+
+        $response = $this->postJson("/api/request/{$requestId}", $data);
+        
+        $response->assertStatus(200)
+            ->assertJson([
+                "status" => true,
+                "request" => [
+                    "to" => [
+                        "id" => $parent->id,
+                        "username" => $parent->username
+                    ],
+                    "from" => [
+                        "id" => $ward->id,
+                        "username" => $ward->username
+                    ],
+                    "type" => strtolower($type),
+                    "state" => $state,
+                ]
+            ]);
+            
+        $this->assertFalse($parent->hasPendingRequests());
+        $this->assertFalse($ward->isWard());
+        $this->assertFalse($parent->isParent());
     }
 }

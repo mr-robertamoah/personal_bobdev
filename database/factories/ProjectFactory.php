@@ -22,6 +22,8 @@ class ProjectFactory extends Factory
         return [
             "name" => $this->faker->name(),
             "description" => $this->faker->sentence(),
+            "start_date" => now()->addDays(2)->toDateTimeString(),
+            "end_date" => now()->subYears(2)->toDateTimeString(),
         ];
     }
 }

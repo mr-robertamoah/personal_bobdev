@@ -21,7 +21,7 @@ class PermissionResource extends JsonResource
             "description" => $this->description,
             "class" => is_null($this->class) ? null: class_basename($this->class),
             "updatedAt" => $this->updated_at,
-            "createdAt" => $this->created_at,
+            "createdAt" => $this->created_at->diffForHumans(),,
         ];
     }
 }

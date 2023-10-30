@@ -34,9 +34,22 @@ class ProjectParticipant extends Model
         });
     }
 
+    function scopeWhereParticipantIds($query, $modelIds)
+    {
+        return $query->where(function ($q) use ($modelIds) {
+            $q->where('participant_type', User::class)
+                ->whereIn('participant_id', $modelIds);
+        });
+    }
+
     function scopeWhereOfficial($query)
     {
         return $query->whereParticipationType(ProjectParticipantEnum::facilitator->value);
+    }
+
+    function scopeWhereLearner($query)
+    {
+        return $query->whereParticipationType(ProjectParticipantEnum::learner->value);
     }
 
     function scopeWhereSponsor($query)
@@ -46,14 +59,11 @@ class ProjectParticipant extends Model
 
     function scopeWhereParticipationType($query, $type)
     {
-        if (is_null($type)) {
+        if (is_null($type))
             return $query;
-        }
 
         if (strtolower($type) == 'learner')
-        {
             $type = ProjectParticipantEnum::learner->value;
-        }
 
         return $query->where('participating_as', strtoupper($type));
     }

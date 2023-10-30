@@ -3628,5 +3628,5 @@ class ProjectTest extends TestCase
         );
     }
 
-    // todo get projectsessions
+    // TODO get projectsessions
 }

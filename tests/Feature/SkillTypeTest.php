@@ -27,7 +27,7 @@ class SkillTypeTest extends TestCase
 
         $this->actingAs($user);
         
-        $response = $this->post('/api/skill_type/create', [
+        $response = $this->post('/api/skill_type', [
             'name' => 'Programming Language',
             'description' => 'this is to help create web and native apps'
         ]);
@@ -54,7 +54,7 @@ class SkillTypeTest extends TestCase
 
         $this->actingAs($user);
         
-        $response = $this->postJson('/api/skill_type/create', [
+        $response = $this->postJson('/api/skill_type', [
             'description' => 'this is to help create web and native apps'
         ]);
 
@@ -80,7 +80,7 @@ class SkillTypeTest extends TestCase
 
         $this->actingAs($user);
         
-        $response = $this->post('/api/skill_type/create', [
+        $response = $this->post('/api/skill_type', [
             'name' => 'Programming Language',
             'description' => 'this is to help create web and native apps'
         ]);
@@ -122,7 +122,7 @@ class SkillTypeTest extends TestCase
 
         $this->actingAs($user);
         
-        $response = $this->post('/api/skill_type/create', [
+        $response = $this->post('/api/skill_type', [
             'name' => 'Programming Language',
             'description' => 'this is to help create web and native apps'
         ]);
@@ -167,7 +167,7 @@ class SkillTypeTest extends TestCase
             'name' => 'Framework',
         ]);
         
-        $response = $this->post("/api/skill_type/{$skillType->id}/update", [
+        $response = $this->post("/api/skill_type/{$skillType->id}", [
             'name' => 'Programming Language',
             'description' => 'this is to help create web and native apps'
         ]);
@@ -225,7 +225,7 @@ class SkillTypeTest extends TestCase
             'name' => 'Framework',
         ]);
         
-        $response = $this->post("/api/skill_type/{$skillType->id}/update", [
+        $response = $this->post("/api/skill_type/{$skillType->id}", [
             'name' => 'Programming Language',
             'description' => 'this is to help create web and native apps'
         ]);
@@ -296,7 +296,7 @@ class SkillTypeTest extends TestCase
             'name' => 'Framework',
         ]);
         
-        $response = $this->post("/api/skill_type/{$skillType->id}/update", [
+        $response = $this->post("/api/skill_type/{$skillType->id}", [
             'name' => 'Programming Language',
             'description' => 'this is to help create web and native apps'
         ]);

@@ -26,7 +26,7 @@ class EnsureAddedbyIsAuthorizedAction extends Action
         }
         
         throw new ProjectException(
-            $this->setErrorMessage($action)
+            $this->setErrorMessage($action), 422
         );
     }
 
@@ -59,7 +59,7 @@ class EnsureAddedbyIsAuthorizedAction extends Action
 
         $isFacilitator = $projectDTO->project?->isFacilitator($projectDTO->addedby);
 
-        if (in_array($what, ['skills']) && $isFacilitator)
+        if (in_array($what, ['skills', 'project session']) && $isFacilitator)
         {
             return true;
         }
@@ -75,7 +75,7 @@ class EnsureAddedbyIsAuthorizedAction extends Action
         {
             return (
                 $isFacilitator && 
-                IsLearnerParticipantTypeAction::make()->execute($participationType ?? $projectDTO->participationType)
+                IsLearnerParticipantTypeAction::make()->execute($participationType ?: $projectDTO->participationType)
             );
         }
 

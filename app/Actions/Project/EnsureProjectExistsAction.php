@@ -14,6 +14,6 @@ class EnsureProjectExistsAction extends Action
             return;
         }
         
-        throw new ProjectException('Sorry! A valid project is required to perform this action.');
+        throw new ProjectException('Sorry! A valid project is required to perform this action.', 422);
     }
 }

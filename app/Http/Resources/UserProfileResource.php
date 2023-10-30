@@ -14,27 +14,45 @@ class UserProfileResource extends JsonResource
      */
     public function toArray($request)
     {
-        ds("user is facilitator", $this->user->isFacilitator());
+        $user = $this->user;
+
+        $ownedCompanies = $user->addedCompanies;
+        $memberingCompanies = $user->memberingCompanies();
+        $administeringCompanies = $user->administeringCompanies();
+
+        $facilitatorProjects = $user->facilitatorProjects();
+        $learnerProjects = $user->learnerProjects();
+        $sponsoredProjects = $user->sponsoredProjects();
+        $parentProjects = $user->parentProjects();
+        $companyProjects = $user->companyProjects();
+        $ownedProjects = $this->ownedProjects();
+
         return [
             'id' => $this->id,
-            'userId' => $this->user->id,
-            'facilitatorProjects' => $this->when(
-                $this->user->isFacilitator(), 
-                $this->facilitatorProjects()
-            ),
-            'learnerProjects' => $this->when(
-                $this->user->isLearner(), 
-                $this->learnerProjects()
-            ),
-            'sponsorProjects' => $this->when(
-                $this->user->isSponsor(), 
-                $this->sponsorProjects()
-            ),
-            'parentProjects' => $this->when(
-                $this->user->isparent(), 
-                $this->parentProjects()
-            ),
-            'ownedProjects' => $this->ownedProjects()
+            'user' => new UserResource($this->user),
+
+            'wards' => ProfileUserResource::collection($user->wards),
+            'parents' => ProfileUserResource::collection($user->parents),
+
+            'ownedCompanies' => ProfileCompanyResource::collection($ownedCompanies->take(5)),
+            'memberingCompanies' => ProfileCompanyResource::collection($memberingCompanies->take(5)),
+            'administeringCompanies' => ProfileCompanyResource::collection($administeringCompanies->take(5)),
+            'ownedCompaniesCount' => $ownedCompanies->count(),
+            'memberingCompaniesCount' => $memberingCompanies->count(),
+            'administeringCompaniesCount' => $administeringCompanies->count(),
+
+            'facilitatorProjects' => ProfileProjectResource::collection($facilitatorProjects->take(5)),
+            'learnerProjects' => ProfileProjectResource::collection($learnerProjects->take(5)),
+            'sponsoredProjects' => ProfileProjectResource::collection($sponsoredProjects->take(5)),
+            'parentProjects' => ProfileProjectResource::collection($parentProjects->take(5)),
+            'companyProjects' => ProfileProjectResource::collection($companyProjects->take(5)),
+            'ownedProjects' => ProfileProjectResource::collection($ownedProjects->take(5)),
+            'facilitatorProjectsCount' => $facilitatorProjects->count(),
+            'learnerProjectsCount' => $learnerProjects->count(),
+            'sponsoredProjectsCount' => $sponsoredProjects->count(),
+            'parentProjectsCount' => $parentProjects->count(),
+            'companyProjectsCount' => $companyProjects->count(),
+            'ownedProjectsCount' => $ownedProjects->count(),
         ];
     }
 }

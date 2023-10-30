@@ -12,6 +12,7 @@ use App\Models\Project;
 use App\Models\User;
 use App\Models\UserType;
 use App\Services\CompanyService;
+use App\Traits\TestTrait;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
@@ -20,6 +21,7 @@ class CompanyTest extends TestCase
 {
     use RefreshDatabase;
     use WithFaker;
+    use TestTrait;
 
     public function testCannotCreateCompanyWithoutAnAlias()
     {
@@ -40,7 +42,7 @@ class CompanyTest extends TestCase
 
         $this->actingAs($user);
 
-        $response = $this->postJson('/api/company/create', [
+        $response = $this->postJson('/api/company', [
             'name' => 'the great enterprise',
         ]);
 
@@ -66,7 +68,7 @@ class CompanyTest extends TestCase
 
         $this->actingAs($user);
 
-        $response = $this->postJson('/api/company/create', [
+        $response = $this->postJson('/api/company', [
             'alias' => 'enterprise',
         ]);
 
@@ -91,7 +93,7 @@ class CompanyTest extends TestCase
 
         $this->actingAs($user);
         
-        $response = $this->postJson('/api/company/create', [
+        $response = $this->postJson('/api/company', [
             'name' => 'the great enterprise',
         ]);
 
@@ -117,7 +119,7 @@ class CompanyTest extends TestCase
 
         $this->actingAs($user);
 
-        $response = $this->postJson('/api/company/create', [
+        $response = $this->postJson('/api/company', [
             'name' => 'the great enterprise',
             'alias' => 'tgenterprise',
         ]);
@@ -184,7 +186,7 @@ class CompanyTest extends TestCase
 
         $this->actingAs($admin);
 
-        $response = $this->postJson("/api/company/10/update", [
+        $response = $this->postJson("/api/company/10", [
             'name' => 'the great ent.',
         ]);
 
@@ -248,7 +250,7 @@ class CompanyTest extends TestCase
 
         $this->actingAs($admin);
 
-        $response = $this->postJson("/api/company/{$company->id}/update");
+        $response = $this->postJson("/api/company/{$company->id}");
 
         $response
             ->assertStatus(500)
@@ -304,7 +306,7 @@ class CompanyTest extends TestCase
 
         $this->actingAs($admin);
 
-        $response = $this->postJson("/api/company/{$company->id}/update", [
+        $response = $this->postJson("/api/company/{$company->id}", [
             'name' => 'the great ent.',
         ]);
 
@@ -355,7 +357,7 @@ class CompanyTest extends TestCase
 
         $this->actingAs($user);
 
-        $response = $this->postJson("/api/company/{$company->id}/update", [
+        $response = $this->postJson("/api/company/{$company->id}", [
             'name' => 'the great ent.',
         ]);
 
@@ -421,7 +423,7 @@ class CompanyTest extends TestCase
 
         $this->actingAs($admin);
 
-        $response = $this->postJson("/api/company/{$company->id}/update", [
+        $response = $this->postJson("/api/company/{$company->id}", [
             'name' => 'the great ent.',
         ]);
 
@@ -501,7 +503,7 @@ class CompanyTest extends TestCase
 
         $this->actingAs($manager);
 
-        $response = $this->postJson("/api/company/{$company->id}/update", [
+        $response = $this->postJson("/api/company/{$company->id}", [
             'name' => 'the great ent.',
         ]);
 
@@ -2475,13 +2477,7 @@ class CompanyTest extends TestCase
 
     public function testCanGetAllCompaniesWhenGuest()
     {
-        $creator = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
+        $creator = $this->createUser();
 
         $companies = Company::factory()->count(20)
             ->create([
@@ -2528,21 +2524,9 @@ class CompanyTest extends TestCase
 
     public function testCanGetAllCompaniesWhenAdmin()
     {
-        $user = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
+        $user = $this->createUser();
 
-        $creator = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
+        $creator = $this->createUser();
 
         $userType = $user->addedUserTypes()->create([
             "name" => UserType::ADMIN
@@ -2597,21 +2581,9 @@ class CompanyTest extends TestCase
 
     public function testCanGetAllCompaniesWhenUser()
     {
-        $user = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
+        $user = $this->createUser();
 
-        $creator = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
+        $creator = $this->createUser();
 
         $userType = $user->addedUserTypes()->create([
             "name" => UserType::FACILITATOR
@@ -2666,21 +2638,9 @@ class CompanyTest extends TestCase
 
     public function testCanGetAllCompaniesWithNameQuery()
     {
-        $user = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
+        $user = $this->createUser();
 
-        $creator = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
+        $creator = $this->createUser();
 
         $userType = $user->addedUserTypes()->create([
             "name" => UserType::FACILITATOR
@@ -2718,29 +2678,11 @@ class CompanyTest extends TestCase
 
     public function testCanGetAllCompaniesWithOwnerQuery()
     {
-        $user = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
+        $user = $this->createUser();
 
-        $creator1 = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
+        $creator1 = $this->createUser();
 
-        $creator2 = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
+        $creator2 = $this->createUser();
 
         $userType = $user->addedUserTypes()->create([
             "name" => UserType::FACILITATOR
@@ -2779,29 +2721,11 @@ class CompanyTest extends TestCase
 
     public function testCanGetAllCompaniesWithMemberQuery()
     {
-        $user = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
+        $user = $this->createUser();
 
-        $creator = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
+        $creator = $this->createUser();
 
-        $member = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
+        $member = $this->createUser();
 
         $userType = $user->addedUserTypes()->create([
             "name" => UserType::FACILITATOR
@@ -2845,29 +2769,11 @@ class CompanyTest extends TestCase
 
     public function testCanGetAllCompaniesWithOfficialQuery()
     {
-        $user = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
+        $user = $this->createUser();
 
-        $creator = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
+        $creator = $this->createUser();
 
-        $official = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
+        $official = $this->createUser();
 
         $userType = $user->addedUserTypes()->create([
             "name" => UserType::FACILITATOR
@@ -2911,29 +2817,11 @@ class CompanyTest extends TestCase
 
     public function testCanGetAllCompaniesWithMembershipQuery()
     {
-        $user = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
+        $user = $this->createUser();
 
-        $creator = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
+        $creator = $this->createUser();
 
-        $member = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
+        $member = $this->createUser();
 
         $userType = $user->addedUserTypes()->create([
             "name" => UserType::FACILITATOR
@@ -2977,29 +2865,11 @@ class CompanyTest extends TestCase
 
     public function testCanGetAllCompaniesWithOfficialRelationshipQuery()
     {
-        $user = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
+        $user = $this->createUser();
 
-        $creator = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
+        $creator = $this->createUser();
 
-        $member = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
+        $member = $this->createUser();
 
         $userType = $user->addedUserTypes()->create([
             "name" => UserType::FACILITATOR
@@ -3043,29 +2913,11 @@ class CompanyTest extends TestCase
 
     public function testCanGetDetailsOfCompany()
     {
-        $user = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
+        $user = $this->createUser();
 
-        $member = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
+        $member = $this->createUser();
 
-        $creator = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
+        $creator = $this->createUser();
 
         $companies = Company::factory()->count(5)->create([
             'name' => $this->faker->company(),
@@ -3131,29 +2983,11 @@ class CompanyTest extends TestCase
 
     public function testCannotGetMembersOfCompanyWithInvalidType()
     {
-        $user = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
+        $user = $this->createUser();
 
-        $member = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
+        $member = $this->createUser();
 
-        $official = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
+        $official = $this->createUser();
 
         $company = Company::create([
             'alias' => $this->faker->userName(),
@@ -3184,29 +3018,11 @@ class CompanyTest extends TestCase
 
     public function testCanGetMembersOfCompany()
     {
-        $user = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
+        $user = $this->createUser();
 
-        $member = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
+        $member = $this->createUser();
 
-        $official = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
+        $official = $this->createUser();
 
         $company = Company::create([
             'alias' => $this->faker->userName(),
@@ -3250,29 +3066,11 @@ class CompanyTest extends TestCase
 
     public function testCanGetOfficialsOfCompany()
     {
-        $user = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
+        $user = $this->createUser();
 
-        $member = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
+        $member = $this->createUser();
 
-        $official = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
+        $official = $this->createUser();
 
         $company = Company::create([
             'alias' => $this->faker->userName(),
@@ -3315,13 +3113,7 @@ class CompanyTest extends TestCase
 
     public function testCannotGetCompanyProjectsWithInvalidType()
     {
-        $user = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
+        $user = $this->createUser();
 
         $company = Company::create([
             'alias' => $this->faker->userName(),
@@ -3345,13 +3137,7 @@ class CompanyTest extends TestCase
 
     public function testCanGetAllProjectsOfCompany()
     {
-        $user = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
+        $user = $this->createUser();
 
         $company = Company::create([
             'alias' => $this->faker->userName(),
@@ -3395,13 +3181,7 @@ class CompanyTest extends TestCase
 
     public function testCanGetSponsoredProjectsOfCompany()
     {
-        $user = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
+        $user = $this->createUser();
 
         $company = Company::create([
             'alias' => $this->faker->userName(),
@@ -3446,13 +3226,7 @@ class CompanyTest extends TestCase
 
     public function testCanGetAddedProjectsOfCompany()
     {
-        $user = User::create([
-            'username' => $this->faker->userName(),
-            'first_name' => $this->faker->firstName(),
-            'surname' => $this->faker->lastName(),
-            'password' => bcrypt("password"),
-            'email' => $this->faker->email(),
-        ]);
+        $user = $this->createUser();
 
         $company = Company::create([
             'alias' => $this->faker->userName(),

@@ -33,7 +33,8 @@ class RequestService
 
         $request = CreateRequestAction::make()->execute($requestDTO);
 
-        if ($request->for->isofficial($requestDTO->from) ||
+        if (
+            ($request->isNotForUser() && $request->for->isofficial($requestDTO->from)) ||
             $requestDTO->from->isAdmin()
         )
         {
@@ -75,10 +76,9 @@ class RequestService
         PerformActionBasedOnResponseAction::make()->execute($responseDTO);
         
         if (
-            $responseDTO->request->for->isofficial($responseDTO->user) ||
+            ($responseDTO->request->isNotForUser() && $responseDTO->request->for->isofficial($responseDTO->user) )||
             $responseDTO->user->isAdmin()
-        )
-        {
+        ) {
             AddActivityAction::make()->execute(
                 ActivityDTO::new()->fromArray([
                     'performedby' => $responseDTO->user,
@@ -119,6 +119,10 @@ class RequestService
                 $requestDTO->for
             )
         );
+
+        if (is_null($requestDTO->for)) {
+            $requestDTO = $requestDTO->withFor($requestDTO->to);
+        }
 
         if ($requestDTO->to) {
             return $requestDTO;

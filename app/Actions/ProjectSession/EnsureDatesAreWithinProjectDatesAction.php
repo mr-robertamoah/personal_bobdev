@@ -11,20 +11,44 @@ class EnsureDatesAreWithinProjectDatesAction extends Action
 {
     public function execute(ProjectSessionDTO $projectSessionDTO)
     {
+        $startDate = $projectSessionDTO->projectSession ? 
+            $projectSessionDTO->projectSession->project->startDate :
+            $projectSessionDTO->project?->startDate;
+        $endDate = $projectSessionDTO->projectSession ? 
+            $projectSessionDTO->projectSession->project->endDate :
+            $projectSessionDTO->project?->endDate;
         if (
-            $projectSessionDTO->project->startDate && 
-            Carbon::parse($projectSessionDTO->project->startDate)
-                ->lessThan($projectSessionDTO->startDate)
+            now()
+                ->greaterThan($projectSessionDTO->startDate)
         ) {
-            throw new ProjectSessionException("Sorry! The start date for the session should be after {$projectSessionDTO->project->startDate}.", 422);
+            throw new ProjectSessionException("Sorry! The start date for the session should be on or after today.", 422);
         }
         
         if (
-            $projectSessionDTO->project->endDate && 
-            Carbon::parse($projectSessionDTO->project->endDate)
-                ->greaterThanOrEqualTo($projectSessionDTO->endDate)
+            $startDate && 
+            Carbon::parse($startDate)
+                ->greaterThan($projectSessionDTO->startDate)
         ) {
-            throw new ProjectSessionException("Sorry! The end date for the session should be before or the same as {$projectSessionDTO->project->startDate}.", 422);
+            $toDateTimeString = Carbon::parse($startDate)->toDateTimeString();
+            throw new ProjectSessionException("Sorry! The start date for the session should come after or on {$toDateTimeString} date.", 422);
+        }
+        
+        if (
+            $endDate && 
+            Carbon::parse($endDate)
+                ->lessThan($projectSessionDTO->endDate)
+        ) {
+            $toDateTimeString = Carbon::parse($endDate)->toDateTimeString();
+            throw new ProjectSessionException("Sorry! The end date for the session should come before or on {$toDateTimeString} date.", 422);
+        }
+        
+        if (
+            $projectSessionDTO->startDate &&
+            $projectSessionDTO->endDate &&
+            $projectSessionDTO->endDate
+                ->lessThan($projectSessionDTO->startDate)
+        ) {
+            throw new ProjectSessionException("Sorry! The end date for the session should be either the same day as or after the start date.", 422);
         }
     }
 }

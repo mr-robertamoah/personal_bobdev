@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\ApiErrorHandlingAction;
 use App\DTOs\CompanyDTO;
 use App\Http\Requests\CreateCompanyRequest;
 use App\Http\Requests\GetCompaniesRequest;
@@ -155,10 +156,8 @@ class CompanyController extends Controller
             ]);
         } catch (\Throwable $th) {
             // throw $th;
-            return response()->json([
-                "status" => false,
-                "message" => $th->getMessage(),
-            ], $th->getCode() ?: 500);
+            return ApiErrorHandlingAction::make()
+                ->execute($th);
         }
     }
     
@@ -203,10 +202,8 @@ class CompanyController extends Controller
             ]);
         } catch (\Throwable $th) {
             // throw $th;
-            return response()->json([
-                "status" => false,
-                "message" => $th->getMessage(),
-            ], $th->getCode() ?: 500);
+            return ApiErrorHandlingAction::make()
+                ->execute($th);
         }
     }
     
@@ -227,10 +224,8 @@ class CompanyController extends Controller
             ]);
         } catch (\Throwable $th) {
             // throw $th;
-            return response()->json([
-                "status" => false,
-                "message" => $th->getMessage(),
-            ], $th->getCode() ?: 500);
+            return ApiErrorHandlingAction::make()
+                ->execute($th);
         }
     }
 }

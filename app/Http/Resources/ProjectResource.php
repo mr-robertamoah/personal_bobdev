@@ -33,7 +33,7 @@ class ProjectResource extends JsonResource
                 $company,
                 $this->isSponsor($company)
             ),
-            // todo skills, sessions, facilitators, learners
+            // TODO skills, sessions, facilitators, learners
         ];
     }
 }
